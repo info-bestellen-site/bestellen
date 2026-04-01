@@ -154,6 +154,73 @@ export type Database = {
           },
         ]
       }
+      opening_hours: {
+        Row: {
+          created_at: string
+          day_of_week: number
+          end_time: string
+          id: string
+          shop_id: string
+          start_time: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: number
+          end_time: string
+          id?: string
+          shop_id: string
+          start_time: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: number
+          end_time?: string
+          id?: string
+          shop_id?: string
+          start_time?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opening_hours_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      tables: {
+        Row: {
+          capacity: number
+          created_at: string
+          id: string
+          shop_id: string
+          table_number: string
+        }
+        Insert: {
+          capacity?: number
+          created_at?: string
+          id?: string
+          shop_id: string
+          table_number: string
+        }
+        Update: {
+          capacity?: number
+          created_at?: string
+          id?: string
+          shop_id?: string
+          table_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tables_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       products: {
         Row: {
           allergens: string[] | null
@@ -219,6 +286,9 @@ export type Database = {
           address: string | null
           created_at: string
           delivery_fee: number
+          has_delivery: boolean
+          has_dine_in: boolean
+          has_pickup: boolean
           id: string
           is_open: boolean
           logo_url: string | null
@@ -226,6 +296,7 @@ export type Database = {
           name: string
           owner_id: string
           phone: string | null
+          prep_lead_time_minutes: number
           slug: string
           stress_factor: number
           updated_at: string
@@ -234,6 +305,9 @@ export type Database = {
           address?: string | null
           created_at?: string
           delivery_fee?: number
+          has_delivery?: boolean
+          has_dine_in?: boolean
+          has_pickup?: boolean
           id?: string
           is_open?: boolean
           logo_url?: string | null
@@ -241,6 +315,7 @@ export type Database = {
           name: string
           owner_id: string
           phone?: string | null
+          prep_lead_time_minutes?: number
           slug: string
           stress_factor?: number
           updated_at?: string
@@ -249,6 +324,9 @@ export type Database = {
           address?: string | null
           created_at?: string
           delivery_fee?: number
+          has_delivery?: boolean
+          has_dine_in?: boolean
+          has_pickup?: boolean
           id?: string
           is_open?: boolean
           logo_url?: string | null
@@ -256,6 +334,7 @@ export type Database = {
           name?: string
           owner_id?: string
           phone?: string | null
+          prep_lead_time_minutes?: number
           slug?: string
           stress_factor?: number
           updated_at?: string
@@ -284,6 +363,8 @@ export type Category = Database['public']['Tables']['categories']['Row']
 export type Product = Database['public']['Tables']['products']['Row']
 export type Order = Database['public']['Tables']['orders']['Row']
 export type OrderItem = Database['public']['Tables']['order_items']['Row']
+export type OpeningHour = Database['public']['Tables']['opening_hours']['Row']
+export type Table = Database['public']['Tables']['tables']['Row']
 
 export type OrderInsert = Database['public']['Tables']['orders']['Insert']
 export type OrderItemInsert = Database['public']['Tables']['order_items']['Insert']

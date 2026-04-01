@@ -9,7 +9,8 @@ import {
   UtensilsCrossed, 
   LogOut,
   LayoutDashboard,
-  ExternalLink
+  ExternalLink,
+  CalendarDays
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -21,6 +22,7 @@ export function AdminSidebar({ shopSlug }: { shopSlug: string }) {
 
   const navItems = [
     { label: 'Küchen-Monitor', icon: ChefHat, href: `/${shopSlug}/admin` },
+    { label: 'Reservierungen', icon: CalendarDays, href: `/${shopSlug}/admin/reservations` },
     { label: 'Bestellungen', icon: LayoutDashboard, href: `/${shopSlug}/admin/orders` },
     { label: 'Speisekarte', icon: UtensilsCrossed, href: `/${shopSlug}/admin/menu` },
     { label: 'Analyse', icon: BarChart3, href: `/${shopSlug}/admin/analysis` },

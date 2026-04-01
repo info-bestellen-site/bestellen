@@ -2,9 +2,10 @@
 
 import { Order, OrderItem, OrderStatus } from '@/types/database'
 import { formatCurrency } from '@/lib/utils/format-currency'
-import { Clock, CheckCircle2, Play, Check, XCircle } from 'lucide-react'
-import { formatDistanceToNow } from 'date-fns'
+import { Clock, CheckCircle2, Play, Check, XCircle, ShoppingBag, Truck, UtensilsCrossed, AlertCircle, Timer } from 'lucide-react'
+import { differenceInMinutes } from 'date-fns'
 import { de } from 'date-fns/locale'
+import { useEffect, useState } from 'react'
 
 interface OrderCardProps {
   order: Order & { order_items: OrderItem[] }
@@ -27,30 +28,86 @@ const statusLabels: Record<string, string> = {
   cancelled: 'Storniert',
 }
 
+const fulfillmentIcons: Record<string, React.ElementType> = {
+  pickup: ShoppingBag,
+  delivery: Truck,
+  dine_in: UtensilsCrossed
+}
+
+const fulfillmentLabels: Record<string, string> = {
+  pickup: 'Abholung',
+  delivery: 'Lieferung',
+  dine_in: 'Vor Ort'
+}
+
 export function OrderCard({ order, onStatusChange }: OrderCardProps) {
-  const createdTime = formatDistanceToNow(new Date(order.created_at), { addSuffix: true, locale: de })
+  const [now, setNow] = useState(new Date())
+
+  // Force re-render every minute to keep countdowns live
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 60000)
+    return () => clearInterval(timer)
+  }, [])
+
+  const isTargetTime = !!order.estimated_ready_at
+  const targetTime = isTargetTime ? new Date(order.estimated_ready_at!) : null
+  
+  let countdownColor = 'text-on-surface-variant/60'
+  let countdownText = ''
+  let diffMins = 0
+  
+  if (targetTime) {
+    diffMins = differenceInMinutes(targetTime, now)
+    
+    if (['completed', 'cancelled'].includes(order.status)) {
+      countdownColor = 'text-on-surface-variant/40'
+      countdownText = 'Abgeschlossen'
+    } else if (diffMins > 10) {
+      countdownColor = 'text-success'
+      countdownText = `In ${diffMins} Min`
+    } else if (diffMins > 4) {
+      countdownColor = 'text-warning font-black'
+      countdownText = `In ${diffMins} Min`
+    } else if (diffMins >= 0) {
+      countdownColor = 'text-error font-black scale-105'
+      countdownText = `In ${diffMins} Min`
+    } else {
+      countdownColor = 'text-error animate-pulse font-black scale-110'
+      countdownText = `Überfällig (${Math.abs(diffMins)} Min)`
+    }
+  }
+
+  const FulfillmentIcon = fulfillmentIcons[order.fulfillment_type] || ShoppingBag
   
   return (
-    <div className="bg-white rounded-3xl border border-outline-variant/10 shadow-xl shadow-primary/5 p-8 flex flex-col h-full transition-all hover:scale-[1.01] hover:shadow-2xl hover:shadow-primary/10">
+    <div className={`bg-white rounded-3xl border shadow-xl p-8 flex flex-col h-full transition-all ${diffMins < 0 && !['completed', 'cancelled'].includes(order.status) ? 'border-error/30 shadow-error/10' : 'border-outline-variant/10 shadow-primary/5 hover:scale-[1.01] hover:shadow-2xl hover:shadow-primary/10'}`}>
       {/* Header */}
-      <div className="flex justify-between items-start mb-6">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
+      <div className="flex justify-between items-start mb-8 gap-4">
+        <div className="flex-1">
+          <div className="flex flex-wrap items-center gap-2 mb-3">
+            <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container-high text-on-surface-variant text-[10px] font-black uppercase tracking-widest shadow-sm">
+              <FulfillmentIcon className="w-3.5 h-3.5" />
+              {fulfillmentLabels[order.fulfillment_type]}
+            </span>
             <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${statusColors[order.status]}`}>
               {statusLabels[order.status]}
             </span>
-            <span className="text-sm font-black text-on-surface-variant opacity-40">#{order.order_number}</span>
           </div>
-          <h3 className="text-2xl font-black tracking-tight">{order.customer_name}</h3>
-          <p className="text-sm text-on-surface-variant font-medium mt-1">{order.customer_phone}</p>
+          <h3 className="text-2xl font-black tracking-tight leading-none mb-1">{order.customer_name}</h3>
+          <p className="text-sm text-on-surface-variant font-medium">{order.customer_phone}</p>
         </div>
-        <div className="text-right">
-          <div className="flex items-center gap-2 text-on-surface-variant/40 mb-1 justify-end">
-            <Clock className="w-3.5 h-3.5" />
-            <span className="text-[10px] font-bold uppercase tracking-widest">{createdTime}</span>
+        
+        {targetTime && (
+          <div className="text-right flex flex-col items-end shrink-0">
+            <div className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/40 mb-1">
+              Zielzeit: {targetTime.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
+            </div>
+            <div className={`flex items-center gap-2 text-xl tracking-tight transition-colors ${countdownColor}`}>
+              <Timer className="w-5 h-5" />
+              {countdownText}
+            </div>
           </div>
-          <p className="text-xl font-black text-primary">{formatCurrency(order.total)}</p>
-        </div>
+        )}
       </div>
 
       {/* Items */}

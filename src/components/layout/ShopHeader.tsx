@@ -81,6 +81,11 @@ export function ShopHeader({ shop }: { shop: Shop }) {
           <Link href={`/${shop.slug}`} className="text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors">
             Speisekarte
           </Link>
+          {shop.has_dine_in && (
+            <Link href={`/${shop.slug}/reserve`} className="text-sm font-bold bg-primary/10 text-primary px-4 py-2 rounded-full hover:bg-primary/20 transition-all flex items-center gap-2">
+              <Store className="w-4 h-4" /> Tisch reservieren
+            </Link>
+          )}
         </nav>
 
         <Link href={`/${shop.slug}/checkout`} className="relative flex items-center gap-2 hover:opacity-80 transition-opacity">

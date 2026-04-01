@@ -12,8 +12,14 @@ import {
   Save, 
   Loader2, 
   CheckCircle2,
-  Globe
+  Globe,
+  Plus,
+  Trash2,
+  Users,
+  LayoutGrid
 } from 'lucide-react'
+import { OpeningHour, Table as ShopTable } from '@/types/database'
+import { DAYS_OF_WEEK } from '@/lib/utils/open-hours'
 
 export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug': string }> }) {
   const { 'shop-slug': shopSlug } = use(params)
@@ -32,6 +38,18 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
   const [deliveryFee, setDeliveryFee] = useState(0)
   const [minOrder, setMinOrder] = useState(0)
   const [isOpen, setIsOpen] = useState(true)
+  const [hasDelivery, setHasDelivery] = useState(true)
+  const [hasPickup, setHasPickup] = useState(true)
+  const [hasDineIn, setHasDineIn] = useState(true)
+  const [prepLeadTime, setPrepLeadTime] = useState(60)
+
+  // Opening Hours State
+  const [openingHours, setOpeningHours] = useState<OpeningHour[]>([])
+  const [newSlot, setNewSlot] = useState({ day: 0, start: '09:00', end: '18:00' })
+
+  // Tables State
+  const [tables, setTables] = useState<ShopTable[]>([])
+  const [newTable, setNewTable] = useState({ number: '', capacity: 2 })
 
   useEffect(() => {
     async function fetchShop() {
@@ -51,11 +69,82 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
         setDeliveryFee(data.delivery_fee)
         setMinOrder(data.min_order_amount)
         setIsOpen(data.is_open)
+        setHasDelivery(data.has_delivery)
+        setHasPickup(data.has_pickup)
+        setHasDineIn(data.has_dine_in)
+        setPrepLeadTime(data.prep_lead_time_minutes)
       }
       setLoading(false)
     }
+
+    async function fetchHours() {
+      const { data } = await supabase
+        .from('opening_hours')
+        .select('*')
+        .eq('shop_id', (await supabase.from('shops').select('id').eq('slug', shopSlug).single()).data?.id || '')
+        .order('start_time')
+      if (data) setOpeningHours(data)
+    }
+
+    async function fetchTables() {
+      const { data } = await supabase
+        .from('tables')
+        .select('*')
+        .eq('shop_id', (await supabase.from('shops').select('id').eq('slug', shopSlug).single()).data?.id || '')
+        .order('table_number')
+      if (data) setTables(data)
+    }
+
     fetchShop()
+    fetchHours()
+    fetchTables()
   }, [supabase, shopSlug])
+
+  const handleAddSlot = async () => {
+    if (!shop) return
+    const { data, error } = await supabase
+      .from('opening_hours')
+      .insert({
+        shop_id: shop.id,
+        day_of_week: newSlot.day,
+        start_time: newSlot.start + ':00',
+        end_time: newSlot.end + ':00'
+      })
+      .select()
+      .single()
+    
+    if (data) setOpeningHours([...openingHours, data])
+    if (error) alert(error.message)
+  }
+
+  const handleDeleteSlot = async (id: string) => {
+    const { error } = await supabase.from('opening_hours').delete().eq('id', id)
+    if (!error) setOpeningHours(openingHours.filter(h => h.id !== id))
+  }
+
+  const handleAddTable = async () => {
+    if (!shop || !newTable.number) return
+    const { data, error } = await supabase
+      .from('tables')
+      .insert({
+        shop_id: shop.id,
+        table_number: newTable.number,
+        capacity: newTable.capacity
+      })
+      .select()
+      .single()
+    
+    if (data) {
+      setTables([...tables, data])
+      setNewTable({ number: '', capacity: 2 })
+    }
+    if (error) alert(error.message)
+  }
+
+  const handleDeleteTable = async (id: string) => {
+    const { error } = await supabase.from('tables').delete().eq('id', id)
+    if (!error) setTables(tables.filter(t => t.id !== id))
+  }
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -73,7 +162,11 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
         stress_factor: stressFactor,
         delivery_fee: deliveryFee,
         min_order_amount: minOrder,
-        is_open: isOpen
+        is_open: isOpen,
+        has_delivery: hasDelivery,
+        has_pickup: hasPickup,
+        has_dine_in: hasDineIn,
+        prep_lead_time_minutes: prepLeadTime
       })
       .eq('id', shop.id)
     
@@ -159,6 +252,86 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
           </div>
         </div>
 
+        {/* Features Config */}
+        <div className="bg-white rounded-[2rem] p-8 border border-outline-variant/10 shadow-xl shadow-primary/5 space-y-8">
+          <div className="flex items-center gap-3 mb-2">
+            <Store className="w-6 h-6 text-primary" />
+            <h2 className="text-xl font-bold tracking-tight">Shop-Funktionen</h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            
+            <button 
+              type="button"
+              onClick={() => setHasDelivery(!hasDelivery)}
+              className={`flex items-center justify-between p-5 rounded-3xl transition-all border-2 ${
+                hasDelivery ? 'border-primary bg-primary/5 text-primary' : 'border-outline-variant/10 bg-surface text-on-surface-variant'
+              }`}
+            >
+              <div className="text-left">
+                <p className="font-bold">Lieferung</p>
+                <p className="text-[10px] uppercase font-bold tracking-widest opacity-60">
+                  {hasDelivery ? 'Aktiviert' : 'Deaktiviert'}
+                </p>
+              </div>
+              <div className={`w-3 h-3 rounded-full ${hasDelivery ? 'bg-primary' : 'bg-outline-variant/30'}`} />
+            </button>
+
+            <button 
+              type="button"
+              onClick={() => setHasPickup(!hasPickup)}
+              className={`flex items-center justify-between p-5 rounded-3xl transition-all border-2 ${
+                hasPickup ? 'border-primary bg-primary/5 text-primary' : 'border-outline-variant/10 bg-surface text-on-surface-variant'
+              }`}
+            >
+              <div className="text-left">
+                <p className="font-bold">Abholung</p>
+                <p className="text-[10px] uppercase font-bold tracking-widest opacity-60">
+                  {hasPickup ? 'Aktiviert' : 'Deaktiviert'}
+                </p>
+              </div>
+              <div className={`w-3 h-3 rounded-full ${hasPickup ? 'bg-primary' : 'bg-outline-variant/30'}`} />
+            </button>
+
+            <button 
+              type="button"
+              onClick={() => setHasDineIn(!hasDineIn)}
+              className={`flex items-center justify-between p-5 rounded-3xl transition-all border-2 ${
+                hasDineIn ? 'border-primary bg-primary/5 text-primary' : 'border-outline-variant/10 bg-surface text-on-surface-variant'
+              }`}
+            >
+              <div className="text-left">
+                <p className="font-bold">Vor Ort (Reservierung)</p>
+                <p className="text-[10px] uppercase font-bold tracking-widest opacity-60">
+                  {hasDineIn ? 'Aktiviert' : 'Deaktiviert'}
+                </p>
+              </div>
+              <div className={`w-3 h-3 rounded-full ${hasDineIn ? 'bg-primary' : 'bg-outline-variant/30'}`} />
+            </button>
+            
+            <div className="col-span-1 md:col-span-2 lg:col-span-3 pt-6 border-t border-outline-variant/10">
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2.5 ml-1">
+                Vorlaufzeit Küchen-Monitor (Min.)
+              </label>
+              <div className="flex items-center gap-4">
+                <input 
+                  type="range" 
+                  min="5" 
+                  max="180" 
+                  step="5"
+                  value={prepLeadTime}
+                  onChange={e => setPrepLeadTime(parseInt(e.target.value))}
+                  className="flex-1 h-1.5 bg-surface-container-low rounded-full appearance-none cursor-pointer accent-primary"
+                />
+                <span className="text-primary font-black text-lg w-20 text-right">{prepLeadTime} Min.</span>
+              </div>
+              <p className="mt-2 text-[10px] text-on-surface-variant/50 font-medium italic">
+                Bestimmt, wann eine zukünftige Vorbestellung auf dem Küchen-Reiter "Aktuell" erscheint (z.B. 60 Min vor Zielzeit).
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Operating Parameters */}
         <div className="bg-white rounded-[2rem] p-8 border border-outline-variant/10 shadow-xl shadow-primary/5 space-y-8">
           <div className="flex items-center gap-3 mb-2">
@@ -188,20 +361,167 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
               </p>
             </div>
 
-            <div className="col-span-2 md:col-span-1 md:border-l md:border-outline-variant/5 md:pl-6">
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-4 ml-1">Status</label>
+            <div className="col-span-2 md:col-span-1 md:border-l md:border-outline-variant/5 md:pl-8">
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-4 ml-1">Manueller Status (Override)</label>
               <button 
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className={`w-full flex items-center justify-between px-6 py-4 rounded-2xl transition-all ${
+                className={`w-full flex items-center justify-between px-6 py-4 rounded-3xl transition-all ${
                   isOpen 
                     ? 'bg-success/5 text-success ring-2 ring-inset ring-success/20' 
                     : 'bg-error/5 text-error ring-2 ring-inset ring-error/20'
                 }`}
               >
-                <span className="text-sm font-black uppercase tracking-widest">{isOpen ? 'Shop Geöffnet' : 'Shop Geschlossen'}</span>
+                <div className="flex flex-col items-start text-left">
+                  <span className="text-sm font-black uppercase tracking-widest leading-none mb-1">
+                    {isOpen ? 'Geöffnet' : 'Geschlossen'}
+                  </span>
+                  <span className="text-[10px] font-bold opacity-60">Manueller Schalter</span>
+                </div>
                 <div className={`w-3 h-3 rounded-full ${isOpen ? 'bg-success animate-pulse' : 'bg-error'}`} />
               </button>
+              <p className="mt-4 text-[10px] text-on-surface-variant/50 font-medium italic">
+                Wenn "Geschlossen", kann niemand bestellen (auch während der Öffnungszeiten).
+              </p>
+            </div>
+
+          </div>
+        </div>
+
+        {/* Opening Hours Section */}
+        <div className="bg-white rounded-[2rem] p-8 border border-outline-variant/10 shadow-xl shadow-primary/5 space-y-8">
+          <div className="flex items-center gap-3 mb-2">
+            <Clock className="w-6 h-6 text-primary" />
+            <h2 className="text-xl font-bold tracking-tight">Reguläre Öffnungszeiten</h2>
+          </div>
+
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-surface-container-low/50 p-6 rounded-3xl border border-outline-variant/5">
+              <div className="space-y-4">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Neues Zeitfenster</p>
+                <div className="grid grid-cols-3 gap-3">
+                  <select 
+                    value={newSlot.day}
+                    onChange={e => setNewSlot({...newSlot, day: parseInt(e.target.value)})}
+                    className="col-span-3 px-4 py-3 bg-white rounded-xl text-sm font-bold border-none ring-1 ring-outline-variant/10"
+                  >
+                    {DAYS_OF_WEEK.map((day, i) => <option key={i} value={i}>{day}</option>)}
+                  </select>
+                  <input 
+                    type="time" 
+                    value={newSlot.start}
+                    onChange={e => setNewSlot({...newSlot, start: e.target.value})}
+                    className="px-4 py-3 bg-white rounded-xl text-sm font-bold border-none ring-1 ring-outline-variant/10"
+                  />
+                  <input 
+                    type="time" 
+                    value={newSlot.end}
+                    onChange={e => setNewSlot({...newSlot, end: e.target.value})}
+                    className="px-4 py-3 bg-white rounded-xl text-sm font-bold border-none ring-1 ring-outline-variant/10"
+                  />
+                  <button 
+                    type="button"
+                    onClick={handleAddSlot}
+                    className="bg-primary text-on-primary rounded-xl flex items-center justify-center hover:scale-105 transition-transform"
+                  >
+                    <Plus className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3">
+              {DAYS_OF_WEEK.map((day, dayIdx) => {
+                const daySlots = openingHours.filter(h => h.day_of_week === dayIdx)
+                return (
+                  <div key={dayIdx} className="flex items-center justify-between p-4 bg-white rounded-2xl border border-outline-variant/5 group">
+                    <span className="text-sm font-bold w-32">{day}</span>
+                    <div className="flex-1 flex flex-wrap gap-2">
+                      {daySlots.length > 0 ? (
+                        daySlots.map(slot => (
+                          <div key={slot.id} className="flex items-center gap-2 px-3 py-1.5 bg-primary/5 text-primary rounded-full border border-primary/10">
+                            <span className="text-[11px] font-black">{slot.start_time.substring(0, 5)} - {slot.end_time.substring(0, 5)}</span>
+                            <button 
+                              type="button"
+                              onClick={() => handleDeleteSlot(slot.id)}
+                              className="hover:text-error transition-colors"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))
+                      ) : (
+                        <span className="text-[11px] font-bold text-on-surface-variant/30 uppercase tracking-widest italic">Geschlossen</span>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Tables Section */}
+        <div className="bg-white rounded-[2rem] p-8 border border-outline-variant/10 shadow-xl shadow-primary/5 space-y-8">
+          <div className="flex items-center gap-3 mb-2">
+            <LayoutGrid className="w-6 h-6 text-primary" />
+            <h2 className="text-xl font-bold tracking-tight">Tisch-Management</h2>
+          </div>
+
+          <div className="space-y-6">
+            <div className="bg-surface-container-low/50 p-6 rounded-3xl border border-outline-variant/5">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary mb-4">Tisch hinzufügen</p>
+              <div className="flex gap-4">
+                <input 
+                  placeholder="Tisch Name/Nr."
+                  value={newTable.number}
+                  onChange={e => setNewTable({...newTable, number: e.target.value})}
+                  className="flex-1 px-4 py-3 bg-white rounded-xl text-sm font-bold border-none ring-1 ring-outline-variant/10"
+                />
+                <div className="flex items-center gap-3 px-4 py-3 bg-white rounded-xl ring-1 ring-outline-variant/10">
+                  <Users className="w-4 h-4 text-on-surface-variant/40" />
+                  <input 
+                    type="number"
+                    min="1"
+                    value={newTable.capacity}
+                    onChange={e => setNewTable({...newTable, capacity: parseInt(e.target.value)})}
+                    className="w-12 text-sm font-bold border-none p-0 focus:ring-0"
+                  />
+                </div>
+                <button 
+                  type="button"
+                  onClick={handleAddTable}
+                  className="px-6 bg-primary text-on-primary rounded-xl font-bold text-sm hover:scale-105 transition-transform"
+                >
+                  Hinzufügen
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {tables.map(table => (
+                <div key={table.id} className="p-5 bg-white rounded-[1.5rem] border border-outline-variant/10 shadow-sm hover:shadow-md transition-all relative group">
+                  <button 
+                    type="button"
+                    onClick={() => handleDeleteTable(table.id)}
+                    className="absolute top-4 right-4 text-on-surface-variant/20 hover:text-error transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/40 mb-1">Tisch</p>
+                  <p className="text-xl font-black mb-4">{table.table_number}</p>
+                  <div className="flex items-center gap-1.5 pt-4 border-t border-outline-variant/5">
+                    <Users className="w-3.5 h-3.5 text-primary" />
+                    <span className="text-xs font-bold">{table.capacity} Plätze</span>
+                    <div className="ml-auto flex gap-0.5">
+                      {Array.from({ length: Math.min(table.capacity, 4) }).map((_, i) => (
+                        <div key={i} className="w-1.5 h-1.5 rounded-full bg-primary/20" />
+                      ))}
+                      {table.capacity > 4 && <span className="text-[8px] font-black text-primary/40">+</span>}
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>

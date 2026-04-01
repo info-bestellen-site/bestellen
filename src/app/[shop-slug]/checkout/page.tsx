@@ -20,7 +20,8 @@ import {
   AlertCircle
 } from 'lucide-react'
 import Link from 'next/link'
-import { Shop, FulfillmentType } from '@/types/database'
+import { Shop, FulfillmentType, OpeningHour, Table, Order } from '@/types/database'
+import { generateAvailableSlots, getAvailableReservationSlots } from '@/lib/utils/open-hours'
 
 export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug': string }> }) {
   const { 'shop-slug': shopSlug } = use(params)
@@ -38,8 +39,14 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
   const [customerName, setCustomerName] = useState('')
   const [customerPhone, setCustomerPhone] = useState('')
   const [deliveryAddress, setDeliveryAddress] = useState('')
-  const [tableNumber, setTableNumber] = useState('')
   const [notes, setNotes] = useState('')
+  
+  // Booking State
+  const [openingHours, setOpeningHours] = useState<OpeningHour[]>([])
+  const [tables, setTables] = useState<Table[]>([])
+  const [existingOrders, setExistingOrders] = useState<Order[]>([])
+  const [selectedSlot, setSelectedSlot] = useState<string>('')
+  const [guestCount, setGuestCount] = useState(2)
 
   useEffect(() => {
     async function init() {
@@ -52,6 +59,12 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
       if (shopData) {
         setShop(shopData)
         
+        let defaultType: FulfillmentType = 'pickup'
+        if (shopData.has_pickup) defaultType = 'pickup'
+        else if (shopData.has_delivery) defaultType = 'delivery'
+        else if (shopData.has_dine_in) defaultType = 'dine_in'
+        setFulfillmentType(defaultType)
+        
         // Fetch active orders for wait time calculation
         const { count } = await supabase
           .from('orders')
@@ -59,7 +72,31 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
           .eq('shop_id', shopData.id)
           .in('status', ['pending', 'preparing'])
         
-        setActiveOrders(count || 0)
+        
+        // Fetch opening hours
+        const { data: hoursData } = await supabase
+          .from('opening_hours')
+          .select('*')
+          .eq('shop_id', shopData.id)
+          
+        // Fetch table layouts
+        const { data: tablesData } = await supabase
+          .from('tables')
+          .select('*')
+          .eq('shop_id', shopData.id)
+          
+        // Fetch existing dine-in bookings for the current day
+        const todayStr = new Date().toISOString().split('T')[0]
+        const { data: ordersData } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('shop_id', shopData.id)
+          .eq('fulfillment_type', 'dine_in')
+          .gte('estimated_ready_at', todayStr + 'T00:00:00Z')
+        
+        if (hoursData) setOpeningHours(hoursData)
+        if (tablesData) setTables(tablesData)
+        if (ordersData) setExistingOrders(ordersData)
       }
       setLoading(false)
     }
@@ -70,6 +107,17 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
   const deliveryFee = fulfillmentType === 'delivery' ? (shop?.delivery_fee || 0) : 0
   const total = subtotal + deliveryFee
   const waitTime = calculateWaitTime(activeOrders, shop?.stress_factor)
+
+  const availableSlots = getAvailableReservationSlots(openingHours, tables, existingOrders, guestCount)
+  
+  // Ensure we have a valid slot selected dynamically
+  useEffect(() => {
+    if (fulfillmentType === 'dine_in' && availableSlots.length > 0) {
+      if (!selectedSlot || !availableSlots.includes(selectedSlot)) {
+        setSelectedSlot(availableSlots[0])
+      }
+    }
+  }, [availableSlots, selectedSlot, fulfillmentType])
 
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -90,13 +138,16 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
           customer_name: customerName,
           customer_phone: customerPhone,
           delivery_address: fulfillmentType === 'delivery' ? deliveryAddress : null,
-          table_number: fulfillmentType === 'dine_in' ? tableNumber : null,
+          table_number: null, // Table assigned by restaurant on arrival
           fulfillment_type: fulfillmentType,
           subtotal,
           delivery_fee: deliveryFee,
           total,
           notes,
-          estimated_ready_at: new Date(Date.now() + waitTime * 60000).toISOString(),
+          estimated_ready_at: (fulfillmentType === 'dine_in' && selectedSlot)
+            ? new Date(new Date().setHours(parseInt(selectedSlot.split(':')[0]), 0, 0, 0)).toISOString()
+            : new Date(Date.now() + waitTime * 60000).toISOString(),
+          guest_count: fulfillmentType === 'dine_in' ? guestCount : null,
           status: 'pending'
         })
         .select()
@@ -190,11 +241,11 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
         {/* Fulfillment Selection */}
         <div className="bg-white rounded-2xl p-6 border border-outline-variant/10 shadow-sm">
           <h3 className="text-sm font-bold uppercase tracking-widest text-on-surface-variant mb-4">Wie möchtest du bestellen?</h3>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {[
-              { id: 'pickup', label: 'Abholung', icon: Store },
-              { id: 'delivery', label: 'Lieferung', icon: Truck },
-              { id: 'dine_in', label: 'Vor Ort', icon: Utensils },
+              ...(shop?.has_pickup ? [{ id: 'pickup', label: 'Abholung', icon: Store }] : []),
+              ...(shop?.has_delivery ? [{ id: 'delivery', label: 'Lieferung', icon: Truck }] : []),
+              ...(shop?.has_dine_in ? [{ id: 'dine_in', label: 'Vor Ort', icon: Utensils }] : []),
             ].map((type) => (
               <button
                 key={type.id}
@@ -212,16 +263,83 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
           </div>
         </div>
 
-        {/* Wait Time Info */}
-        <div className="flex items-center gap-4 p-4 bg-primary/5 border border-primary/10 rounded-xl">
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-            <Clock className="w-5 h-5 text-primary" />
+        {/* Time Slot Selection */}
+        {fulfillmentType === 'dine_in' && (
+          <div className="bg-white rounded-2xl p-6 border border-outline-variant/10 shadow-sm animate-[fadeIn_0.3s_ease]">
+            <div className="flex items-center gap-3 mb-4">
+              <Clock className="w-4 h-4 text-primary" />
+              <h3 className="text-sm font-bold uppercase tracking-widest text-on-surface-variant">Wann möchtest du kommen?</h3>
+            </div>
+            
+            <div className="flex flex-wrap gap-2">
+              {availableSlots.length > 0 ? (
+                availableSlots.map(slot => (
+                  <button
+                    key={slot}
+                    type="button"
+                    onClick={() => setSelectedSlot(slot)}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold border-2 transition-all ${
+                      selectedSlot === slot 
+                        ? 'border-primary bg-primary text-on-primary' 
+                        : 'border-outline-variant/10 hover:border-primary/30'
+                    }`}
+                  >
+                    {slot}
+                  </button>
+                ))
+              ) : (
+                <p className="text-xs text-error font-medium italic">Für diese Personenanzahl sind leider keine Plätze mehr frei.</p>
+              )}
+            </div>
+            <p className="mt-3 text-[10px] text-on-surface-variant/50 font-semibold italic">
+              * Termine werden in 1-Stunden-Fenstern vergeben.
+            </p>
           </div>
-          <div>
-            <p className="text-xs text-primary/60 font-medium leading-none mb-1">Voraussichtliche Wartezeit</p>
-            <p className="text-sm font-bold text-primary">{formatWaitTime(waitTime)}</p>
+        )}
+
+        {/* Guest Count (Dine In only) */}
+        {fulfillmentType === 'dine_in' && (
+          <div className="bg-white rounded-2xl p-6 border border-outline-variant/10 shadow-sm animate-[fadeIn_0.3s_ease]">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-bold uppercase tracking-widest text-on-surface-variant mb-1">Personenanzahl</h3>
+                <p className="text-[10px] text-on-surface-variant/60 font-medium">Für wie viele Personen sollen wir decken?</p>
+              </div>
+              <div className="flex items-center gap-4 bg-surface-container-low px-4 py-2 rounded-2xl">
+                <button 
+                  type="button"
+                  onClick={() => setGuestCount(Math.max(1, guestCount - 1))}
+                  className="p-1 hover:text-primary transition-colors text-on-surface-variant"
+                >
+                  <Minus className="w-5 h-5" />
+                </button>
+                <span className="text-lg font-black w-6 text-center">{guestCount}</span>
+                <button 
+                  type="button"
+                  onClick={() => setGuestCount(guestCount + 1)}
+                  className="p-1 hover:text-primary transition-colors text-on-surface-variant"
+                >
+                  <Plus className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Wait Time Info (For Pickup and Delivery) */}
+        {(fulfillmentType === 'delivery' || fulfillmentType === 'pickup') && (
+          <div className="flex items-center gap-4 p-4 bg-primary/5 border border-primary/10 rounded-xl">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <Clock className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-xs text-primary/60 font-medium leading-none mb-1">
+                {fulfillmentType === 'delivery' ? 'Voraussichtliche Lieferzeit' : 'Voraussichtliche Abholzeit'}
+              </p>
+              <p className="text-sm font-bold text-primary">{formatWaitTime(waitTime)}</p>
+            </div>
+          </div>
+        )}
 
         {/* Checkout Form */}
         <form onSubmit={handlePlaceOrder} className="bg-white rounded-2xl p-6 border border-outline-variant/10 shadow-sm space-y-4">
@@ -266,19 +384,6 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
               </div>
             )}
 
-            {fulfillmentType === 'dine_in' && (
-              <div className="animate-[fadeIn_0.3s_ease]">
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5 ml-1">Tischnummer</label>
-                <input 
-                  required
-                  type="text" 
-                  value={tableNumber}
-                  onChange={e => setTableNumber(e.target.value)}
-                  placeholder="Welcher Tisch?"
-                  className="w-full px-4 py-3 bg-surface-container-low border-none rounded-xl text-sm focus:ring-2 focus:ring-primary/10"
-                />
-              </div>
-            )}
 
             <div>
               <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5 ml-1">Anmerkungen (Optional)</label>
