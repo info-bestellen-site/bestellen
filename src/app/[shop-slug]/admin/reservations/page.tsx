@@ -120,17 +120,17 @@ export default function ReservationsPage({ params }: ReservationPageProps) {
   const completedReservations = reservations.filter(r => ['completed', 'cancelled'].includes(r.status))
 
   return (
-    <div className="p-10 space-y-10 max-w-6xl mx-auto">
-      <div className="flex justify-between items-end">
+    <div className="p-4 sm:p-10 space-y-8 sm:space-y-10 max-w-6xl mx-auto">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
         <div>
-          <h1 className="text-4xl font-black tracking-tight mb-2">Reservierungen</h1>
-          <p className="text-lg text-on-surface-variant font-medium">Tische, Gäste und Laufkundschaft verwalten.</p>
+          <h1 className="text-2xl sm:text-4xl font-black tracking-tight mb-2">Reservierungen</h1>
+          <p className="text-sm sm:text-lg text-on-surface-variant font-medium">Tische, Gäste und Laufkundschaft verwalten.</p>
         </div>
         <button 
           onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-3 px-6 py-3.5 bg-primary text-on-primary rounded-2xl text-sm font-black uppercase tracking-widest hover:shadow-lg hover:shadow-primary/20 transition-all active:scale-95"
+          className="flex items-center justify-center gap-3 px-6 py-3.5 bg-primary text-on-primary rounded-2xl text-sm font-black uppercase tracking-widest hover:shadow-lg hover:shadow-primary/20 transition-all active:scale-95 w-full sm:w-auto"
         >
-          {showForm ? 'Schließen' : <><Plus className="w-5 h-5" /> Neue Reservierung</>}
+          {showForm ? 'Schließen' : <><Plus className="w-5 h-5" /> Reservierung</>}
         </button>
       </div>
 
@@ -173,7 +173,7 @@ export default function ReservationsPage({ params }: ReservationPageProps) {
             <p className="text-sm text-on-surface-variant/60">Aktuell ist nichts für heute geplant.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {activeReservations.map(res => {
               const resTime = new Date(res.estimated_ready_at!).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
               const isManual = res.customer_phone === 'Manuell'

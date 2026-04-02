@@ -10,12 +10,21 @@ import {
   LogOut,
   LayoutDashboard,
   ExternalLink,
-  CalendarDays
+  CalendarDays,
+  X
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
-export function AdminSidebar({ shopSlug }: { shopSlug: string }) {
+export function AdminSidebar({ 
+  shopSlug, 
+  isOpen, 
+  onClose 
+}: { 
+  shopSlug: string, 
+  isOpen?: boolean, 
+  onClose?: () => void 
+}) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
@@ -35,14 +44,35 @@ export function AdminSidebar({ shopSlug }: { shopSlug: string }) {
   }
 
   return (
-    <aside className="w-72 bg-white border-r border-outline-variant/10 flex flex-col h-screen sticky top-0">
+    <>
+      {/* Mobile Backdrop */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm transition-opacity"
+          onClick={onClose}
+        />
+      )}
+
+      <aside className={`
+        fixed lg:sticky top-0 left-0 z-50
+        w-72 h-screen bg-white border-r border-outline-variant/10 flex flex-col 
+        transition-transform duration-300 ease-in-out
+        ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+      `}>
       <div className="p-8">
-        <Link href="/" className="flex items-center gap-3 mb-10 group">
-          <div className="w-10 h-10 bg-primary text-on-primary rounded-2xl flex items-center justify-center p-2 shadow-lg shadow-primary/20 transition-all group-hover:scale-105 active:scale-95">
-            <ChefHat className="w-full h-full" />
-          </div>
-          <span className="text-xl font-black tracking-tighter">Bestellen</span>
-        </Link>
+        <div className="flex items-center justify-between mb-10">
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="w-10 h-10 bg-primary text-on-primary rounded-2xl flex items-center justify-center p-2 shadow-lg shadow-primary/20 transition-all group-hover:scale-105 active:scale-95">
+              <ChefHat className="w-full h-full" />
+            </div>
+            <span className="text-xl font-black tracking-tighter text-on-surface">Bestellen</span>
+          </Link>
+          {onClose && (
+            <button onClick={onClose} className="lg:hidden p-2 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+          )}
+        </div>
 
         <nav className="space-y-1.5">
           {navItems.map((item) => {
@@ -83,5 +113,6 @@ export function AdminSidebar({ shopSlug }: { shopSlug: string }) {
         </button>
       </div>
     </aside>
+    </>
   )
 }

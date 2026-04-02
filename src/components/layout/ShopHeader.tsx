@@ -1,19 +1,53 @@
 'use client'
 
 import Link from 'next/link'
-import { ShoppingCart, Store, ShieldAlert, ShieldCheck, Settings } from 'lucide-react'
+import { 
+  ShoppingCart, 
+  Store, 
+  ShieldAlert, 
+  ShieldCheck, 
+  Settings,
+  Coffee,
+  Pizza,
+  Utensils,
+  Beer,
+  Cake,
+  IceCream,
+  Fish,
+  Soup,
+  Beef,
+  Wine
+} from 'lucide-react'
 import { useCartStore } from '@/lib/store/cart-store'
 import { Shop } from '@/types/database'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useAdminStore } from '@/lib/store/admin-store'
 
-export function ShopHeader({ shop }: { shop: Shop }) {
+const ICON_MAP: Record<string, any> = {
+  Store,
+  Utensils,
+  Coffee,
+  Pizza,
+  Beer,
+  Cake,
+  IceCream,
+  Fish,
+  Soup,
+  Beef,
+  Wine
+}
+
+export function ShopHeader({ shop, isCurrentlyOpen }: { shop: Shop, isCurrentlyOpen?: boolean }) {
   const router = useRouter()
   const supabase = createClient()
   const searchParams = useSearchParams()
+  const pathname = usePathname()
   const isEmbed = searchParams.get('embed') === 'true'
+  
+  // Use the prop if provided, otherwise fallback to shop.is_open (for backward compatibility if needed)
+  const isOpen = isCurrentlyOpen !== undefined ? isCurrentlyOpen : shop.is_open
   
   const [itemCount, setItemCount] = useState(0)
   const [isOwner, setIsOwner] = useState(false)
@@ -48,41 +82,50 @@ export function ShopHeader({ shop }: { shop: Shop }) {
               <img src={shop.logo_url} alt={shop.name} className="w-9 h-9 rounded-full object-cover border border-outline-variant/15" />
             ) : (
               <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center">
-                <Store className="w-4 h-4 text-on-primary" />
+                {(() => {
+                  const IconComponent = (shop.icon_name && ICON_MAP[shop.icon_name]) || Store
+                  return <IconComponent className="w-4 h-4 text-on-primary" />
+                })()}
               </div>
             )}
             <div>
               <h1 className="text-lg font-bold tracking-tight text-on-surface leading-tight">{shop.name}</h1>
-              {!shop.is_open && (
+              {!isOpen && (
                 <span className="text-[10px] font-bold text-error uppercase tracking-wider">Geschlossen</span>
               )}
             </div>
           </Link>
 
           {isOwner && (
-            <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-surface-container-low rounded-full">
-              <button 
-                onClick={toggleEditMode}
-                className={`flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${
-                  editMode ? 'bg-primary text-on-primary' : 'text-on-surface-variant'
-                }`}
-              >
-                {editMode ? <ShieldCheck className="w-3.5 h-3.5" /> : <ShieldAlert className="w-3.5 h-3.5" />}
-                Edit-Modus {editMode ? 'An' : 'Aus'}
-              </button>
-              <Link href={`/${shop.slug}/admin`} className="p-1 text-on-surface-variant hover:text-primary transition-colors">
-                <Settings className="w-3.5 h-3.5" />
-              </Link>
-            </div>
+            <Link 
+              href={`/${shop.slug}/admin`} 
+              className="px-4 py-2 bg-surface-container-low hover:bg-surface-container-high rounded-full text-on-surface-variant hover:text-primary transition-all flex items-center gap-2 text-xs font-bold"
+            >
+              <Settings className="w-4 h-4" /> Admin
+            </Link>
           )}
         </div>
 
-        <nav className="hidden md:flex items-center gap-8">
-          <Link href={`/${shop.slug}`} className="text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors">
+        <nav className="hidden md:flex items-center gap-6">
+          <Link 
+            href={`/${shop.slug}`} 
+            className={`text-sm font-black uppercase tracking-widest px-4 py-2 rounded-full transition-all ${
+              pathname === `/${shop.slug}` 
+                ? 'bg-primary text-on-primary shadow-lg shadow-primary/20' 
+                : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low'
+            }`}
+          >
             Speisekarte
           </Link>
-          {shop.has_dine_in && (
-            <Link href={`/${shop.slug}/reserve`} className="text-sm font-bold bg-primary/10 text-primary px-4 py-2 rounded-full hover:bg-primary/20 transition-all flex items-center gap-2">
+          {shop.has_reservation && (
+            <Link 
+              href={`/${shop.slug}/reserve`} 
+              className={`text-sm font-black uppercase tracking-widest px-4 py-2 rounded-full transition-all flex items-center gap-2 ${
+                pathname === `/${shop.slug}/reserve`
+                  ? 'bg-primary text-on-primary shadow-lg shadow-primary/20'
+                  : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low'
+              }`}
+            >
               <Store className="w-4 h-4" /> Tisch reservieren
             </Link>
           )}

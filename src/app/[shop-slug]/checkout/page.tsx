@@ -21,7 +21,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { Shop, FulfillmentType, OpeningHour, Table, Order } from '@/types/database'
-import { generateAvailableSlots, getAvailableReservationSlots } from '@/lib/utils/open-hours'
+import { generateAvailableSlots, getAvailableReservationSlots, isShopOpen } from '@/lib/utils/open-hours'
 
 export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug': string }> }) {
   const { 'shop-slug': shopSlug } = use(params)
@@ -71,7 +71,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
           .select('*', { count: 'exact', head: true })
           .eq('shop_id', shopData.id)
           .in('status', ['pending', 'preparing'])
-        
+        setActiveOrders(count || 0)
         
         // Fetch opening hours
         const { data: hoursData } = await supabase
@@ -125,6 +125,15 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
 
     if (subtotal < shop.min_order_amount) {
       alert(`Mindestbestellwert von ${formatCurrency(shop.min_order_amount)} nicht erreicht.`)
+      return
+    }
+
+    // Final check if shop is still open
+    const { data: latestShop } = await supabase.from('shops').select('is_open').eq('id', shop.id).single()
+    const { data: hours } = await supabase.from('opening_hours').select('*').eq('shop_id', shop.id)
+    if (!isShopOpen(hours || [], latestShop?.is_open ?? false)) {
+      alert('Der Shop hat gerade geschlossen. Ihre Bestellung konnte nicht aufgegeben werden.')
+      window.location.reload() // Reload to show closed status
       return
     }
 

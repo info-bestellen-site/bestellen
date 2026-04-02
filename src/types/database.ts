@@ -289,6 +289,8 @@ export type Database = {
           has_delivery: boolean
           has_dine_in: boolean
           has_pickup: boolean
+          has_reservation: boolean
+          icon_name: string | null
           id: string
           is_open: boolean
           logo_url: string | null
@@ -308,6 +310,8 @@ export type Database = {
           has_delivery?: boolean
           has_dine_in?: boolean
           has_pickup?: boolean
+          has_reservation?: boolean
+          icon_name?: string | null
           id?: string
           is_open?: boolean
           logo_url?: string | null
@@ -327,6 +331,8 @@ export type Database = {
           has_delivery?: boolean
           has_dine_in?: boolean
           has_pickup?: boolean
+          has_reservation?: boolean
+          icon_name?: string | null
           id?: string
           is_open?: boolean
           logo_url?: string | null

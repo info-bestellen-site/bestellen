@@ -80,9 +80,9 @@ export function OrderCard({ order, onStatusChange }: OrderCardProps) {
   const FulfillmentIcon = fulfillmentIcons[order.fulfillment_type] || ShoppingBag
   
   return (
-    <div className={`bg-white rounded-3xl border shadow-xl p-8 flex flex-col h-full transition-all ${diffMins < 0 && !['completed', 'cancelled'].includes(order.status) ? 'border-error/30 shadow-error/10' : 'border-outline-variant/10 shadow-primary/5 hover:scale-[1.01] hover:shadow-2xl hover:shadow-primary/10'}`}>
+    <div className={`bg-white rounded-3xl border shadow-xl p-5 sm:p-8 flex flex-col h-full transition-all ${diffMins < 0 && !['completed', 'cancelled'].includes(order.status) ? 'border-error/30 shadow-error/10' : 'border-outline-variant/10 shadow-primary/5 hover:scale-[1.01] hover:shadow-2xl hover:shadow-primary/10'}`}>
       {/* Header */}
-      <div className="flex justify-between items-start mb-8 gap-4">
+      <div className="flex justify-between items-start mb-4 sm:mb-8 gap-4">
         <div className="flex-1">
           <div className="flex flex-wrap items-center gap-2 mb-3">
             <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container-high text-on-surface-variant text-[10px] font-black uppercase tracking-widest shadow-sm">
@@ -93,8 +93,8 @@ export function OrderCard({ order, onStatusChange }: OrderCardProps) {
               {statusLabels[order.status]}
             </span>
           </div>
-          <h3 className="text-2xl font-black tracking-tight leading-none mb-1">{order.customer_name}</h3>
-          <p className="text-sm text-on-surface-variant font-medium">{order.customer_phone}</p>
+          <h3 className="text-xl sm:text-2xl font-black tracking-tight leading-none mb-1 break-words">{order.customer_name}</h3>
+          <p className="text-xs sm:text-sm text-on-surface-variant font-medium">{order.customer_phone}</p>
         </div>
         
         {targetTime && (
@@ -111,7 +111,7 @@ export function OrderCard({ order, onStatusChange }: OrderCardProps) {
       </div>
 
       {/* Items */}
-      <div className="flex-1 space-y-4 mb-8">
+      <div className="flex-1 space-y-4 mb-6 sm:mb-8">
         <div className="space-y-3">
           {order.order_items.map((item) => (
             <div key={item.id} className="flex items-start gap-4">

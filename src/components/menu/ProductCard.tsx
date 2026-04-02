@@ -6,21 +6,25 @@ import { formatCurrency } from '@/lib/utils/format-currency'
 import { useCartStore } from '@/lib/store/cart-store'
 import { useAdminStore } from '@/lib/store/admin-store'
 import { createClient } from '@/lib/supabase/client'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Modal } from '@/components/ui/Modal'
+import { ImageCropper } from '@/components/ui/ImageCropper'
+import { Upload, Loader2 } from 'lucide-react'
 
 interface ProductCardProps {
   product: Product
   shopSlug: string
   onOpenDetail: (product: Product) => void
   isAdmin?: boolean
+  isCurrentlyOpen?: boolean
 }
 
 export function ProductCard({ 
   product: initialProduct, 
   shopSlug, 
   onOpenDetail,
-  isAdmin = false 
+  isAdmin = false,
+  isCurrentlyOpen = true 
 }: ProductCardProps) {
   const supabase = createClient()
   const addItem = useCartStore(s => s.addItem)
@@ -34,6 +38,9 @@ export function ProductCard({
     price: product.price.toString()
   })
   const [isSaving, setIsSaving] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
+  const [imageToCrop, setImageToCrop] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleToggleAvailability = async (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -67,6 +74,55 @@ export function ProductCard({
     }
     setIsSaving(false)
   }
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = () => {
+      setImageToCrop(reader.result as string)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const onCropComplete = async (croppedBlob: Blob) => {
+    setIsUploading(true)
+    setImageToCrop(null)
+
+    const fileName = `${product.shop_id}/${Math.random()}.jpg`
+    const filePath = `product-images/${fileName}`
+
+    try {
+      const { error: uploadError } = await supabase.storage
+        .from('product-images')
+        .upload(filePath, croppedBlob, {
+          upsert: true,
+          contentType: 'image/jpeg'
+        })
+
+      if (uploadError) throw uploadError
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('product-images')
+        .getPublicUrl(filePath)
+
+      const { data, error: updateError } = await supabase
+        .from('products')
+        .update({ image_url: publicUrl })
+        .eq('id', product.id)
+        .select()
+        .single()
+      
+      if (!updateError && data) {
+        setProduct(data)
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error)
+      alert('Fehler beim Upload')
+    } finally {
+      setIsUploading(false)
+    }
+  }
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -85,7 +141,7 @@ export function ProductCard({
     <div className="group relative">
       <div
         className="aspect-[4/5] rounded-lg overflow-hidden bg-surface-container-low mb-3 relative cursor-pointer"
-        onClick={() => onOpenDetail(product)}
+        onClick={() => isAdmin ? fileInputRef.current?.click() : onOpenDetail(product)}
       >
         {product.image_url ? (
           <img
@@ -111,6 +167,16 @@ export function ProductCard({
             <button
               onClick={(e) => {
                 e.stopPropagation()
+                fileInputRef.current?.click()
+              }}
+              disabled={isUploading}
+              className="w-10 h-10 rounded-full bg-white text-primary shadow-lg flex items-center justify-center hover:scale-110 transition-transform disabled:opacity-50"
+            >
+              {isUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Upload className="w-5 h-5" />}
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
                 setIsEditModalOpen(true)
               }}
               className="w-10 h-10 rounded-full bg-white text-primary shadow-lg flex items-center justify-center hover:scale-110 transition-transform"
@@ -133,7 +199,7 @@ export function ProductCard({
             </button>
           </div>
         ) : (
-          product.is_available && (
+          product.is_available && isCurrentlyOpen && (
             <button
               onClick={(e) => {
                 e.stopPropagation()
@@ -205,6 +271,22 @@ export function ProductCard({
       </div>
       {product.description && (
         <p className="text-sm text-on-surface-variant leading-relaxed line-clamp-2">{product.description}</p>
+      )}
+
+      <input 
+        type="file"
+        ref={fileInputRef}
+        className="hidden"
+        accept="image/*"
+        onChange={handleImageUpload}
+      />
+
+      {imageToCrop && (
+        <ImageCropper 
+          image={imageToCrop} 
+          onCancel={() => setImageToCrop(null)}
+          onCropComplete={onCropComplete}
+        />
       )}
     </div>
   )

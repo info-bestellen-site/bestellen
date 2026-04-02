@@ -1,6 +1,7 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { AdminSidebar } from '@/components/admin/AdminSidebar'
+import { ResponsiveAdminLayout } from '@/components/admin/ResponsiveAdminLayout'
 
 interface AdminLayoutProps {
   children: React.ReactNode
@@ -26,9 +27,8 @@ export default async function AdminLayout({ children, params }: AdminLayoutProps
   }
 
   return (
-    <div className="flex bg-surface-container-lowest min-h-screen">
-      <AdminSidebar shopSlug={slug} />
-      <main className="flex-1 min-w-0">{children}</main>
-    </div>
+    <ResponsiveAdminLayout shopSlug={slug}>
+      {children}
+    </ResponsiveAdminLayout>
   )
 }

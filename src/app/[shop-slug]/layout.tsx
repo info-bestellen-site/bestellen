@@ -4,6 +4,7 @@ import { ShopHeader } from '@/components/layout/ShopHeader'
 import { ShopFooter } from '@/components/layout/ShopFooter'
 import { MobileNav } from '@/components/layout/MobileNav'
 import { ShopMain } from '@/components/layout/ShopMain'
+import { isShopOpen } from '@/lib/utils/open-hours'
 
 interface ShopLayoutProps {
   children: React.ReactNode
@@ -26,12 +27,16 @@ export default async function ShopLayout({ children, params }: ShopLayoutProps) 
   const { data: shop } = await supabase.from('shops').select('*').eq('slug', slug).single()
   if (!shop) notFound()
 
+  // Fetch opening hours
+  const { data: hours } = await supabase.from('opening_hours').select('*').eq('shop_id', shop.id)
+  const isCurrentlyOpen = isShopOpen(hours || [], shop.is_open)
+  
   return (
     <div className="min-h-screen bg-surface">
-      <ShopHeader shop={shop} />
+      <ShopHeader shop={shop} isCurrentlyOpen={isCurrentlyOpen} />
       <ShopMain>{children}</ShopMain>
       <ShopFooter shop={shop} />
-      <MobileNav shopSlug={slug} />
+      <MobileNav shopSlug={slug} shop={shop} />
     </div>
   )
 }

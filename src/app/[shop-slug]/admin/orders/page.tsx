@@ -91,15 +91,15 @@ export default function OrderHistoryPage({ params }: { params: Promise<{ 'shop-s
   }
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      <div className="flex items-end justify-between mb-10">
+    <div className="p-4 sm:p-8 max-w-7xl mx-auto space-y-6 sm:space-y-10">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-black tracking-tighter text-on-surface mb-2">Historie</h1>
-          <p className="text-on-surface-variant font-medium">Archiv aller Bestellungen.</p>
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tighter text-on-surface mb-2">Historie</h1>
+          <p className="text-sm sm:text-base text-on-surface-variant font-medium">Archiv aller Bestellungen.</p>
         </div>
         <button 
           onClick={downloadCSV}
-          className="flex items-center gap-2 px-5 py-2.5 bg-surface-container-high hover:bg-surface-container-highest transition-colors rounded-2xl text-sm font-bold text-on-surface"
+          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-surface-container-high hover:bg-surface-container-highest transition-colors rounded-2xl text-sm font-bold text-on-surface w-full sm:w-auto"
         >
           <Download className="w-4 h-4" />
           Exportieren

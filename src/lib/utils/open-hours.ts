@@ -2,7 +2,7 @@ import { OpeningHour, Table, Order } from '@/types/database'
 
 export function isShopOpen(hours: OpeningHour[], manualOpen: boolean): boolean {
   if (!manualOpen) return false
-  if (hours.length === 0) return manualOpen // Fallback to manual if no hours defined
+  if (hours.length === 0) return false // Default to closed if no hours defined
 
   const now = new Date()
   const dayOfWeek = now.getDay() // 0 = Sunday, 1 = Monday, ...

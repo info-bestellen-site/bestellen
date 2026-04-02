@@ -1,6 +1,5 @@
 export function calculateWaitTime(activeOrders: number, stressFactor: number = 5): number {
-  const baseTime = 10
-  return Math.max(baseTime, activeOrders * stressFactor)
+  return Math.max(stressFactor, activeOrders * stressFactor)
 }
 
 export function formatWaitTime(minutes: number): string {

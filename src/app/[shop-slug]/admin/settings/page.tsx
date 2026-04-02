@@ -16,10 +16,40 @@ import {
   Plus,
   Trash2,
   Users,
-  LayoutGrid
+  LayoutGrid,
+  ShieldAlert,
+  Image as ImageIcon,
+  Upload,
+  Coffee,
+  Pizza,
+  Utensils,
+  Beer,
+  Cake,
+  IceCream,
+  Fish,
+  Soup,
+  Beef,
+  Wine
 } from 'lucide-react'
 import { OpeningHour, Table as ShopTable } from '@/types/database'
 import { DAYS_OF_WEEK } from '@/lib/utils/open-hours'
+import { useRef } from 'react'
+import { Modal } from '@/components/ui/Modal'
+import { ImageCropper } from '@/components/ui/ImageCropper'
+
+const PRESET_ICONS = [
+  { name: 'Store', icon: Store },
+  { name: 'Utensils', icon: Utensils },
+  { name: 'Coffee', icon: Coffee },
+  { name: 'Pizza', icon: Pizza },
+  { name: 'Beer', icon: Beer },
+  { name: 'Cake', icon: Cake },
+  { name: 'IceCream', icon: IceCream },
+  { name: 'Fish', icon: Fish },
+  { name: 'Soup', icon: Soup },
+  { name: 'Beef', icon: Beef },
+  { name: 'Wine', icon: Wine },
+]
 
 export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug': string }> }) {
   const { 'shop-slug': shopSlug } = use(params)
@@ -41,7 +71,15 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
   const [hasDelivery, setHasDelivery] = useState(true)
   const [hasPickup, setHasPickup] = useState(true)
   const [hasDineIn, setHasDineIn] = useState(true)
+  const [hasReservation, setHasReservation] = useState(true)
   const [prepLeadTime, setPrepLeadTime] = useState(60)
+  const [logoUrl, setLogoUrl] = useState<string | null>(null)
+  const [iconName, setIconName] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  
+  const [isUploading, setIsUploading] = useState(false)
+  const [imageToCrop, setImageToCrop] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Opening Hours State
   const [openingHours, setOpeningHours] = useState<OpeningHour[]>([])
@@ -72,7 +110,10 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
         setHasDelivery(data.has_delivery)
         setHasPickup(data.has_pickup)
         setHasDineIn(data.has_dine_in)
+        setHasReservation(data.has_reservation ?? true)
         setPrepLeadTime(data.prep_lead_time_minutes)
+        setLogoUrl(data.logo_url)
+        setIconName(data.icon_name)
       }
       setLoading(false)
     }
@@ -166,7 +207,10 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
         has_delivery: hasDelivery,
         has_pickup: hasPickup,
         has_dine_in: hasDineIn,
-        prep_lead_time_minutes: prepLeadTime
+        has_reservation: hasReservation,
+        prep_lead_time_minutes: prepLeadTime,
+        logo_url: logoUrl,
+        icon_name: iconName
       })
       .eq('id', shop.id)
     
@@ -179,6 +223,48 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
     setSaving(false)
   }
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = () => {
+      setImageToCrop(reader.result as string)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const onCropComplete = async (croppedBlob: Blob) => {
+    if (!shop) return
+    setIsUploading(true)
+    setImageToCrop(null)
+
+    const fileName = `${shop.id}/logo_${Math.random()}.jpg`
+    const filePath = `shop-logos/${fileName}`
+
+    try {
+      const { error: uploadError } = await supabase.storage
+        .from('shop-logos')
+        .upload(filePath, croppedBlob, {
+          upsert: true,
+          contentType: 'image/jpeg'
+        })
+
+      if (uploadError) throw uploadError
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('shop-logos')
+        .getPublicUrl(filePath)
+
+      setLogoUrl(publicUrl)
+    } catch (error: any) {
+      console.error('Error uploading logo:', error)
+      setError(error.message || 'Fehler beim Upload')
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
   if (loading) return (
     <div className="flex h-screen items-center justify-center">
       <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -186,15 +272,15 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
   )
 
   return (
-    <div className="p-10 max-w-4xl space-y-10">
+    <div className="p-4 sm:p-10 max-w-4xl mx-auto space-y-6 sm:space-y-10">
       <div>
-        <h1 className="text-4xl font-black tracking-tight mb-2">Einstellungen</h1>
-        <p className="text-lg text-on-surface-variant font-medium">Shop-Details und Betriebsparameter anpassen.</p>
+        <h1 className="text-2xl sm:text-4xl font-black tracking-tight mb-2">Einstellungen</h1>
+        <p className="text-sm sm:text-lg text-on-surface-variant font-medium">Shop-Details und Betriebsparameter anpassen.</p>
       </div>
 
       <form onSubmit={handleSave} className="space-y-8 pb-20">
         {/* Core Info */}
-        <div className="bg-white rounded-[2rem] p-8 border border-outline-variant/10 shadow-xl shadow-primary/5 space-y-8">
+        <div className="bg-white rounded-[2rem] p-6 sm:p-8 border border-outline-variant/10 shadow-xl shadow-primary/5 space-y-6 sm:space-y-8">
           <div className="flex items-center gap-3 mb-2">
             <Store className="w-6 h-6 text-primary" />
             <h2 className="text-xl font-bold tracking-tight">Stammdaten</h2>
@@ -252,8 +338,84 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
           </div>
         </div>
 
+        {/* Branding Section */}
+        <div className="bg-white rounded-[2rem] p-6 sm:p-8 border border-outline-variant/10 shadow-xl shadow-primary/5 space-y-6 sm:space-y-8">
+          <div className="flex items-center gap-3 mb-2">
+            <ImageIcon className="w-6 h-6 text-primary" />
+            <h2 className="text-xl font-bold tracking-tight">Branding & Logo</h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-10">
+            {/* Logo Upload */}
+            <div className="space-y-4">
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant ml-1">Eigenes Logo</label>
+              <div className="flex items-center gap-6">
+                <div className="relative group">
+                  <div className="w-24 h-24 rounded-full bg-surface-container-low overflow-hidden border-2 border-outline-variant/10 flex items-center justify-center">
+                    {logoUrl ? (
+                      <img src={logoUrl} alt="Shop Logo" className="w-full h-full object-cover" />
+                    ) : (
+                      <Store className="w-8 h-8 text-on-surface-variant/20" />
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                    className="absolute inset-0 bg-primary/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-full text-white"
+                  >
+                    {isUploading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Upload className="w-6 h-6" />}
+                  </button>
+                </div>
+                <div className="flex-1 space-y-2">
+                  <p className="text-sm font-bold text-on-surface">Logo hochladen</p>
+                  <p className="text-[10px] text-on-surface-variant leading-relaxed">
+                    Wird im Header und auf Bons angezeigt. quadratisch oder rund empfohlen.
+                  </p>
+                  {logoUrl && (
+                    <button 
+                      type="button"
+                      onClick={() => setLogoUrl(null)}
+                      className="text-[10px] font-bold text-error uppercase tracking-widest hover:underline"
+                    >
+                      Logo entfernen
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Icon Picker */}
+            <div className="space-y-4">
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant ml-1">Alternatives Icon</label>
+              <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+                {PRESET_ICONS.map((item) => {
+                  const Icon = item.icon
+                  return (
+                    <button
+                      key={item.name}
+                      type="button"
+                      onClick={() => setIconName(item.name)}
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+                        iconName === item.name 
+                          ? 'bg-primary text-on-primary shadow-lg shadow-primary/20 scale-110' 
+                          : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high'
+                      }`}
+                    >
+                      <Icon className="w-5 h-5" />
+                    </button>
+                  )
+                })}
+              </div>
+              <p className="text-[10px] text-on-surface-variant leading-relaxed italic">
+                Wird als Platzhalter angezeigt, wenn kein Logo hochgeladen wurde.
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Features Config */}
-        <div className="bg-white rounded-[2rem] p-8 border border-outline-variant/10 shadow-xl shadow-primary/5 space-y-8">
+        <div className="bg-white rounded-[2rem] p-6 sm:p-8 border border-outline-variant/10 shadow-xl shadow-primary/5 space-y-6 sm:space-y-8">
           <div className="flex items-center gap-3 mb-2">
             <Store className="w-6 h-6 text-primary" />
             <h2 className="text-xl font-bold tracking-tight">Shop-Funktionen</h2>
@@ -301,12 +463,28 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
               }`}
             >
               <div className="text-left">
-                <p className="font-bold">Vor Ort (Reservierung)</p>
+                <p className="font-bold">Vor Ort Bestellung</p>
                 <p className="text-[10px] uppercase font-bold tracking-widest opacity-60">
                   {hasDineIn ? 'Aktiviert' : 'Deaktiviert'}
                 </p>
               </div>
               <div className={`w-3 h-3 rounded-full ${hasDineIn ? 'bg-primary' : 'bg-outline-variant/30'}`} />
+            </button>
+
+            <button 
+              type="button"
+              onClick={() => setHasReservation(!hasReservation)}
+              className={`flex items-center justify-between p-5 rounded-3xl transition-all border-2 ${
+                hasReservation ? 'border-primary bg-primary/5 text-primary' : 'border-outline-variant/10 bg-surface text-on-surface-variant'
+              }`}
+            >
+              <div className="text-left">
+                <p className="font-bold">Tischreservierung</p>
+                <p className="text-[10px] uppercase font-bold tracking-widest opacity-60">
+                  {hasReservation ? 'Aktiviert' : 'Deaktiviert'}
+                </p>
+              </div>
+              <div className={`w-3 h-3 rounded-full ${hasReservation ? 'bg-primary' : 'bg-outline-variant/30'}`} />
             </button>
             
             <div className="col-span-1 md:col-span-2 lg:col-span-3 pt-6 border-t border-outline-variant/10">
@@ -558,10 +736,10 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
         </div>
 
         {/* Save Button */}
-        <div className="fixed bottom-10 right-10 z-50">
+        <div className="fixed bottom-6 right-6 sm:bottom-10 sm:right-10 z-50">
           <button
             disabled={saving}
-            className={`flex items-center gap-3 px-10 py-5 rounded-full font-black text-sm uppercase tracking-widest transition-all shadow-2xl ${
+            className={`flex items-center gap-3 px-6 sm:px-10 py-4 sm:py-5 rounded-full font-black text-xs sm:text-sm uppercase tracking-widest transition-all shadow-2xl ${
               success 
                 ? 'bg-success text-white' 
                 : 'bg-primary text-on-primary shadow-primary/20 hover:scale-[1.02] active:scale-95'
@@ -573,6 +751,48 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
           </button>
         </div>
       </form>
+
+      <input 
+        type="file"
+        ref={fileInputRef}
+        className="hidden"
+        accept="image/*"
+        onChange={handleImageUpload}
+      />
+
+      {imageToCrop && (
+        <ImageCropper 
+          image={imageToCrop} 
+          onCancel={() => setImageToCrop(null)}
+          onCropComplete={onCropComplete}
+          aspectRatio={1}
+          circularCrop={true}
+        />
+      )}
+
+      {error && (
+        <Modal 
+          isOpen={!!error} 
+          onClose={() => setError(null)} 
+          title="Fehler"
+        >
+          <div className="p-10 text-center space-y-6">
+            <div className="w-16 h-16 bg-error/10 text-error rounded-full flex items-center justify-center mx-auto">
+              <ShieldAlert className="w-8 h-8" />
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm font-black uppercase tracking-widest text-error">Upload fehlgeschlagen</p>
+              <p className="text-on-surface-variant text-sm font-medium">{error}</p>
+            </div>
+            <button 
+              onClick={() => setError(null)}
+              className="w-full py-4 bg-surface-container-high rounded-2xl font-bold text-sm hover:bg-surface-container-highest transition-colors"
+            >
+              Schließen
+            </button>
+          </div>
+        </Modal>
+      )}
     </div>
   )
 }
