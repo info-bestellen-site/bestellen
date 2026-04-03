@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { useTranslation } from '@/lib/i18n/useTranslation'
 
 export function AdminSidebar({ 
   shopSlug, 
@@ -28,14 +29,15 @@ export function AdminSidebar({
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
+  const { t } = useTranslation()
 
   const navItems = [
-    { label: 'Küchen-Monitor', icon: ChefHat, href: `/${shopSlug}/admin` },
-    { label: 'Reservierungen', icon: CalendarDays, href: `/${shopSlug}/admin/reservations` },
-    { label: 'Bestellungen', icon: LayoutDashboard, href: `/${shopSlug}/admin/orders` },
-    { label: 'Speisekarte', icon: UtensilsCrossed, href: `/${shopSlug}/admin/menu` },
-    { label: 'Analyse', icon: BarChart3, href: `/${shopSlug}/admin/analysis` },
-    { label: 'Einstellungen', icon: Settings, href: `/${shopSlug}/admin/settings` },
+    { label: t('monitor'), icon: ChefHat, href: `/${shopSlug}/admin` },
+    { label: t('reservations'), icon: CalendarDays, href: `/${shopSlug}/admin/reservations` },
+    { label: t('orders'), icon: LayoutDashboard, href: `/${shopSlug}/admin/orders` },
+    { label: t('menu'), icon: UtensilsCrossed, href: `/${shopSlug}/admin/menu` },
+    { label: t('analysis'), icon: BarChart3, href: `/${shopSlug}/admin/analysis` },
+    { label: t('settings'), icon: Settings, href: `/${shopSlug}/admin/settings` },
   ]
 
   const handleLogout = async () => {
@@ -101,7 +103,7 @@ export function AdminSidebar({
           target="_blank"
           className="flex items-center justify-between gap-3 px-4 py-3 rounded-2xl text-xs font-bold text-on-surface-variant bg-surface-container-low hover:bg-surface-container-high transition-all"
         >
-          <span>Shop ansehen</span>
+          <span>{t('view_shop')}</span>
           <ExternalLink className="w-3.5 h-3.5 opacity-40" />
         </Link>
         <button 
@@ -109,7 +111,7 @@ export function AdminSidebar({
           className="w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl text-sm font-bold text-error border border-transparent hover:border-error/10 hover:bg-error/5 transition-all"
         >
           <LogOut className="w-5 h-5 opacity-60" />
-          Abmelden
+          {t('logout')}
         </button>
       </div>
     </aside>

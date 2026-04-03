@@ -29,13 +29,16 @@ import {
   Fish,
   Soup,
   Beef,
-  Wine
+  Wine,
+  ChevronDown
 } from 'lucide-react'
 import { OpeningHour, Table as ShopTable } from '@/types/database'
 import { DAYS_OF_WEEK } from '@/lib/utils/open-hours'
 import { useRef } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { ImageCropper } from '@/components/ui/ImageCropper'
+import { useTranslation } from '@/lib/i18n/useTranslation'
+import { LANGUAGES, Language } from '@/lib/i18n/translations'
 
 const PRESET_ICONS = [
   { name: 'Store', icon: Store },
@@ -76,6 +79,8 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const [iconName, setIconName] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  
+  const { t } = useTranslation()
   
   const [isUploading, setIsUploading] = useState(false)
   const [imageToCrop, setImageToCrop] = useState<string | null>(null)
@@ -274,8 +279,8 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
   return (
     <div className="p-4 sm:p-10 max-w-4xl mx-auto space-y-6 sm:space-y-10">
       <div>
-        <h1 className="text-2xl sm:text-4xl font-black tracking-tight mb-2">Einstellungen</h1>
-        <p className="text-sm sm:text-lg text-on-surface-variant font-medium">Shop-Details und Betriebsparameter anpassen.</p>
+        <h1 className="text-2xl sm:text-4xl font-black tracking-tight mb-2">{t('settings')}</h1>
+        <p className="text-sm sm:text-lg text-on-surface-variant font-medium">{t('settings_subtitle')}</p>
       </div>
 
       <form onSubmit={handleSave} className="space-y-8 pb-20">
@@ -283,12 +288,12 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
         <div className="bg-white rounded-[2rem] p-6 sm:p-8 border border-outline-variant/10 shadow-xl shadow-primary/5 space-y-6 sm:space-y-8">
           <div className="flex items-center gap-3 mb-2">
             <Store className="w-6 h-6 text-primary" />
-            <h2 className="text-xl font-bold tracking-tight">Stammdaten</h2>
+            <h2 className="text-xl font-bold tracking-tight">{t('master_data')}</h2>
           </div>
 
           <div className="grid grid-cols-2 gap-6">
             <div className="col-span-2 md:col-span-1">
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2.5 ml-1">Restaurant Name</label>
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2.5 ml-1">{t('restaurant_name')}</label>
               <input 
                 required
                 type="text" 
@@ -298,7 +303,7 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
               />
             </div>
             <div className="col-span-2 md:col-span-1">
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2.5 ml-1">Shop URL (Slug)</label>
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2.5 ml-1">{t('shop_url_slug')}</label>
               <div className="relative">
                 <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant/40" />
                 <input 
@@ -311,20 +316,20 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
               </div>
             </div>
             <div className="col-span-2">
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2.5 ml-1">Anschrift</label>
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2.5 ml-1">{t('address_label')}</label>
               <div className="relative">
                 <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant/40" />
                 <input 
                   type="text" 
                   value={address}
                   onChange={e => setAddress(e.target.value)}
-                  placeholder="Straße, Hausnummer, PLZ, Ort"
+                  placeholder={t('address_placeholder')}
                   className="w-full pl-11 pr-4 py-4 bg-surface-container-low border-none rounded-2xl text-sm font-semibold focus:ring-2 focus:ring-primary/10 transition-all"
                 />
               </div>
             </div>
             <div className="col-span-2 md:col-span-1">
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2.5 ml-1">Telefonnummer</label>
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2.5 ml-1">{t('phone_label')}</label>
               <div className="relative">
                 <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant/40" />
                 <input 
@@ -335,6 +340,8 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
                 />
               </div>
             </div>
+
+
           </div>
         </div>
 
@@ -342,13 +349,13 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
         <div className="bg-white rounded-[2rem] p-6 sm:p-8 border border-outline-variant/10 shadow-xl shadow-primary/5 space-y-6 sm:space-y-8">
           <div className="flex items-center gap-3 mb-2">
             <ImageIcon className="w-6 h-6 text-primary" />
-            <h2 className="text-xl font-bold tracking-tight">Branding & Logo</h2>
+            <h2 className="text-xl font-bold tracking-tight">{t('branding_logo')}</h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-10">
             {/* Logo Upload */}
             <div className="space-y-4">
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant ml-1">Eigenes Logo</label>
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant ml-1">{t('custom_logo')}</label>
               <div className="flex items-center gap-6">
                 <div className="relative group">
                   <div className="w-24 h-24 rounded-full bg-surface-container-low overflow-hidden border-2 border-outline-variant/10 flex items-center justify-center">
@@ -368,9 +375,9 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
                   </button>
                 </div>
                 <div className="flex-1 space-y-2">
-                  <p className="text-sm font-bold text-on-surface">Logo hochladen</p>
+                  <p className="text-sm font-bold text-on-surface">{t('upload_logo')}</p>
                   <p className="text-[10px] text-on-surface-variant leading-relaxed">
-                    Wird im Header und auf Bons angezeigt. quadratisch oder rund empfohlen.
+                    {t('logo_hint')}
                   </p>
                   {logoUrl && (
                     <button 
@@ -378,7 +385,7 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
                       onClick={() => setLogoUrl(null)}
                       className="text-[10px] font-bold text-error uppercase tracking-widest hover:underline"
                     >
-                      Logo entfernen
+                      {t('remove_logo')}
                     </button>
                   )}
                 </div>
@@ -387,7 +394,7 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
 
             {/* Icon Picker */}
             <div className="space-y-4">
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant ml-1">Alternatives Icon</label>
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant ml-1">{t('alternative_icon')}</label>
               <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
                 {PRESET_ICONS.map((item) => {
                   const Icon = item.icon
@@ -408,7 +415,7 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
                 })}
               </div>
               <p className="text-[10px] text-on-surface-variant leading-relaxed italic">
-                Wird als Platzhalter angezeigt, wenn kein Logo hochgeladen wurde.
+                {t('icon_hint')}
               </p>
             </div>
           </div>
@@ -418,7 +425,7 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
         <div className="bg-white rounded-[2rem] p-6 sm:p-8 border border-outline-variant/10 shadow-xl shadow-primary/5 space-y-6 sm:space-y-8">
           <div className="flex items-center gap-3 mb-2">
             <Store className="w-6 h-6 text-primary" />
-            <h2 className="text-xl font-bold tracking-tight">Shop-Funktionen</h2>
+            <h2 className="text-xl font-bold tracking-tight">{t('shop_features')}</h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -431,9 +438,9 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
               }`}
             >
               <div className="text-left">
-                <p className="font-bold">Lieferung</p>
+                <p className="font-bold">{t('delivery')}</p>
                 <p className="text-[10px] uppercase font-bold tracking-widest opacity-60">
-                  {hasDelivery ? 'Aktiviert' : 'Deaktiviert'}
+                  {hasDelivery ? t('activated') : t('deactivated')}
                 </p>
               </div>
               <div className={`w-3 h-3 rounded-full ${hasDelivery ? 'bg-primary' : 'bg-outline-variant/30'}`} />
@@ -447,9 +454,9 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
               }`}
             >
               <div className="text-left">
-                <p className="font-bold">Abholung</p>
+                <p className="font-bold">{t('pickup')}</p>
                 <p className="text-[10px] uppercase font-bold tracking-widest opacity-60">
-                  {hasPickup ? 'Aktiviert' : 'Deaktiviert'}
+                  {hasPickup ? t('activated') : t('deactivated')}
                 </p>
               </div>
               <div className={`w-3 h-3 rounded-full ${hasPickup ? 'bg-primary' : 'bg-outline-variant/30'}`} />
@@ -463,9 +470,9 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
               }`}
             >
               <div className="text-left">
-                <p className="font-bold">Vor Ort Bestellung</p>
+                <p className="font-bold">{t('dine_in_feature')}</p>
                 <p className="text-[10px] uppercase font-bold tracking-widest opacity-60">
-                  {hasDineIn ? 'Aktiviert' : 'Deaktiviert'}
+                  {hasDineIn ? t('activated') : t('deactivated')}
                 </p>
               </div>
               <div className={`w-3 h-3 rounded-full ${hasDineIn ? 'bg-primary' : 'bg-outline-variant/30'}`} />
@@ -479,9 +486,9 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
               }`}
             >
               <div className="text-left">
-                <p className="font-bold">Tischreservierung</p>
+                <p className="font-bold">{t('reservation_feature')}</p>
                 <p className="text-[10px] uppercase font-bold tracking-widest opacity-60">
-                  {hasReservation ? 'Aktiviert' : 'Deaktiviert'}
+                  {hasReservation ? t('activated') : t('deactivated')}
                 </p>
               </div>
               <div className={`w-3 h-3 rounded-full ${hasReservation ? 'bg-primary' : 'bg-outline-variant/30'}`} />
@@ -489,7 +496,7 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
             
             <div className="col-span-1 md:col-span-2 lg:col-span-3 pt-6 border-t border-outline-variant/10">
               <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2.5 ml-1">
-                Vorlaufzeit Küchen-Monitor (Min.)
+                {t('prep_time_label')}
               </label>
               <div className="flex items-center gap-4">
                 <input 
@@ -504,7 +511,7 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
                 <span className="text-primary font-black text-lg w-20 text-right">{prepLeadTime} Min.</span>
               </div>
               <p className="mt-2 text-[10px] text-on-surface-variant/50 font-medium italic">
-                Bestimmt, wann eine zukünftige Vorbestellung auf dem Küchen-Reiter "Aktuell" erscheint (z.B. 60 Min vor Zielzeit).
+                {t('prep_time_hint')}
               </p>
             </div>
           </div>
@@ -514,13 +521,13 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
         <div className="bg-white rounded-[2rem] p-8 border border-outline-variant/10 shadow-xl shadow-primary/5 space-y-8">
           <div className="flex items-center gap-3 mb-2">
             <Clock className="w-6 h-6 text-primary" />
-            <h2 className="text-xl font-bold tracking-tight">Betrieb & Zeiten</h2>
+            <h2 className="text-xl font-bold tracking-tight">{t('operating_times_title')}</h2>
           </div>
 
           <div className="grid grid-cols-2 gap-6">
             <div className="col-span-2 md:col-span-1">
               <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2.5 ml-1">
-                Stressfaktor (Minuten p. Bestellung)
+                {t('stress_factor_label')}
               </label>
               <div className="flex items-center gap-4">
                 <input 
@@ -535,12 +542,12 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
                 <span className="text-primary font-black text-lg w-16 text-right">{stressFactor} Min.</span>
               </div>
               <p className="mt-2 text-[10px] text-on-surface-variant/50 font-medium italic">
-                Wird zur Berechnung der Wartezeit genutzt (Bestellungen × Stressfaktor).
+                {t('stress_factor_hint')}
               </p>
             </div>
 
             <div className="col-span-2 md:col-span-1 md:border-l md:border-outline-variant/5 md:pl-8">
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-4 ml-1">Manueller Status (Override)</label>
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-4 ml-1">{t('manual_status_override')}</label>
               <button 
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
@@ -552,14 +559,14 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
               >
                 <div className="flex flex-col items-start text-left">
                   <span className="text-sm font-black uppercase tracking-widest leading-none mb-1">
-                    {isOpen ? 'Geöffnet' : 'Geschlossen'}
+                    {isOpen ? t('open') : t('closed')}
                   </span>
-                  <span className="text-[10px] font-bold opacity-60">Manueller Schalter</span>
+                  <span className="text-[10px] font-bold opacity-60">{t('manual_switch')}</span>
                 </div>
                 <div className={`w-3 h-3 rounded-full ${isOpen ? 'bg-success animate-pulse' : 'bg-error'}`} />
               </button>
               <p className="mt-4 text-[10px] text-on-surface-variant/50 font-medium italic">
-                Wenn "Geschlossen", kann niemand bestellen (auch während der Öffnungszeiten).
+                {t('manual_switch_hint')}
               </p>
             </div>
 
@@ -570,20 +577,20 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
         <div className="bg-white rounded-[2rem] p-8 border border-outline-variant/10 shadow-xl shadow-primary/5 space-y-8">
           <div className="flex items-center gap-3 mb-2">
             <Clock className="w-6 h-6 text-primary" />
-            <h2 className="text-xl font-bold tracking-tight">Reguläre Öffnungszeiten</h2>
+            <h2 className="text-xl font-bold tracking-tight">{t('opening_hours_subtitle')}</h2>
           </div>
 
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-surface-container-low/50 p-6 rounded-3xl border border-outline-variant/5">
               <div className="space-y-4">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Neues Zeitfenster</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">{t('new_time_slot')}</p>
                 <div className="grid grid-cols-3 gap-3">
                   <select 
                     value={newSlot.day}
                     onChange={e => setNewSlot({...newSlot, day: parseInt(e.target.value)})}
                     className="col-span-3 px-4 py-3 bg-white rounded-xl text-sm font-bold border-none ring-1 ring-outline-variant/10"
                   >
-                    {DAYS_OF_WEEK.map((day, i) => <option key={i} value={i}>{day}</option>)}
+                    {DAYS_OF_WEEK.map((day, i) => <option key={i} value={i}>{t(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'][i])}</option>)}
                   </select>
                   <input 
                     type="time" 
@@ -613,7 +620,7 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
                 const daySlots = openingHours.filter(h => h.day_of_week === dayIdx)
                 return (
                   <div key={dayIdx} className="flex items-center justify-between p-4 bg-white rounded-2xl border border-outline-variant/5 group">
-                    <span className="text-sm font-bold w-32">{day}</span>
+                    <span className="text-sm font-bold w-32">{t(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'][dayIdx])}</span>
                     <div className="flex-1 flex flex-wrap gap-2">
                       {daySlots.length > 0 ? (
                         daySlots.map(slot => (
@@ -629,7 +636,7 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
                           </div>
                         ))
                       ) : (
-                        <span className="text-[11px] font-bold text-on-surface-variant/30 uppercase tracking-widest italic">Geschlossen</span>
+                        <span className="text-[11px] font-bold text-on-surface-variant/30 uppercase tracking-widest italic">{t('closed')}</span>
                       )}
                     </div>
                   </div>
@@ -643,15 +650,15 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
         <div className="bg-white rounded-[2rem] p-8 border border-outline-variant/10 shadow-xl shadow-primary/5 space-y-8">
           <div className="flex items-center gap-3 mb-2">
             <LayoutGrid className="w-6 h-6 text-primary" />
-            <h2 className="text-xl font-bold tracking-tight">Tisch-Management</h2>
+            <h2 className="text-xl font-bold tracking-tight">{t('table_management')}</h2>
           </div>
 
           <div className="space-y-6">
             <div className="bg-surface-container-low/50 p-6 rounded-3xl border border-outline-variant/5">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary mb-4">Tisch hinzufügen</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary mb-4">{t('add_table')}</p>
               <div className="flex gap-4">
                 <input 
-                  placeholder="Tisch Name/Nr."
+                  placeholder={t('table_name_nr')}
                   value={newTable.number}
                   onChange={e => setNewTable({...newTable, number: e.target.value})}
                   className="flex-1 px-4 py-3 bg-white rounded-xl text-sm font-bold border-none ring-1 ring-outline-variant/10"
@@ -671,7 +678,7 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
                   onClick={handleAddTable}
                   className="px-6 bg-primary text-on-primary rounded-xl font-bold text-sm hover:scale-105 transition-transform"
                 >
-                  Hinzufügen
+                  {t('add_category').split(' ')[0]} {/* Needs a better key, but reuse for now */}
                 </button>
               </div>
             </div>
@@ -686,11 +693,11 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/40 mb-1">Tisch</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/40 mb-1">{t('table')}</p>
                   <p className="text-xl font-black mb-4">{table.table_number}</p>
                   <div className="flex items-center gap-1.5 pt-4 border-t border-outline-variant/5">
                     <Users className="w-3.5 h-3.5 text-primary" />
-                    <span className="text-xs font-bold">{table.capacity} Plätze</span>
+                    <span className="text-xs font-bold">{table.capacity} {t('places')}</span>
                     <div className="ml-auto flex gap-0.5">
                       {Array.from({ length: Math.min(table.capacity, 4) }).map((_, i) => (
                         <div key={i} className="w-1.5 h-1.5 rounded-full bg-primary/20" />
@@ -708,12 +715,12 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
         <div className="bg-white rounded-[2rem] p-8 border border-outline-variant/10 shadow-xl shadow-primary/5 space-y-8">
           <div className="flex items-center gap-3 mb-2">
             <Euro className="w-6 h-6 text-primary" />
-            <h2 className="text-xl font-bold tracking-tight">Preise & Gebühren</h2>
+            <h2 className="text-xl font-bold tracking-tight">{t('pricing_fees')}</h2>
           </div>
 
           <div className="grid grid-cols-2 gap-6">
             <div className="col-span-2 md:col-span-1">
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2.5 ml-1">Liefergebühr (€)</label>
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2.5 ml-1">{t('delivery_fee_label')}</label>
               <input 
                 type="number" 
                 step="0.50"
@@ -723,7 +730,7 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
               />
             </div>
             <div className="col-span-2 md:col-span-1">
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2.5 ml-1">Mindestbestellwert (€)</label>
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2.5 ml-1">{t('min_order_label')}</label>
               <input 
                 type="number" 
                 step="0.50"
@@ -747,7 +754,7 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
           >
             {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : 
              success ? <CheckCircle2 className="w-5 h-5" /> : <Save className="w-5 h-5" />}
-            {success ? 'Gespeichert!' : 'Einstellungen Speichern'}
+            {success ? t('saved_success') : t('save_settings')}
           </button>
         </div>
       </form>

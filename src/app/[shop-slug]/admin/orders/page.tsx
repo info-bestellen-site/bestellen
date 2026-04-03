@@ -6,7 +6,21 @@ import { Order, OrderItem } from '@/types/database'
 import { formatCurrency } from '@/lib/utils/format-currency'
 import { Search, Filter, CalendarIcon, ChevronDown, Download, CheckCircle2, XCircle, Clock } from 'lucide-react'
 import { format } from 'date-fns'
-import { de } from 'date-fns/locale'
+import { de, enUS, it, arSA, tr, vi, zhCN, ja, hi } from 'date-fns/locale'
+import { useTranslation } from '@/lib/i18n/useTranslation'
+import { Language } from '@/lib/i18n/translations'
+
+const DATE_LOCALES: Record<Language, any> = {
+  de,
+  en: enUS,
+  it,
+  ar: arSA,
+  tr,
+  vi,
+  zh: zhCN,
+  ja,
+  hi
+}
 
 type OrderWithItems = Order & { order_items: OrderItem[] }
 
@@ -20,6 +34,8 @@ export default function OrderHistoryPage({ params }: { params: Promise<{ 'shop-s
   
   const [statusFilter, setStatusFilter] = useState<'all' | 'completed' | 'cancelled'>('all')
   const [searchQuery, setSearchQuery] = useState('')
+  const { t, language } = useTranslation()
+  const locale = DATE_LOCALES[language] || de
 
   useEffect(() => {
     async function loadHistory() {
@@ -58,9 +74,9 @@ export default function OrderHistoryPage({ params }: { params: Promise<{ 'shop-s
 
   // Basic CSV export logic (just for current view for now, or all)
   const downloadCSV = () => {
-    if (!filteredOrders.length) return alert('Keine Daten zum Exportieren.')
+    if (!filteredOrders.length) return alert(t('no_orders'))
     
-    const headers = ['Datum', 'Bestellnummer', 'Kunde', 'Art', 'Status', 'Summe (€)']
+    const headers = [t('date'), t('order_no'), t('customer'), t('type'), t('status'), `${t('sum')} (€)`]
     const csvContent = [
       headers.join(';'),
       ...filteredOrders.map(o => {
@@ -68,8 +84,8 @@ export default function OrderHistoryPage({ params }: { params: Promise<{ 'shop-s
           format(new Date(o.created_at), 'dd.MM.yyyy HH:mm'),
           o.order_number,
           `"${o.customer_name}"`,
-          o.fulfillment_type === 'delivery' ? 'Lieferung' : (o.fulfillment_type === 'pickup' ? 'Abholung' : 'Im Lokal'),
-          o.status === 'completed' ? 'Abgeschlossen' : o.status,
+          o.fulfillment_type === 'delivery' ? t('delivery') : (o.fulfillment_type === 'pickup' ? t('pickup') : t('dine_in')),
+          o.status === 'completed' ? t('completed') : (o.status === 'cancelled' ? t('cancelled') : t('preparing')),
           o.total.toFixed(2).replace('.', ',')
         ].join(';')
       })
@@ -78,7 +94,7 @@ export default function OrderHistoryPage({ params }: { params: Promise<{ 'shop-s
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement('a')
     link.href = URL.createObjectURL(blob)
-    link.download = `bestellungen_${format(new Date(), 'yyyyMMdd_HHmm')}.csv`
+    link.download = `orders_${format(new Date(), 'yyyyMMdd_HHmm')}.csv`
     link.click()
   }
 
@@ -94,15 +110,15 @@ export default function OrderHistoryPage({ params }: { params: Promise<{ 'shop-s
     <div className="p-4 sm:p-8 max-w-7xl mx-auto space-y-6 sm:space-y-10">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tighter text-on-surface mb-2">Historie</h1>
-          <p className="text-sm sm:text-base text-on-surface-variant font-medium">Archiv aller Bestellungen.</p>
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tighter text-on-surface mb-2">{t('history')}</h1>
+          <p className="text-sm sm:text-base text-on-surface-variant font-medium">{t('orders_archive_subtitle')}</p>
         </div>
         <button 
           onClick={downloadCSV}
           className="flex items-center justify-center gap-2 px-5 py-2.5 bg-surface-container-high hover:bg-surface-container-highest transition-colors rounded-2xl text-sm font-bold text-on-surface w-full sm:w-auto"
         >
           <Download className="w-4 h-4" />
-          Exportieren
+          {t('export')}
         </button>
       </div>
 
@@ -114,7 +130,7 @@ export default function OrderHistoryPage({ params }: { params: Promise<{ 'shop-s
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant/50" />
               <input 
                 type="text" 
-                placeholder="Name oder Bestell-Nr. suchen..." 
+                placeholder={t('search_placeholder')} 
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 className="w-full pl-11 pr-4 py-3 bg-surface border-none rounded-2xl text-sm focus:ring-2 focus:ring-primary/20 transition-shadow outline-none"
@@ -128,9 +144,9 @@ export default function OrderHistoryPage({ params }: { params: Promise<{ 'shop-s
               value={statusFilter}
               onChange={e => setStatusFilter(e.target.value as any)}
             >
-              <option value="all">Alle Status</option>
-              <option value="completed">Abgeschlossen</option>
-              <option value="cancelled">Storniert</option>
+              <option value="all">{t('all_status')}</option>
+              <option value="completed">{t('completed')}</option>
+              <option value="cancelled">{t('cancelled')}</option>
             </select>
           </div>
         </div>
@@ -140,19 +156,19 @@ export default function OrderHistoryPage({ params }: { params: Promise<{ 'shop-s
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-outline-variant/10 text-on-surface-variant/60 font-semibold bg-surface/30">
-                <th className="px-6 py-4 font-bold tracking-wider uppercase text-[10px]">Datum</th>
-                <th className="px-6 py-4 font-bold tracking-wider uppercase text-[10px]">Bestell-Nr.</th>
-                <th className="px-6 py-4 font-bold tracking-wider uppercase text-[10px]">Kunde</th>
-                <th className="px-6 py-4 font-bold tracking-wider uppercase text-[10px]">Typ</th>
-                <th className="px-6 py-4 font-bold tracking-wider uppercase text-[10px]">Status</th>
-                <th className="px-6 py-4 font-bold tracking-wider uppercase text-[10px] text-right">Summe</th>
+                <th className="px-6 py-4 font-bold tracking-wider uppercase text-[10px]">{t('date')}</th>
+                <th className="px-6 py-4 font-bold tracking-wider uppercase text-[10px]">{t('order_no')}</th>
+                <th className="px-6 py-4 font-bold tracking-wider uppercase text-[10px]">{t('customer')}</th>
+                <th className="px-6 py-4 font-bold tracking-wider uppercase text-[10px]">{t('type')}</th>
+                <th className="px-6 py-4 font-bold tracking-wider uppercase text-[10px]">{t('status')}</th>
+                <th className="px-6 py-4 font-bold tracking-wider uppercase text-[10px] text-right">{t('sum')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant/5">
               {filteredOrders.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-on-surface-variant font-medium">
-                    Keine Bestellungen gefunden.
+                    {t('no_orders')}
                   </td>
                 </tr>
               ) : (
@@ -161,7 +177,7 @@ export default function OrderHistoryPage({ params }: { params: Promise<{ 'shop-s
                     <td className="px-6 py-4 whitespace-nowrap text-on-surface-variant">
                       <div className="flex items-center gap-2">
                         <CalendarIcon className="w-4 h-4 opacity-40 group-hover:text-primary transition-colors" />
-                        {format(new Date(order.created_at), 'dd.MM.yyyy HH:mm')}
+                        {format(new Date(order.created_at), 'PPp', { locale })}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap font-black text-on-surface">
@@ -171,12 +187,12 @@ export default function OrderHistoryPage({ params }: { params: Promise<{ 'shop-s
                       {order.customer_name}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-on-surface-variant">
-                      {order.fulfillment_type === 'delivery' ? 'Lieferung' : (order.fulfillment_type === 'pickup' ? 'Abholung' : 'Im Lokal')}
+                      {order.fulfillment_type === 'delivery' ? t('delivery') : (order.fulfillment_type === 'pickup' ? t('pickup') : t('dine_in'))}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {order.status === 'completed' && <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-surface-container-high text-on-surface-variant text-[11px] font-bold tracking-wide uppercase"><CheckCircle2 className="w-3.5 h-3.5"/> Abgeschlossen</span>}
-                      {order.status === 'cancelled' && <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-outline/10 text-on-surface-variant text-[11px] font-bold tracking-wide uppercase"><XCircle className="w-3.5 h-3.5"/> Storniert</span>}
-                      {!['completed', 'cancelled'].includes(order.status) && <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-warning/10 text-warning text-[11px] font-bold tracking-wide uppercase"><Clock className="w-3.5 h-3.5"/> In Bearbeitung</span>}
+                      {order.status === 'completed' && <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-surface-container-high text-on-surface-variant text-[11px] font-bold tracking-wide uppercase"><CheckCircle2 className="w-3.5 h-3.5"/> {t('completed')}</span>}
+                      {order.status === 'cancelled' && <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-outline/10 text-on-surface-variant text-[11px] font-bold tracking-wide uppercase"><XCircle className="w-3.5 h-3.5"/> {t('cancelled')}</span>}
+                      {!['completed', 'cancelled'].includes(order.status) && <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-warning/10 text-warning text-[11px] font-bold tracking-wide uppercase"><Clock className="w-3.5 h-3.5"/> {t('in_progress')}</span>}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right font-black text-on-surface">
                       {formatCurrency(order.total)}

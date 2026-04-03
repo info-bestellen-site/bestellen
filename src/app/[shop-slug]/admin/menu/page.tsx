@@ -15,6 +15,7 @@ import {
   Upload,
   Edit2
 } from 'lucide-react'
+import { useTranslation } from '@/lib/i18n/useTranslation'
 import { formatCurrency } from '@/lib/utils/format-currency'
 import { Modal } from '@/components/ui/Modal'
 import { ImageCropper } from '@/components/ui/ImageCropper'
@@ -43,6 +44,7 @@ export default function MenuManagementPage({ params }: { params: Promise<{ 'shop
   const [shopId, setShopId] = useState<string | null>(null)
   const [categories, setCategories] = useState<Category[]>([])
   const [products, setProducts] = useState<Product[]>([])
+  const { t } = useTranslation()
 
   // Modal states
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false)
@@ -147,7 +149,7 @@ export default function MenuManagementPage({ params }: { params: Promise<{ 'shop
   }
 
   const handleDeleteCategory = async (id: string) => {
-    if (!confirm('Kategorie wirklich löschen? Alle zugehörigen Produkte werden ebenfalls gelöscht.')) return
+    if (!confirm(t('delete_category_confirm'))) return
     await supabase.from('categories').delete().eq('id', id)
     setCategories(categories.filter(c => c.id !== id))
     setProducts(products.filter(p => p.category_id !== id))
@@ -235,14 +237,14 @@ export default function MenuManagementPage({ params }: { params: Promise<{ 'shop
       }
     } catch (error) {
       console.error('Error uploading image:', error)
-      alert('Fehler beim Upload. Bitte versuche es erneut.')
+      alert(t('error_occurred'))
     } finally {
       setIsUploading(false)
     }
   }
 
   const handleDeleteProduct = async (id: string) => {
-    if (!confirm('Produkt wirklich löschen?')) return
+    if (!confirm(t('delete_product_confirm'))) return
     await supabase.from('products').delete().eq('id', id)
     setProducts(products.filter(p => p.id !== id))
   }
@@ -323,15 +325,15 @@ export default function MenuManagementPage({ params }: { params: Promise<{ 'shop
     <div className="p-4 sm:p-10 space-y-8 sm:space-y-10 max-w-5xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
         <div>
-          <h1 className="text-2xl sm:text-4xl font-black tracking-tight mb-2">Speisekarte</h1>
-          <p className="text-sm sm:text-lg text-on-surface-variant font-medium">Kategorien und Produkte verwalten.</p>
+          <h1 className="text-2xl sm:text-4xl font-black tracking-tight mb-2">{t('menu_title')}</h1>
+          <p className="text-sm sm:text-lg text-on-surface-variant font-medium">{t('menu_subtitle')}</p>
         </div>
         <button 
           onClick={() => setIsCategoryModalOpen(true)}
           className="flex items-center justify-center gap-3 px-8 py-4 bg-primary text-on-primary rounded-full font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/10 hover:scale-[1.02] active:scale-95 transition-all w-full sm:w-auto"
         >
           <Plus className="w-4 h-4" />
-          Kategorie
+          {t('category')}
         </button>
       </div>
 
@@ -339,7 +341,7 @@ export default function MenuManagementPage({ params }: { params: Promise<{ 'shop
         {categories.length === 0 && (
           <div className="py-40 text-center rounded-[2rem] border-2 border-dashed border-outline-variant/20">
             <UtensilsCrossed className="w-12 h-12 text-on-surface-variant/20 mx-auto mb-6" />
-            <p className="text-on-surface-variant font-bold italic">Noch keine Kategorien erstellt.</p>
+            <p className="text-on-surface-variant font-bold italic">{t('no_categories')}</p>
           </div>
         )}
 
@@ -372,7 +374,7 @@ export default function MenuManagementPage({ params }: { params: Promise<{ 'shop
                           className="flex items-center gap-1.5 px-3 sm:px-4 py-2 text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary/5 rounded-full transition-all"
                         >
                           <Plus className="w-3.5 h-3.5" />
-                          <span className="hidden sm:inline">Produkt</span>
+                          <span className="hidden sm:inline">{t('product')}</span>
                         </button>
                         <button 
                           onClick={() => openEditCategoryModal(category)}
@@ -437,7 +439,7 @@ export default function MenuManagementPage({ params }: { params: Promise<{ 'shop
                                       }`}
                                     >
                                       <div className={`w-1.5 h-1.5 rounded-full ${product.is_available ? 'bg-success animate-pulse' : 'bg-error'}`} />
-                                      {product.is_available ? 'Verfügbar' : 'Ausverkauft'}
+                                      {product.is_available ? t('available') : t('sold_out')}
                                     </button>
                                   </div>
                                 </div>
@@ -466,17 +468,17 @@ export default function MenuManagementPage({ params }: { params: Promise<{ 'shop
       <Modal 
         isOpen={isCategoryModalOpen} 
         onClose={() => setIsCategoryModalOpen(false)} 
-        title="Neue Kategorie"
+        title={editingCategory ? t('edit_category') : t('new_category')}
       >
         <form onSubmit={handleSaveCategory} className="space-y-6">
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">Name</label>
+            <label className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">{t('name')}</label>
             <input 
               type="text" 
               autoFocus
               required
               className="w-full px-6 py-4 rounded-2xl bg-surface-container-low border-none focus:ring-2 focus:ring-primary/20 text-sm font-bold"
-              placeholder="z.B. Vorspeisen"
+              placeholder={t('category_placeholder')}
               value={newCategoryName}
               onChange={(e) => setNewCategoryName(e.target.value)}
             />
@@ -486,7 +488,7 @@ export default function MenuManagementPage({ params }: { params: Promise<{ 'shop
             disabled={isSaving}
             className="w-full py-4 bg-primary text-on-primary rounded-full font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/10 active:scale-95 transition-all disabled:opacity-50"
           >
-            {isSaving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : (editingCategory ? 'Kategorie Aktualisieren' : 'Kategorie Speichern')}
+            {isSaving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : (editingCategory ? t('update_category') : t('save_category'))}
           </button>
         </form>
       </Modal>
@@ -495,32 +497,32 @@ export default function MenuManagementPage({ params }: { params: Promise<{ 'shop
       <Modal 
         isOpen={isProductModalOpen} 
         onClose={() => setIsProductModalOpen(false)} 
-        title="Neues Produkt"
+        title={t('new_product')}
       >
         <form onSubmit={handleSaveProduct} className="space-y-6">
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">Name</label>
+            <label className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">{t('name')}</label>
             <input 
               type="text" 
               autoFocus
               required
               className="w-full px-6 py-4 rounded-2xl bg-surface-container-low border-none focus:ring-2 focus:ring-primary/20 text-sm font-bold"
-              placeholder="z.B. Sushi Mix Large"
+              placeholder={t('product_placeholder')}
               value={newProduct.name}
               onChange={(e) => setNewProduct(prev => ({ ...prev, name: e.target.value }))}
             />
           </div>
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">Beschreibung</label>
+            <label className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">{t('description')}</label>
             <textarea 
               className="w-full px-6 py-4 rounded-2xl bg-surface-container-low border-none focus:ring-2 focus:ring-primary/20 text-sm font-bold min-h-[100px]"
-              placeholder="Zutaten, Allergene oder Details..."
+              placeholder={t('description_placeholder')}
               value={newProduct.description}
               onChange={(e) => setNewProduct(prev => ({ ...prev, description: e.target.value }))}
             />
           </div>
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">Preis (€)</label>
+            <label className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">{t('price')} (€)</label>
             <input 
               type="number" 
               step="0.01"
@@ -532,7 +534,7 @@ export default function MenuManagementPage({ params }: { params: Promise<{ 'shop
             />
           </div>
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">Bild (Optional)</label>
+            <label className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">{t('image')} (Optional)</label>
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 rounded-2xl bg-surface-container-low flex items-center justify-center overflow-hidden border-2 border-dashed border-outline-variant/10">
                 {newProduct.image_url ? (
@@ -552,7 +554,7 @@ export default function MenuManagementPage({ params }: { params: Promise<{ 'shop
                 ) : (
                   <Upload className="w-3.5 h-3.5" />
                 )}
-                {isUploading ? 'Wird hochgeladen...' : 'Bild Hochladen'}
+                {isUploading ? t('uploading') : t('upload_image')}
               </button>
             </div>
           </div>
@@ -561,7 +563,7 @@ export default function MenuManagementPage({ params }: { params: Promise<{ 'shop
             disabled={isSaving}
             className="w-full py-4 bg-primary text-on-primary rounded-full font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/10 active:scale-95 transition-all disabled:opacity-50"
           >
-            {isSaving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Produkt Speichern'}
+            {isSaving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : t('save_product')}
           </button>
         </form>
       </Modal>

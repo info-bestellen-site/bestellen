@@ -1,8 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { AdminSidebar } from './AdminSidebar'
 import { Menu, ChefHat } from 'lucide-react'
+import { AdminSidebar } from './AdminSidebar'
 
 interface ResponsiveAdminLayoutProps {
   children: React.ReactNode
@@ -15,17 +15,19 @@ export function ResponsiveAdminLayout({ children, shopSlug }: ResponsiveAdminLay
   return (
     <div className="flex bg-surface-container-lowest min-h-screen relative">
       {/* Sidebar - Desktop Sticky, Mobile Drawered */}
-      <AdminSidebar 
-        shopSlug={shopSlug} 
-        isOpen={isSidebarOpen} 
-        onClose={() => setIsSidebarOpen(false)} 
+      <AdminSidebar
+        shopSlug={shopSlug}
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
       />
 
       <div className="flex-1 flex flex-col min-w-0">
+
+
         {/* Mobile Header */}
         <header className="lg:hidden flex items-center justify-between px-6 py-4 bg-white border-b border-outline-variant/10 sticky top-0 z-30">
           <div className="flex items-center gap-3">
-            <button 
+            <button
               onClick={() => setIsSidebarOpen(true)}
               className="p-2 -ml-2 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-colors"
             >

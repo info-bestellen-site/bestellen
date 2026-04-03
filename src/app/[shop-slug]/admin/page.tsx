@@ -6,6 +6,7 @@ import { Order, OrderItem, OrderStatus } from '@/types/database'
 import { OrderCard } from '@/components/admin/OrderCard'
 import { playNewOrderSound } from '@/lib/utils/audio'
 import { Loader2, ChefHat, BellOff, Bell, Clock, CalendarClock, CheckCircle } from 'lucide-react'
+import { useTranslation } from '@/lib/i18n/useTranslation'
 
 type OrderWithItems = Order & { order_items: OrderItem[] }
 type TabFilter = 'current' | 'future' | 'completed'
@@ -21,6 +22,7 @@ export default function KitchenDashboard({ params }: { params: Promise<{ 'shop-s
   const [activeTab, setActiveTab] = useState<TabFilter>('current')
   const [prepLeadTime, setPrepLeadTime] = useState(60)
   const [timeTick, setTimeTick] = useState(0)
+  const { t } = useTranslation()
 
   useEffect(() => {
     soundEnabledRef.current = soundEnabled
@@ -174,8 +176,8 @@ export default function KitchenDashboard({ params }: { params: Promise<{ 'shop-s
     <div className="p-4 sm:p-10 space-y-6 sm:space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-4xl font-black tracking-tight mb-2">Küchen-Monitor</h1>
-          <p className="text-sm sm:text-lg text-on-surface-variant font-medium">Aktive Bestellungen in Echtzeit verwalten.</p>
+          <h1 className="text-2xl sm:text-4xl font-black tracking-tight mb-2">{t('kitchen_monitor')}</h1>
+          <p className="text-sm sm:text-lg text-on-surface-variant font-medium">{t('kitchen_subtitle')}</p>
         </div>
         <button 
           onClick={() => setSoundEnabled(!soundEnabled)}
@@ -186,7 +188,7 @@ export default function KitchenDashboard({ params }: { params: Promise<{ 'shop-s
           }`}
         >
           {soundEnabled ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
-          {soundEnabled ? 'Ton Aktiv' : 'Ton Aus'}
+          {soundEnabled ? t('sound_on') : t('sound_off')}
         </button>
       </div>
 
@@ -201,7 +203,7 @@ export default function KitchenDashboard({ params }: { params: Promise<{ 'shop-s
           }`}
         >
           <Clock className="w-4 h-4" />
-          Aktuell
+          {t('current')}
           <span className={`px-2 py-0.5 rounded-full text-[10px] ${activeTab === 'current' ? 'bg-black/20' : 'bg-black/5'}`}>
             {currentCount}
           </span>
@@ -215,7 +217,7 @@ export default function KitchenDashboard({ params }: { params: Promise<{ 'shop-s
           }`}
         >
           <CalendarClock className="w-4 h-4" />
-          Geplant
+          {t('future')}
           <span className={`px-2 py-0.5 rounded-full text-[10px] ${activeTab === 'future' ? 'bg-black/20' : 'bg-black/5'}`}>
             {futureCount}
           </span>
@@ -229,7 +231,7 @@ export default function KitchenDashboard({ params }: { params: Promise<{ 'shop-s
           }`}
         >
           <CheckCircle className="w-4 h-4" />
-          Abgeschlossen
+          {t('completed')}
           <span className={`px-2 py-0.5 rounded-full text-[10px] ${activeTab === 'completed' ? 'bg-black/20' : 'bg-black/5'}`}>
             {completedCount}
           </span>
@@ -242,7 +244,7 @@ export default function KitchenDashboard({ params }: { params: Promise<{ 'shop-s
             <div className="w-24 h-24 bg-surface-container-low rounded-[2rem] flex items-center justify-center mb-6">
               <ChefHat className="w-10 h-10 text-on-surface-variant/20" />
             </div>
-            <h2 className="text-2xl font-black mb-2">Keine Bestellungen in diesem Reiter</h2>
+            <h2 className="text-2xl font-black mb-2">{t('no_orders_in_tab')}</h2>
           </div>
         ) : (
           filteredOrders.map(order => (

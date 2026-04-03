@@ -302,6 +302,7 @@ export type Database = {
           slug: string
           stress_factor: number
           updated_at: string
+          base_language: string
         }
         Insert: {
           address?: string | null
@@ -323,6 +324,7 @@ export type Database = {
           slug: string
           stress_factor?: number
           updated_at?: string
+          base_language?: string
         }
         Update: {
           address?: string | null
@@ -344,6 +346,7 @@ export type Database = {
           slug?: string
           stress_factor?: number
           updated_at?: string
+          base_language?: string
         }
         Relationships: []
       }

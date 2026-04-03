@@ -5,6 +5,7 @@ import { CalendarDays, Loader2, User, Phone, Users, Clock, Plus, MonitorCheck, S
 import { useState, useEffect, use } from 'react'
 import { Shop, Order, OrderStatus } from '@/types/database'
 import Link from 'next/link'
+import { useTranslation } from '@/lib/i18n/useTranslation'
 
 interface ReservationPageProps {
   params: Promise<{ 'shop-slug': string }>
@@ -24,6 +25,7 @@ export default function ReservationsPage({ params }: ReservationPageProps) {
   const [newResName, setNewResName] = useState('')
   const [newResTime, setNewResTime] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const { t } = useTranslation()
 
   useEffect(() => {
     async function init() {
@@ -123,38 +125,38 @@ export default function ReservationsPage({ params }: ReservationPageProps) {
     <div className="p-4 sm:p-10 space-y-8 sm:space-y-10 max-w-6xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
         <div>
-          <h1 className="text-2xl sm:text-4xl font-black tracking-tight mb-2">Reservierungen</h1>
-          <p className="text-sm sm:text-lg text-on-surface-variant font-medium">Tische, Gäste und Laufkundschaft verwalten.</p>
+          <h1 className="text-2xl sm:text-4xl font-black tracking-tight mb-2">{t('reservations')}</h1>
+          <p className="text-sm sm:text-lg text-on-surface-variant font-medium">{t('reservations_subtitle')}</p>
         </div>
         <button 
           onClick={() => setShowForm(!showForm)}
           className="flex items-center justify-center gap-3 px-6 py-3.5 bg-primary text-on-primary rounded-2xl text-sm font-black uppercase tracking-widest hover:shadow-lg hover:shadow-primary/20 transition-all active:scale-95 w-full sm:w-auto"
         >
-          {showForm ? 'Schließen' : <><Plus className="w-5 h-5" /> Reservierung</>}
+          {showForm ? t('cancel') : <><Plus className="w-5 h-5" /> {t('add_reservation')}</>}
         </button>
       </div>
 
       {showForm && (
         <form onSubmit={handleCreateManualReservation} className="bg-surface-container-low p-8 rounded-[2rem] border border-outline-variant/10 shadow-sm animate-[fadeIn_0.3s_ease] space-y-6 mb-10">
-          <h2 className="text-xl font-bold">Manuelle Reservierung eintragen</h2>
+          <h2 className="text-xl font-bold">{t('manual_reservation_title')}</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2 ml-1">Name</label>
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2 ml-1">{t('name')}</label>
               <input required type="text" value={newResName} onChange={e => setNewResName(e.target.value)} className="w-full px-4 py-3 bg-white border-none focus:ring-2 focus:ring-primary/20 rounded-xl font-medium shadow-sm" placeholder="z.B. Müller" />
             </div>
             <div>
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2 ml-1">Uhrzeit (HH:MM)</label>
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2 ml-1">{t('time')} (HH:MM)</label>
               <input required type="time" value={newResTime} onChange={e => setNewResTime(e.target.value)} className="w-full px-4 py-3 bg-white border-none focus:ring-2 focus:ring-primary/20 rounded-xl font-medium shadow-sm" />
             </div>
             <div>
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2 ml-1">Personen</label>
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2 ml-1">{t('persons')}</label>
               <input required type="number" min="1" value={newResGuestCount} onChange={e => setNewResGuestCount(parseInt(e.target.value))} className="w-full px-4 py-3 bg-white border-none focus:ring-2 focus:ring-primary/20 rounded-xl font-black text-primary shadow-sm" />
             </div>
           </div>
           <div className="flex justify-end pt-4">
             <button disabled={isSubmitting} type="submit" className="flex items-center gap-2 px-8 py-3.5 bg-on-surface text-surface rounded-2xl text-sm font-black uppercase tracking-widest hover:bg-on-surface/90 transition-all">
               {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              Reservieren
+              {t('reserve_button')}
             </button>
           </div>
         </form>
@@ -163,14 +165,14 @@ export default function ReservationsPage({ params }: ReservationPageProps) {
       <div className="space-y-6">
         <h2 className="text-xl font-black uppercase tracking-widest text-on-surface-variant flex items-center gap-3">
           <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-          Aktive & Kommende Gäste ({activeReservations.length})
+          {t('active_guests')} ({activeReservations.length})
         </h2>
         
         {activeReservations.length === 0 ? (
           <div className="p-10 border-2 border-dashed border-outline-variant/20 rounded-[2rem] text-center">
             <CalendarDays className="w-12 h-12 text-on-surface-variant/20 mx-auto mb-4" />
-            <h3 className="text-lg font-bold text-on-surface-variant mb-1">Keine anstehenden Reservierungen</h3>
-            <p className="text-sm text-on-surface-variant/60">Aktuell ist nichts für heute geplant.</p>
+            <h3 className="text-lg font-bold text-on-surface-variant mb-1">{t('no_reservations')}</h3>
+            <p className="text-sm text-on-surface-variant/60">{t('no_reservations_subtitle')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -190,7 +192,7 @@ export default function ReservationsPage({ params }: ReservationPageProps) {
                         <h3 className="font-bold text-lg leading-tight">{res.customer_name}</h3>
                         <p className="text-xs text-on-surface-variant font-medium flex items-center gap-1 mt-0.5">
                           {isManual ? <User className="w-3 h-3" /> : <MonitorCheck className="w-3 h-3" />}
-                          {isManual ? 'Manuelle Buchung' : 'Online Reservierung'}
+                          {isManual ? t('manual_booking') : t('online_reservation')}
                         </p>
                       </div>
                     </div>
@@ -208,8 +210,8 @@ export default function ReservationsPage({ params }: ReservationPageProps) {
                       <div className="bg-success/10 text-success p-3 rounded-xl flex items-center gap-3">
                         <UtensilsCrossed className="w-5 h-5" />
                         <div className="flex flex-col">
-                          <span className="text-[10px] font-bold uppercase tracking-widest opacity-50">Bestellung</span>
-                          <span className="font-black leading-none">Mit Essen</span>
+                          <span className="text-[10px] font-bold uppercase tracking-widest opacity-50">{t('orders')}</span>
+                          <span className="font-black leading-none">{t('with_food')}</span>
                         </div>
                       </div>
                     )}
@@ -220,13 +222,13 @@ export default function ReservationsPage({ params }: ReservationPageProps) {
                       onClick={() => updateReservationStatus(res.id, 'completed')}
                       className="flex-1 px-4 py-3 bg-success/10 text-success hover:bg-success hover:text-white rounded-xl text-sm font-bold transition-all"
                     >
-                      Angenommen / Fertig
+                      {t('accepted_done')}
                     </button>
                     <button 
                       onClick={() => updateReservationStatus(res.id, 'cancelled')}
                       className="px-4 py-3 bg-surface-container-high text-on-surface-variant hover:bg-error hover:text-white rounded-xl text-sm font-bold transition-all"
                     >
-                      Storno
+                      {t('cancel')}
                     </button>
                   </div>
                 </div>
