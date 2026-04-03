@@ -17,10 +17,10 @@ interface MenuListProps {
   hours?: OpeningHour[]
 }
 
-export function MenuList({ 
-  shop, 
-  categories, 
-  products, 
+export function MenuList({
+  shop,
+  categories,
+  products,
   isAdmin = false,
   isCurrentlyOpen = true,
   hours = []
@@ -32,8 +32,8 @@ export function MenuList({
 
   const filteredProducts = products.filter((product) => {
     const matchesCategory = activeCategoryId ? product.category_id === activeCategoryId : true
-    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                         (product.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
+    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (product.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
     return matchesCategory && matchesSearch
   })
 
@@ -48,7 +48,8 @@ export function MenuList({
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6">
       {/* Search and Filter */}
-      <div className="sticky top-[72px] z-40 bg-surface/95 backdrop-blur-md pt-4 pb-6 space-y-6">
+      {/* <div className="sticky top-[72px] z-40 bg-surface/95 backdrop-blur-md pt-4 pb-6 space-y-6"> */}
+      <div className="sticky top-[15px] z-40 bg-surface/95 backdrop-blur-md -mt-16 pt-20 pb-6 space-y-6">
         <div className="relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant/50" />
           <input
@@ -75,15 +76,15 @@ export function MenuList({
           <h2 className="text-xl font-black tracking-tight text-on-surface mb-2">Wir haben aktuell geschlossen</h2>
           <div className="text-sm text-on-surface-variant max-w-md mx-auto space-y-4">
             <p>
-              Vielen Dank für dein Interesse! Wir nehmen aktuell keine Bestellungen entgegen. 
-              Bitte schau zu unseren <button 
+              Vielen Dank für dein Interesse! Wir nehmen aktuell keine Bestellungen entgegen.
+              Bitte schau zu unseren <button
                 onClick={() => setShowHours(!showHours)}
                 className="text-primary font-bold underline decoration-2 underline-offset-4 hover:opacity-70 transition-opacity"
               >
                 Öffnungszeiten
               </button> wieder vorbei.
             </p>
-            
+
             {showHours && (
               <div className="mt-6 bg-white/50 backdrop-blur-sm rounded-2xl p-4 border border-outline-variant/10 text-left animate-fadeIn">
                 <div className="flex items-center gap-2 mb-3 text-on-surface/60">
@@ -97,7 +98,7 @@ export function MenuList({
                       <div key={day} className="flex justify-between items-center text-xs">
                         <span className="font-bold">{day}</span>
                         <span className="font-medium text-on-surface-variant">
-                          {dayHours.length > 0 
+                          {dayHours.length > 0
                             ? dayHours.map(h => `${h.start_time.substring(0, 5)} - ${h.end_time.substring(0, 5)}`).join(', ')
                             : 'Geschlossen'}
                         </span>
