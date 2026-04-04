@@ -6,7 +6,8 @@ import { CategoryFilter } from './CategoryFilter'
 import { ProductCard } from './ProductCard'
 import { ProductDetailModal } from './ProductDetailModal'
 import { Search, Clock, ChevronDown, ChevronUp } from 'lucide-react'
-import { DAYS_OF_WEEK } from '@/lib/utils/open-hours'
+import { DAYS_OF_WEEK, DAY_KEYS } from '@/lib/utils/open-hours'
+import { useTranslation } from '@/lib/i18n/useTranslation'
 
 interface MenuListProps {
   shop: Shop
@@ -29,6 +30,8 @@ export function MenuList({
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [showHours, setShowHours] = useState(false)
+
+  const { t } = useTranslation()
 
   const filteredProducts = products.filter((product) => {
     const matchesCategory = activeCategoryId ? product.category_id === activeCategoryId : true
@@ -93,14 +96,14 @@ export function MenuList({
                 </div>
                 <div className="space-y-2">
                   {DAYS_OF_WEEK.map((day, index) => {
-                    const dayHours = hours.filter(h => h.day_of_week === index)
+                    const dayHours = hours.filter(h => Number(h.day_of_week) === index)
                     return (
-                      <div key={day} className="flex justify-between items-center text-xs">
-                        <span className="font-bold">{day}</span>
+                      <div key={index} className="flex justify-between items-center text-xs">
+                        <span className="font-bold">{t(DAY_KEYS[index])}</span>
                         <span className="font-medium text-on-surface-variant">
                           {dayHours.length > 0
                             ? dayHours.map(h => `${h.start_time.substring(0, 5)} - ${h.end_time.substring(0, 5)}`).join(', ')
-                            : 'Geschlossen'}
+                            : t('closed')}
                         </span>
                       </div>
                     )

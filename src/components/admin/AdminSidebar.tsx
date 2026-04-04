@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { 
-  BarChart3, 
+  TrendingUp, 
   ChefHat, 
   Settings, 
   UtensilsCrossed, 
@@ -36,7 +36,7 @@ export function AdminSidebar({
     { label: t('reservations'), icon: CalendarDays, href: `/${shopSlug}/admin/reservations` },
     { label: t('orders'), icon: LayoutDashboard, href: `/${shopSlug}/admin/orders` },
     { label: t('menu'), icon: UtensilsCrossed, href: `/${shopSlug}/admin/menu` },
-    { label: t('analysis'), icon: BarChart3, href: `/${shopSlug}/admin/analysis` },
+    { label: t('trending'), icon: TrendingUp, href: `/${shopSlug}/admin/analysis` },
     { label: t('settings'), icon: Settings, href: `/${shopSlug}/admin/settings` },
   ]
 

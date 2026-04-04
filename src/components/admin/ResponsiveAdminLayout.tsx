@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Menu, ChefHat } from 'lucide-react'
+import { useTranslation } from '@/lib/i18n/useTranslation'
 import { AdminSidebar } from './AdminSidebar'
 
 interface ResponsiveAdminLayoutProps {
@@ -11,6 +12,7 @@ interface ResponsiveAdminLayoutProps {
 
 export function ResponsiveAdminLayout({ children, shopSlug }: ResponsiveAdminLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const { t } = useTranslation()
 
   return (
     <div className="flex bg-surface-container-lowest min-h-screen relative">
@@ -37,7 +39,7 @@ export function ResponsiveAdminLayout({ children, shopSlug }: ResponsiveAdminLay
               <div className="w-8 h-8 bg-primary text-on-primary rounded-xl flex items-center justify-center p-1.5 shadow-lg shadow-primary/20">
                 <ChefHat className="w-full h-full" />
               </div>
-              <span className="font-black tracking-tight text-sm uppercase">Admin</span>
+              <span className="font-black tracking-tight text-sm uppercase">{t('admin')}</span>
             </div>
           </div>
         </header>

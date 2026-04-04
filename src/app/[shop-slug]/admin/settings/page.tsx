@@ -33,7 +33,7 @@ import {
   ChevronDown
 } from 'lucide-react'
 import { OpeningHour, Table as ShopTable } from '@/types/database'
-import { DAYS_OF_WEEK } from '@/lib/utils/open-hours'
+import { DAYS_OF_WEEK, DAY_KEYS } from '@/lib/utils/open-hours'
 import { useRef } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { ImageCropper } from '@/components/ui/ImageCropper'
@@ -264,7 +264,7 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
       setLogoUrl(publicUrl)
     } catch (error: any) {
       console.error('Error uploading logo:', error)
-      setError(error.message || 'Fehler beim Upload')
+      setError(error.message || t('upload_failed'))
     } finally {
       setIsUploading(false)
     }
@@ -590,7 +590,7 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
                     onChange={e => setNewSlot({...newSlot, day: parseInt(e.target.value)})}
                     className="col-span-3 px-4 py-3 bg-white rounded-xl text-sm font-bold border-none ring-1 ring-outline-variant/10"
                   >
-                    {DAYS_OF_WEEK.map((day, i) => <option key={i} value={i}>{t(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'][i])}</option>)}
+                    {DAYS_OF_WEEK.map((day, i) => <option key={i} value={i}>{t(DAY_KEYS[i])}</option>)}
                   </select>
                   <input 
                     type="time" 
@@ -617,10 +617,10 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
 
             <div className="grid grid-cols-1 gap-3">
               {DAYS_OF_WEEK.map((day, dayIdx) => {
-                const daySlots = openingHours.filter(h => h.day_of_week === dayIdx)
+                const daySlots = openingHours.filter(h => Number(h.day_of_week) === dayIdx)
                 return (
                   <div key={dayIdx} className="flex items-center justify-between p-4 bg-white rounded-2xl border border-outline-variant/5 group">
-                    <span className="text-sm font-bold w-32">{t(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'][dayIdx])}</span>
+                    <span className="text-sm font-bold w-32">{t(DAY_KEYS[dayIdx])}</span>
                     <div className="flex-1 flex flex-wrap gap-2">
                       {daySlots.length > 0 ? (
                         daySlots.map(slot => (
@@ -781,21 +781,21 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
         <Modal 
           isOpen={!!error} 
           onClose={() => setError(null)} 
-          title="Fehler"
+          title={t('error')}
         >
           <div className="p-10 text-center space-y-6">
             <div className="w-16 h-16 bg-error/10 text-error rounded-full flex items-center justify-center mx-auto">
               <ShieldAlert className="w-8 h-8" />
             </div>
             <div className="space-y-2">
-              <p className="text-sm font-black uppercase tracking-widest text-error">Upload fehlgeschlagen</p>
+              <p className="text-sm font-black uppercase tracking-widest text-error">{t('upload_failed')}</p>
               <p className="text-on-surface-variant text-sm font-medium">{error}</p>
             </div>
             <button 
               onClick={() => setError(null)}
               className="w-full py-4 bg-surface-container-high rounded-2xl font-bold text-sm hover:bg-surface-container-highest transition-colors"
             >
-              Schließen
+              {t('close')}
             </button>
           </div>
         </Modal>

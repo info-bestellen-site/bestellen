@@ -126,7 +126,7 @@ export default function KitchenDashboard({ params }: { params: Promise<{ 'shop-s
       .eq('id', orderId)
     
     if (error) {
-      alert('Status konnte nicht geändert werden.')
+      alert(t('status_update_failed'))
     } else {
       if (status === 'cancelled') {
         setOrders(prev => prev.filter(o => o.id !== orderId))
