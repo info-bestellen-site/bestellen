@@ -106,7 +106,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
   const subtotal = getSubtotal()
   const deliveryFee = fulfillmentType === 'delivery' ? (shop?.delivery_fee || 0) : 0
   const total = subtotal + deliveryFee
-  const waitTime = calculateWaitTime(activeOrders, shop?.stress_factor)
+  const waitTime = calculateWaitTime(activeOrders, items)
 
   const availableSlots = getAvailableReservationSlots(openingHours, tables, existingOrders, guestCount)
   
@@ -129,9 +129,9 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
     }
 
     // Final check if shop is still open
-    const { data: latestShop } = await supabase.from('shops').select('is_open').eq('id', shop.id).single()
+    const { data: latestShop } = await supabase.from('shops').select('is_open, manual_status_updated_at').eq('id', shop.id).single()
     const { data: hours } = await supabase.from('opening_hours').select('*').eq('shop_id', shop.id)
-    if (!isShopOpen(hours || [], latestShop?.is_open ?? false)) {
+    if (!isShopOpen(hours || [], latestShop?.is_open ?? false, latestShop?.manual_status_updated_at)) {
       alert('Der Shop hat gerade geschlossen. Ihre Bestellung konnte nicht aufgegeben werden.')
       window.location.reload() // Reload to show closed status
       return
@@ -255,7 +255,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
               ...(shop?.has_pickup ? [{ id: 'pickup', label: 'Abholung', icon: Store }] : []),
               ...(shop?.has_delivery ? [{ id: 'delivery', label: 'Lieferung', icon: Truck }] : []),
               ...(shop?.has_dine_in ? [{ id: 'dine_in', label: 'Vor Ort', icon: Utensils }] : []),
-            ].map((type) => (
+            ].filter(type => type.id !== 'dine_in').map((type) => (
               <button
                 key={type.id}
                 onClick={() => setFulfillmentType(type.id as FulfillmentType)}

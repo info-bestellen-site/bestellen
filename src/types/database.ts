@@ -233,6 +233,8 @@ export type Database = {
           name: string
           price: number
           shop_id: string
+          preparation_time_minutes: number
+          parallel_capacity: number
           sort_order: number
           updated_at: string
         }
@@ -245,6 +247,8 @@ export type Database = {
           image_url?: string | null
           is_available?: boolean
           name: string
+          parallel_capacity?: number
+          preparation_time_minutes?: number
           price: number
           shop_id: string
           sort_order?: number
@@ -259,6 +263,8 @@ export type Database = {
           image_url?: string | null
           is_available?: boolean
           name?: string
+          parallel_capacity?: number
+          preparation_time_minutes?: number
           price?: number
           shop_id?: string
           sort_order?: number
@@ -303,6 +309,7 @@ export type Database = {
           stress_factor: number
           updated_at: string
           base_language: string
+          manual_status_updated_at: string | null
         }
         Insert: {
           address?: string | null
@@ -325,6 +332,7 @@ export type Database = {
           stress_factor?: number
           updated_at?: string
           base_language?: string
+          manual_status_updated_at?: string | null
         }
         Update: {
           address?: string | null
@@ -347,6 +355,7 @@ export type Database = {
           stress_factor?: number
           updated_at?: string
           base_language?: string
+          manual_status_updated_at?: string | null
         }
         Relationships: []
       }

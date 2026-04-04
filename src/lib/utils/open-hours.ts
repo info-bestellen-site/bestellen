@@ -1,13 +1,27 @@
 import { OpeningHour, Table, Order } from '@/types/database'
 
-export function isShopOpen(hours: OpeningHour[], manualOpen: boolean): boolean {
-  // If forced closed manually, it is always closed
+export function isShopOpen(hours: OpeningHour[], manualOpen: boolean, lastUpdate?: string | null): boolean {
+  const now = new Date()
+
+  // If we have a last manual update, check if it was on a previous day
+  if (lastUpdate) {
+    const updateDate = new Date(lastUpdate)
+    const isDifferentDay = 
+      updateDate.getDate() !== now.getDate() ||
+      updateDate.getMonth() !== now.getMonth() ||
+      updateDate.getFullYear() !== now.getFullYear()
+    
+    if (isDifferentDay) {
+      // Midnight reset: Treat manual closing from a previous day as manualOpen: true (following schedule)
+      manualOpen = true
+    }
+  }
+
+  // If forced closed manually TODAY, it is always closed
   if (!manualOpen) return false
 
-  // If no opening hours are defined, the manual toggle is the only truth
   if (hours.length === 0) return true
 
-  const now = new Date()
   const originalIndex = now.getDay()
   const dayOfWeek = (originalIndex + 6) % 7 // Transform 0=Sun back to 6=Sun, 1=Mon to 0=Mon
   const currentTime = now.getHours() * 100 + now.getMinutes()

@@ -5,11 +5,11 @@ import { createClient } from '@/lib/supabase/client'
 import { Order, OrderItem, OrderStatus } from '@/types/database'
 import { OrderCard } from '@/components/admin/OrderCard'
 import { playNewOrderSound } from '@/lib/utils/audio'
-import { Loader2, ChefHat, BellOff, Bell, Clock, CalendarClock, CheckCircle } from 'lucide-react'
+import { Loader2, ChefHat, BellOff, Bell, Clock, CalendarClock, CheckCircle, Play, CheckCircle2 } from 'lucide-react'
 import { useTranslation } from '@/lib/i18n/useTranslation'
 
 type OrderWithItems = Order & { order_items: OrderItem[] }
-type TabFilter = 'current' | 'future' | 'completed'
+type TabFilter = 'all' | 'unprocessed' | 'preparing' | 'ready' | 'completed'
 
 export default function KitchenDashboard({ params }: { params: Promise<{ 'shop-slug': string }> }) {
   const { 'shop-slug': shopSlug } = use(params)
@@ -18,9 +18,8 @@ export default function KitchenDashboard({ params }: { params: Promise<{ 'shop-s
   const [loading, setLoading] = useState(true)
   const [soundEnabled, setSoundEnabled] = useState(false)
   const soundEnabledRef = useRef(soundEnabled)
-  
-  const [activeTab, setActiveTab] = useState<TabFilter>('current')
-  const [prepLeadTime, setPrepLeadTime] = useState(60)
+
+  const [activeTab, setActiveTab] = useState<TabFilter>('all')
   const [timeTick, setTimeTick] = useState(0)
   const { t } = useTranslation()
 
@@ -35,10 +34,6 @@ export default function KitchenDashboard({ params }: { params: Promise<{ 'shop-s
   }, [])
 
   useEffect(() => {
-    soundEnabledRef.current = soundEnabled
-  }, [soundEnabled])
-
-  useEffect(() => {
     const channelRef = { current: null as any }
     let isSubscribing = false
 
@@ -47,12 +42,11 @@ export default function KitchenDashboard({ params }: { params: Promise<{ 'shop-s
       isSubscribing = true
       const { data: shop } = await supabase
         .from('shops')
-        .select('id, prep_lead_time_minutes')
+        .select('id')
         .eq('slug', shopSlug)
         .single()
-      
+
       if (!shop) return
-      setPrepLeadTime(shop.prep_lead_time_minutes)
 
       const todayStr = new Date().toISOString().split('T')[0]
       const { data: initialOrders } = await supabase
@@ -62,13 +56,13 @@ export default function KitchenDashboard({ params }: { params: Promise<{ 'shop-s
         .gte('created_at', todayStr + 'T00:00:00Z')
         .neq('status', 'cancelled')
         .order('estimated_ready_at', { ascending: true })
-      
+
       const validOrders = (initialOrders as OrderWithItems[] || []).filter(o => o.total > 0)
       setOrders(validOrders)
       setLoading(false)
 
       const channelName = `shop-orders-${shop.id}`
-      
+
       // Remove any existing channel with this name to prevent double-subscribe errors in React Strict Mode
       supabase.getChannels().forEach(c => {
         if (c.topic === `realtime:${channelName}`) {
@@ -90,27 +84,27 @@ export default function KitchenDashboard({ params }: { params: Promise<{ 'shop-s
           },
           async (payload) => {
             if (payload.eventType === 'INSERT') {
-                const { data: newOrder } = await supabase
-                  .from('orders')
-                  .select('*, order_items(*)')
-                  .eq('id', payload.new.id)
-                  .single()
-                
-                if (newOrder && newOrder.total > 0) {
-                  setOrders(prev => [...prev, newOrder as OrderWithItems])
-                  if (soundEnabledRef.current) playNewOrderSound()
-                }
-              } else if (payload.eventType === 'UPDATE') {
-                const updatedOrder = payload.new as Order
-                if (updatedOrder.status === 'cancelled') {
-                  setOrders(prev => prev.filter(o => o.id !== updatedOrder.id))
-                } else {
-                  setOrders(prev => prev.map(o => o.id === updatedOrder.id ? { ...o, ...updatedOrder } : o))
-                }
+              const { data: newOrder } = await supabase
+                .from('orders')
+                .select('*, order_items(*)')
+                .eq('id', payload.new.id)
+                .single()
+
+              if (newOrder && newOrder.total > 0) {
+                setOrders(prev => [...prev, newOrder as OrderWithItems])
+                if (soundEnabledRef.current) playNewOrderSound()
+              }
+            } else if (payload.eventType === 'UPDATE') {
+              const updatedOrder = payload.new as Order
+              if (updatedOrder.status === 'cancelled') {
+                setOrders(prev => prev.filter(o => o.id !== updatedOrder.id))
+              } else {
+                setOrders(prev => prev.map(o => o.id === updatedOrder.id ? { ...o, ...updatedOrder } : o))
               }
             }
-          )
-          .subscribe()
+          }
+        )
+        .subscribe()
     }
     init()
 
@@ -119,58 +113,68 @@ export default function KitchenDashboard({ params }: { params: Promise<{ 'shop-s
     }
   }, [shopSlug, supabase])
 
-  const handleStatusChange = useCallback(async (orderId: string, status: OrderStatus) => {
+  const handleStatusChange = useCallback(async (orderId: string, status: OrderStatus, customMinutes?: number) => {
+    const updateData: any = { status }
+    
+    if (customMinutes !== undefined) {
+      updateData.estimated_ready_at = new Date(Date.now() + customMinutes * 60000).toISOString()
+    }
+
     const { error } = await supabase
       .from('orders')
-      .update({ status })
+      .update(updateData)
       .eq('id', orderId)
-    
+
     if (error) {
       alert(t('status_update_failed'))
     } else {
       if (status === 'cancelled') {
         setOrders(prev => prev.filter(o => o.id !== orderId))
       } else {
-        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status } : o))
+        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, ...updateData } : o))
       }
     }
-  }, [supabase])
+  }, [supabase, t])
 
   const now = new Date()
-  const cutoffTime = new Date(now.getTime() + prepLeadTime * 60000)
 
+  // Improved filtering logic
   const filteredOrders = orders.filter(o => {
+    if (activeTab === 'all') return o.status !== 'completed'
+    if (activeTab === 'unprocessed') return o.status === 'pending'
+    if (activeTab === 'preparing') return o.status === 'preparing'
+    if (activeTab === 'ready') return o.status === 'ready'
     if (activeTab === 'completed') return o.status === 'completed'
-    
-    // Status is active for current/future
-    if (o.status === 'completed' || o.status === 'cancelled') return false
-
-    if (!o.estimated_ready_at) return activeTab === 'current'
-    
-    const readyAt = new Date(o.estimated_ready_at)
-    
-    if (activeTab === 'current') {
-      return readyAt <= cutoffTime
-    } else {
-      return readyAt > cutoffTime
-    }
+    return false
   }).sort((a, b) => {
     if (activeTab === 'completed') {
-      return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime() // newest completed first
+      return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
     }
-    return new Date(a.estimated_ready_at || a.created_at).getTime() - new Date(b.estimated_ready_at || b.created_at).getTime() // soonest target first
+    return new Date(a.estimated_ready_at || a.created_at).getTime() - new Date(b.estimated_ready_at || b.created_at).getTime()
   })
 
   // Tab counts
-  const currentCount = orders.filter(o => o.status !== 'completed' && o.status !== 'cancelled' && (!o.estimated_ready_at || new Date(o.estimated_ready_at) <= cutoffTime)).length
-  const futureCount = orders.filter(o => o.status !== 'completed' && o.status !== 'cancelled' && (o.estimated_ready_at && new Date(o.estimated_ready_at) > cutoffTime)).length
-  const completedCount = orders.filter(o => o.status === 'completed').length
+  const counts = {
+    all: orders.filter(o => o.status !== 'completed').length,
+    unprocessed: orders.filter(o => o.status === 'pending').length,
+    preparing: orders.filter(o => o.status === 'preparing').length,
+    ready: orders.filter(o => o.status === 'ready').length,
+    completed: orders.filter(o => o.status === 'completed').length,
+  }
 
   if (loading) return (
     <div className="flex h-screen items-center justify-center">
       <Loader2 className="w-8 h-8 animate-spin text-primary" />
     </div>
   )
+
+  const tabs: { id: TabFilter, label: string, icon: any, color?: string }[] = [
+    { id: 'all', label: t('filter_all'), icon: ChefHat },
+    { id: 'unprocessed', label: t('filter_unprocessed'), icon: Bell, color: 'bg-error text-white' },
+    { id: 'preparing', label: t('filter_preparing'), icon: Play, color: 'bg-warning text-white' },
+    { id: 'ready', label: t('filter_ready'), icon: CheckCircle2, color: 'bg-success text-white' },
+    { id: 'completed', label: t('filter_completed'), icon: CheckCircle },
+  ]
 
   return (
     <div className="p-4 sm:p-10 space-y-6 sm:space-y-8">
@@ -179,13 +183,12 @@ export default function KitchenDashboard({ params }: { params: Promise<{ 'shop-s
           <h1 className="text-2xl sm:text-4xl font-black tracking-tight mb-2">{t('kitchen_monitor')}</h1>
           <p className="text-sm sm:text-lg text-on-surface-variant font-medium">{t('kitchen_subtitle')}</p>
         </div>
-        <button 
+        <button
           onClick={() => setSoundEnabled(!soundEnabled)}
-          className={`flex items-center justify-center gap-3 px-6 py-3.5 rounded-2xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${
-            soundEnabled 
-              ? 'bg-primary text-on-primary shadow-lg shadow-primary/10' 
+          className={`flex items-center justify-center gap-3 px-6 py-3.5 rounded-2xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${soundEnabled
+              ? 'bg-primary text-on-primary shadow-lg shadow-primary/10'
               : 'bg-surface-container-low text-on-surface-variant ring-1 ring-inset ring-outline-variant/10 whitespace-nowrap'
-          }`}
+            }`}
         >
           {soundEnabled ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
           {soundEnabled ? t('sound_on') : t('sound_off')}
@@ -193,49 +196,23 @@ export default function KitchenDashboard({ params }: { params: Promise<{ 'shop-s
       </div>
 
       {/* Tabs */}
-      <div className="flex flex-wrap gap-2 sm:gap-4 border-b border-outline-variant/10 pb-4">
-        <button
-          onClick={() => setActiveTab('current')}
-          className={`flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-full text-xs sm:text-sm font-bold transition-all ${
-            activeTab === 'current' 
-              ? 'bg-primary text-on-primary' 
-              : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high'
-          }`}
-        >
-          <Clock className="w-4 h-4" />
-          {t('current')}
-          <span className={`px-2 py-0.5 rounded-full text-[10px] ${activeTab === 'current' ? 'bg-black/20' : 'bg-black/5'}`}>
-            {currentCount}
-          </span>
-        </button>
-        <button
-          onClick={() => setActiveTab('future')}
-          className={`flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-full text-xs sm:text-sm font-bold transition-all ${
-            activeTab === 'future' 
-              ? 'bg-secondary text-on-secondary' 
-              : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high'
-          }`}
-        >
-          <CalendarClock className="w-4 h-4" />
-          {t('future')}
-          <span className={`px-2 py-0.5 rounded-full text-[10px] ${activeTab === 'future' ? 'bg-black/20' : 'bg-black/5'}`}>
-            {futureCount}
-          </span>
-        </button>
-        <button
-          onClick={() => setActiveTab('completed')}
-          className={`flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-full text-xs sm:text-sm font-bold transition-all ${
-            activeTab === 'completed' 
-              ? 'bg-success text-on-primary' 
-              : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high'
-          }`}
-        >
-          <CheckCircle className="w-4 h-4" />
-          {t('completed')}
-          <span className={`px-2 py-0.5 rounded-full text-[10px] ${activeTab === 'completed' ? 'bg-black/20' : 'bg-black/5'}`}>
-            {completedCount}
-          </span>
-        </button>
+      <div className="flex flex-wrap gap-2 sm:gap-3 border-b border-outline-variant/10 pb-6">
+        {tabs.map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex items-center gap-2.5 px-4 sm:px-6 py-3 rounded-2xl text-xs sm:text-sm font-black uppercase tracking-widest transition-all ${activeTab === tab.id
+                ? (tab.color || 'bg-primary text-on-primary shadow-lg shadow-primary/20')
+                : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high'
+              }`}
+          >
+            <tab.icon className="w-4 h-4" />
+            {tab.label}
+            <span className={`px-2 py-0.5 rounded-lg text-[10px] ${activeTab === tab.id ? 'bg-black/20' : 'bg-black/5'}`}>
+              {counts[tab.id]}
+            </span>
+          </button>
+        ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 sm:gap-8">
@@ -248,10 +225,11 @@ export default function KitchenDashboard({ params }: { params: Promise<{ 'shop-s
           </div>
         ) : (
           filteredOrders.map(order => (
-            <OrderCard 
-              key={order.id} 
-              order={order} 
-              onStatusChange={handleStatusChange} 
+            <OrderCard
+              key={order.id}
+              order={order}
+              onStatusChange={handleStatusChange}
+              activeOrdersCount={orders.filter(o => ['pending', 'preparing'].includes(o.status)).length}
             />
           ))
         )}

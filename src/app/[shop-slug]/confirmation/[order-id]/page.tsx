@@ -1,27 +1,109 @@
-import { createServerSupabaseClient } from '@/lib/supabase/server'
-import { notFound } from 'next/navigation'
+'use client'
+
+import { createClient } from '@/lib/supabase/client'
+import { useEffect, useState, use } from 'react'
 import { formatCurrency } from '@/lib/utils/format-currency'
 import { formatWaitTime } from '@/lib/utils/calculate-wait-time'
-import { CheckCircle2, ChevronRight, Clock, MapPin, Phone, ChefHat } from 'lucide-react'
+import { CheckCircle2, ChevronRight, Clock, MapPin, Phone, ChefHat, Loader2 } from 'lucide-react'
 import Link from 'next/link'
+import { Order, OrderItem, Shop } from '@/types/database'
+import { useTranslation } from '@/lib/i18n/useTranslation'
 
-interface ConfirmationPageProps {
-  params: Promise<{ 'shop-slug': string; 'order-id': string }>
-}
+type OrderWithDetails = Order & { shops: Shop; order_items: OrderItem[] }
 
-export default async function ConfirmationPage({ params }: ConfirmationPageProps) {
-  const { 'shop-slug': slug, 'order-id': orderId } = await params
-  const supabase = await createServerSupabaseClient()
+export default function ConfirmationPage({ params }: { params: Promise<{ 'shop-slug': string; 'order-id': string }> }) {
+  const { 'shop-slug': slug, 'order-id': orderId } = use(params)
+  
+  const supabase = createClient()
+  const { t } = useTranslation()
+  const [order, setOrder] = useState<OrderWithDetails | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  const { data: order } = await supabase
-    .from('orders')
-    .select('*, shops(*), order_items(*)')
-    .eq('id', orderId)
-    .single()
+  useEffect(() => {
+    async function fetchOrder() {
+      // Validate if orderId is a UUID to avoid Supabase errors
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+      if (!uuidRegex.test(orderId)) {
+        setLoading(false)
+        return
+      }
 
-  if (!order) notFound()
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*, shops(*), order_items(*)')
+        .eq('id', orderId)
+        .maybeSingle()
+      
+      if (data) {
+        setOrder(data as OrderWithDetails)
+      }
+      setLoading(false)
+    }
+
+    fetchOrder()
+
+    // Realtime subscription
+    const channel = supabase
+      .channel(`order-status-${orderId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders',
+          filter: `id=eq.${orderId}`,
+        },
+        (payload) => {
+          setOrder(prev => prev ? { ...prev, ...payload.new } : null)
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [orderId, supabase])
+
+  if (loading) return (
+    <div className="flex h-screen items-center justify-center">
+      <Loader2 className="w-8 h-8 animate-spin text-primary" />
+    </div>
+  )
+
+  if (!order) return (
+    <div className="max-w-2xl mx-auto px-4 py-32 text-center">
+      <div className="w-20 h-20 bg-surface-container-low rounded-[2rem] flex items-center justify-center mx-auto mb-8">
+        <ChefHat className="w-10 h-10 text-on-surface-variant/20" />
+      </div>
+      <h1 className="text-3xl font-black tracking-tight mb-4">Bestellung nicht gefunden</h1>
+      <p className="text-on-surface-variant font-medium mb-12">Entschuldigung, wir konnten die Details zu dieser Bestellung nicht abrufen.</p>
+      <Link 
+        href={`/${slug}`} 
+        className="inline-flex items-center gap-3 px-8 py-4 bg-primary text-on-primary rounded-full font-bold text-sm hover:scale-[1.02] active:scale-98 transition-all shadow-lg shadow-primary/20"
+      >
+        Zurück zum Shop
+        <ChevronRight className="w-4 h-4" />
+      </Link>
+    </div>
+  )
 
   const waitTime = Math.max(10, Math.round((new Date(order.estimated_ready_at || '').getTime() - new Date(order.created_at).getTime()) / 60000))
+
+  const getStatusInfo = (status: string) => {
+    switch (status) {
+        case 'preparing': return { label: t('preparing'), color: 'bg-warning/20 text-white' }
+        case 'ready': 
+          return { 
+            label: order.fulfillment_type === 'delivery' ? t('delivery_on_way') : t('ready'), 
+            color: 'bg-success/20 text-white' 
+          }
+        case 'completed': return { label: t('completed'), color: 'bg-white/20 text-white' }
+        case 'cancelled': return { label: t('cancelled'), color: 'bg-error/20 text-white' }
+        default: return { label: 'Wartet auf Bestätigung', color: 'bg-white/20 text-white' }
+    }
+  }
+
+  const statusInfo = getStatusInfo(order.status)
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-12">
@@ -35,7 +117,7 @@ export default async function ConfirmationPage({ params }: ConfirmationPageProps
 
       <div className="space-y-6">
         {/* Order Status Card */}
-        <div className="bg-primary text-on-primary rounded-3xl p-8 shadow-xl shadow-primary/15 relative overflow-hidden">
+        <div className={`rounded-3xl p-8 shadow-xl shadow-primary/15 relative overflow-hidden transition-colors duration-500 ${order.status === 'cancelled' ? 'bg-error text-white' : 'bg-primary text-on-primary'}`}>
           <div className="absolute top-0 right-0 p-8 opacity-10">
             <ChefHat className="w-32 h-32" />
           </div>
@@ -43,10 +125,10 @@ export default async function ConfirmationPage({ params }: ConfirmationPageProps
           <div className="relative z-10">
             <div className="flex justify-between items-start mb-8">
               <div>
-                <p className="text-xs font-bold uppercase tracking-widest opacity-60 mb-1">Status</p>
-                <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 rounded-full">
-                  <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                  <span className="text-sm font-bold">Wartet auf Bestätigung</span>
+                <p className="text-xs font-bold uppercase tracking-widest opacity-60 mb-2">Status</p>
+                <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full ${statusInfo.color} backdrop-blur-sm border border-white/10`}>
+                  <div className={`w-2.5 h-2.5 rounded-full bg-white ${['pending', 'preparing'].includes(order.status) ? 'animate-pulse' : ''}`} />
+                  <span className="text-sm font-black uppercase tracking-tight">{statusInfo.label}</span>
                 </div>
               </div>
               <div className="text-right">
@@ -62,7 +144,9 @@ export default async function ConfirmationPage({ params }: ConfirmationPageProps
                 </div>
                 <div>
                   <p className="text-xs font-bold uppercase tracking-widest opacity-60 mb-0.5">Wartezeit</p>
-                  <p className="text-base font-bold">{formatWaitTime(waitTime)}</p>
+                  <p className="text-base font-bold">
+                    {order.status === 'pending' ? 'Warten auf Bestätigung...' : formatWaitTime(waitTime)}
+                  </p>
                 </div>
               </div>
               <div className="flex items-start gap-4">
@@ -118,15 +202,17 @@ export default async function ConfirmationPage({ params }: ConfirmationPageProps
           </div>
 
           <div className="p-8 bg-surface-container-low/30 space-y-6">
-            <div className="flex items-start gap-4">
-              <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-outline-variant/10">
-                <MapPin className="w-4 h-4 text-on-surface-variant" />
+            {order.fulfillment_type !== 'delivery' && (
+              <div className="flex items-start gap-4">
+                <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-outline-variant/10">
+                  <MapPin className="w-4 h-4 text-on-surface-variant" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-0.5">Abholort</p>
+                  <p className="text-sm font-semibold">{order.shops.address || 'Im Restaurant vor Ort'}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-0.5">Abholort</p>
-                <p className="text-sm font-semibold">{order.shops.address || 'Im Restaurant vor Ort'}</p>
-              </div>
-            </div>
+            )}
             {order.shops.phone && (
               <div className="flex items-start gap-4">
                 <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-outline-variant/10">

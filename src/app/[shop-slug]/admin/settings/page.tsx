@@ -67,15 +67,14 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
   const [slug, setSlug] = useState('')
   const [address, setAddress] = useState('')
   const [phone, setPhone] = useState('')
-  const [stressFactor, setStressFactor] = useState(5)
   const [deliveryFee, setDeliveryFee] = useState(0)
   const [minOrder, setMinOrder] = useState(0)
   const [isOpen, setIsOpen] = useState(true)
+  const [manualStatusUpdatedAt, setManualStatusUpdatedAt] = useState<string | null>(null)
   const [hasDelivery, setHasDelivery] = useState(true)
   const [hasPickup, setHasPickup] = useState(true)
   const [hasDineIn, setHasDineIn] = useState(true)
   const [hasReservation, setHasReservation] = useState(true)
-  const [prepLeadTime, setPrepLeadTime] = useState(60)
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const [iconName, setIconName] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -108,7 +107,6 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
         setSlug(data.slug)
         setAddress(data.address || '')
         setPhone(data.phone || '')
-        setStressFactor(data.stress_factor)
         setDeliveryFee(data.delivery_fee)
         setMinOrder(data.min_order_amount)
         setIsOpen(data.is_open)
@@ -116,7 +114,7 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
         setHasPickup(data.has_pickup)
         setHasDineIn(data.has_dine_in)
         setHasReservation(data.has_reservation ?? true)
-        setPrepLeadTime(data.prep_lead_time_minutes)
+        setManualStatusUpdatedAt(data.manual_status_updated_at)
         setLogoUrl(data.logo_url)
         setIconName(data.icon_name)
       }
@@ -205,15 +203,13 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
         slug,
         address,
         phone,
-        stress_factor: stressFactor,
-        delivery_fee: deliveryFee,
-        min_order_amount: minOrder,
-        is_open: isOpen,
-        has_delivery: hasDelivery,
         has_pickup: hasPickup,
-        has_dine_in: hasDineIn,
         has_reservation: hasReservation,
-        prep_lead_time_minutes: prepLeadTime,
+        is_open: isOpen,
+        manual_status_updated_at: manualStatusUpdatedAt,
+        min_order_amount: minOrder,
+        delivery_fee: deliveryFee,
+        has_delivery: hasDelivery,
         logo_url: logoUrl,
         icon_name: iconName
       })
@@ -462,21 +458,6 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
               <div className={`w-3 h-3 rounded-full ${hasPickup ? 'bg-primary' : 'bg-outline-variant/30'}`} />
             </button>
 
-            <button 
-              type="button"
-              onClick={() => setHasDineIn(!hasDineIn)}
-              className={`flex items-center justify-between p-5 rounded-3xl transition-all border-2 ${
-                hasDineIn ? 'border-primary bg-primary/5 text-primary' : 'border-outline-variant/10 bg-surface text-on-surface-variant'
-              }`}
-            >
-              <div className="text-left">
-                <p className="font-bold">{t('dine_in_feature')}</p>
-                <p className="text-[10px] uppercase font-bold tracking-widest opacity-60">
-                  {hasDineIn ? t('activated') : t('deactivated')}
-                </p>
-              </div>
-              <div className={`w-3 h-3 rounded-full ${hasDineIn ? 'bg-primary' : 'bg-outline-variant/30'}`} />
-            </button>
 
             <button 
               type="button"
@@ -494,26 +475,6 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
               <div className={`w-3 h-3 rounded-full ${hasReservation ? 'bg-primary' : 'bg-outline-variant/30'}`} />
             </button>
             
-            <div className="col-span-1 md:col-span-2 lg:col-span-3 pt-6 border-t border-outline-variant/10">
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2.5 ml-1">
-                {t('prep_time_label')}
-              </label>
-              <div className="flex items-center gap-4">
-                <input 
-                  type="range" 
-                  min="5" 
-                  max="180" 
-                  step="5"
-                  value={prepLeadTime}
-                  onChange={e => setPrepLeadTime(parseInt(e.target.value))}
-                  className="flex-1 h-1.5 bg-surface-container-low rounded-full appearance-none cursor-pointer accent-primary"
-                />
-                <span className="text-primary font-black text-lg w-20 text-right">{prepLeadTime} Min.</span>
-              </div>
-              <p className="mt-2 text-[10px] text-on-surface-variant/50 font-medium italic">
-                {t('prep_time_hint')}
-              </p>
-            </div>
           </div>
         </div>
 
@@ -525,32 +486,15 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
           </div>
 
           <div className="grid grid-cols-2 gap-6">
-            <div className="col-span-2 md:col-span-1">
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2.5 ml-1">
-                {t('stress_factor_label')}
-              </label>
-              <div className="flex items-center gap-4">
-                <input 
-                  type="range" 
-                  min="1" 
-                  max="30" 
-                  step="1"
-                  value={stressFactor}
-                  onChange={e => setStressFactor(parseInt(e.target.value))}
-                  className="flex-1 h-1.5 bg-surface-container-low rounded-full appearance-none cursor-pointer accent-primary"
-                />
-                <span className="text-primary font-black text-lg w-16 text-right">{stressFactor} Min.</span>
-              </div>
-              <p className="mt-2 text-[10px] text-on-surface-variant/50 font-medium italic">
-                {t('stress_factor_hint')}
-              </p>
-            </div>
 
             <div className="col-span-2 md:col-span-1 md:border-l md:border-outline-variant/5 md:pl-8">
               <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-4 ml-1">{t('manual_status_override')}</label>
               <button 
                 type="button"
-                onClick={() => setIsOpen(!isOpen)}
+                onClick={() => {
+                  setIsOpen(!isOpen)
+                  setManualStatusUpdatedAt(new Date().toISOString())
+                }}
                 className={`w-full flex items-center justify-between px-6 py-4 rounded-3xl transition-all ${
                   isOpen 
                     ? 'bg-success/5 text-success ring-2 ring-inset ring-success/20' 

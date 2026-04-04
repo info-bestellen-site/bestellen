@@ -25,6 +25,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useAdminStore } from '@/lib/store/admin-store'
 import { LanguageSwitcher } from '@/components/admin/LanguageSwitcher'
+import { useTranslation } from '@/lib/i18n/useTranslation'
 
 const ICON_MAP: Record<string, any> = {
   Store,
@@ -46,6 +47,7 @@ export function ShopHeader({ shop, isCurrentlyOpen }: { shop: Shop, isCurrentlyO
   const searchParams = useSearchParams()
   const pathname = usePathname()
   const isEmbed = searchParams.get('embed') === 'true'
+  const { t } = useTranslation()
   
   // Use the prop if provided, otherwise fallback to shop.is_open (for backward compatibility if needed)
   const isOpen = isCurrentlyOpen !== undefined ? isCurrentlyOpen : shop.is_open
@@ -132,16 +134,33 @@ export function ShopHeader({ shop, isCurrentlyOpen }: { shop: Shop, isCurrentlyO
           )}
         </nav>
 
-        <div className="flex items-center gap-4 sm:gap-6">
-          {isOwner && <LanguageSwitcher />}
-          <Link href={`/${shop.slug}/checkout`} className="relative flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <ShoppingCart className="w-5 h-5 text-on-surface" />
-            {itemCount > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-primary text-on-primary text-[10px] font-bold rounded-full flex items-center justify-center">
-                {itemCount}
-              </span>
-            )}
-          </Link>
+        <div className="flex items-center gap-3 sm:gap-4">
+          {isOwner && (
+            <>
+              <div className={`flex items-center gap-2 px-3 py-2 rounded-full border border-outline-variant/10 shadow-sm transition-all ${
+                isOpen 
+                  ? 'bg-success/5 text-success' 
+                  : 'bg-error/5 text-error'
+              }`}>
+                <div className={`w-2 h-2 rounded-full ${isOpen ? 'bg-success animate-pulse' : 'bg-error'}`} />
+                <span className="text-[10px] font-black uppercase tracking-[0.15em]">
+                  {isOpen ? t('open') : t('closed')}
+                </span>
+              </div>
+              <LanguageSwitcher />
+            </>
+          )}
+
+          {!isOwner && (
+            <Link href={`/${shop.slug}/checkout`} className="relative flex items-center gap-2 hover:opacity-80 transition-opacity p-2">
+              <ShoppingCart className="w-5 h-5 text-on-surface" />
+              {itemCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-primary text-on-primary text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white">
+                  {itemCount}
+                </span>
+              )}
+            </Link>
+          )}
         </div>
       </div>
     </header>

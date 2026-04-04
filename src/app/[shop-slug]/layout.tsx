@@ -29,7 +29,7 @@ export default async function ShopLayout({ children, params }: ShopLayoutProps) 
 
   // Fetch opening hours
   const { data: hours } = await supabase.from('opening_hours').select('*').eq('shop_id', shop.id)
-  const isCurrentlyOpen = isShopOpen(hours || [], shop.is_open)
+  const isCurrentlyOpen = isShopOpen(hours || [], shop.is_open, shop.manual_status_updated_at)
   
   return (
     <div className="min-h-screen bg-surface">
