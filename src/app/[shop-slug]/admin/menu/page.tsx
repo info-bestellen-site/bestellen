@@ -21,11 +21,12 @@ import { Modal } from '@/components/ui/Modal'
 import { ImageCropper } from '@/components/ui/ImageCropper'
 import {
   DndContext,
-  closestCenter,
+  closestCorners,
   KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
+  DragOverEvent,
   DragEndEvent,
 } from '@dnd-kit/core'
 import {
@@ -272,13 +273,71 @@ export default function MenuManagementPage({ params }: { params: Promise<{ 'shop
     }
   }
 
+  const handleDragOver = (event: DragOverEvent) => {
+    const { active, over } = event
+    if (!over) return
+
+    const activeId = active.id.toString()
+    const overId = over.id.toString()
+
+    const activeType = active.data.current?.type
+    const overType = over.data.current?.type
+
+    if (activeType === 'product') {
+      const activeProduct = products.find(p => p.id === activeId)
+      if (!activeProduct) return
+
+      const sourceCategoryId = activeProduct.category_id
+      let targetCategoryId: string | null = null
+
+      if (overType === 'category') {
+        targetCategoryId = overId
+      } else if (overType === 'product') {
+        const overProduct = products.find(p => p.id === overId)
+        targetCategoryId = overProduct?.category_id || null
+      }
+
+      if (targetCategoryId && sourceCategoryId !== targetCategoryId) {
+        setProducts((prev) => {
+          const activeIndex = prev.findIndex((p) => p.id === activeId)
+          const overIndex = prev.findIndex((p) => p.id === overId)
+
+          let newIndex: number
+          if (overType === 'category') {
+            newIndex = prev.length
+          } else {
+            const isBelowOverItem =
+              over &&
+              active.rect.current.translated &&
+              active.rect.current.translated.top >
+                over.rect.top + over.rect.height
+
+            const modifier = isBelowOverItem ? 1 : 0
+            newIndex = overIndex >= 0 ? overIndex + modifier : prev.length
+          }
+
+          const updatedProducts = [...prev]
+          updatedProducts[activeIndex] = {
+            ...updatedProducts[activeIndex],
+            category_id: targetCategoryId!
+          }
+          
+          return arrayMove(updatedProducts, activeIndex, newIndex)
+        })
+      }
+    }
+  }
+
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event
-    if (!over || active.id === over.id) return
+    if (!over) return
 
+    const activeId = active.id.toString()
+    const overId = over.id.toString()
     const type = active.data.current?.type
 
     if (type === 'category') {
+      if (active.id === over.id) return
       const oldIndex = categories.findIndex((c) => c.id === active.id)
       const newIndex = categories.findIndex((c) => c.id === over.id)
       
@@ -286,42 +345,41 @@ export default function MenuManagementPage({ params }: { params: Promise<{ 'shop
       setCategories(newCategories)
 
       // Persist to DB
-      const updates = newCategories.map((c, i) => ({
-        id: c.id,
-        sort_order: i
-      }))
-
-      for (const update of updates) {
+      for (let i = 0; i < newCategories.length; i++) {
         await supabase
           .from('categories')
-          .update({ sort_order: update.sort_order })
-          .eq('id', update.id)
+          .update({ sort_order: i })
+          .eq('id', newCategories[i].id)
       }
     } else if (type === 'product') {
-      const categoryId = active.data.current?.categoryId
-      const categoryProducts = products.filter(p => p.category_id === categoryId)
-      
-      const oldIndex = categoryProducts.findIndex((p) => p.id === active.id)
-      const newIndex = categoryProducts.findIndex((p) => p.id === over.id)
-      
-      const newCategoryProducts = arrayMove(categoryProducts, oldIndex, newIndex)
-      
-      // Update main products state
-      const otherProducts = products.filter(p => p.category_id !== categoryId)
-      const updatedProducts = [...otherProducts, ...newCategoryProducts]
-      setProducts(updatedProducts)
+      const activeIndex = products.findIndex((p) => p.id === activeId)
+      const overIndex = products.findIndex((p) => p.id === overId)
 
-      // Persist to DB
-      const updates = newCategoryProducts.map((p, i) => ({
-        id: p.id,
-        sort_order: i
-      }))
+      let newProducts = products
+      if (activeIndex !== overIndex) {
+        newProducts = arrayMove(products, activeIndex, overIndex)
+        setProducts(newProducts)
+      }
 
-      for (const update of updates) {
-        await supabase
-          .from('products')
-          .update({ sort_order: update.sort_order })
-          .eq('id', update.id)
+      // Re-calculate sort_order for ALL products within their respective categories
+      const categoryGroups: Record<string, Product[]> = {}
+      newProducts.forEach(p => {
+        if (!categoryGroups[p.category_id]) categoryGroups[p.category_id] = []
+        categoryGroups[p.category_id].push(p)
+      })
+
+      // Batch update category_id and sort_order
+      for (const catId in categoryGroups) {
+        const group = categoryGroups[catId]
+        for (let i = 0; i < group.length; i++) {
+          await supabase
+            .from('products')
+            .update({ 
+              category_id: catId,
+              sort_order: i 
+            })
+            .eq('id', group[i].id)
+        }
       }
     }
   }
@@ -358,7 +416,8 @@ export default function MenuManagementPage({ params }: { params: Promise<{ 'shop
 
         <DndContext 
           sensors={sensors}
-          collisionDetection={closestCenter}
+          collisionDetection={closestCorners}
+          onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
         >
           <SortableContext 
@@ -372,7 +431,7 @@ export default function MenuManagementPage({ params }: { params: Promise<{ 'shop
                     <div className="flex items-center justify-between mb-6 pb-4 border-b border-outline-variant/10">
                       <div className="flex items-center gap-4">
                         <div {...attributes} {...listeners} className="p-2 cursor-grab active:cursor-grabbing">
-                          <GripVertical className="w-5 h-5 text-on-surface-variant/20" />
+                          <GripVertical className="w-5 h-5 text-on-surface-variant/40" />
                         </div>
                         <h2 className="text-2xl font-black tracking-tight">{category.name}</h2>
                         <div className="w-6 h-6 rounded-full bg-surface-container-low flex items-center justify-center text-[10px] font-black text-on-surface-variant shrink-0">
@@ -387,15 +446,15 @@ export default function MenuManagementPage({ params }: { params: Promise<{ 'shop
                           <Plus className="w-3.5 h-3.5" />
                           <span className="hidden sm:inline">{t('product')}</span>
                         </button>
-                        <button 
+                         <button 
                           onClick={() => openEditCategoryModal(category)}
-                          className="p-2 sm:p-3 text-on-surface-variant/30 hover:text-primary hover:bg-primary/5 rounded-full transition-all"
+                          className="p-2 sm:p-3 text-on-surface-variant/50 hover:text-primary hover:bg-primary/5 rounded-full transition-all"
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
                         <button 
                           onClick={() => handleDeleteCategory(category.id)}
-                          className="p-2 sm:p-3 text-on-surface-variant/30 hover:text-error hover:bg-error/5 rounded-full transition-all"
+                          className="p-2 sm:p-3 text-on-surface-variant/50 hover:text-error hover:bg-error/5 rounded-full transition-all"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -411,7 +470,7 @@ export default function MenuManagementPage({ params }: { params: Promise<{ 'shop
                           <SortableItem key={product.id} id={product.id} data={{ type: 'product', categoryId: category.id }}>
                             {({ attributes, listeners }) => (
                               <div className={`flex items-center gap-3 sm:gap-6 p-3 sm:p-4 rounded-2xl sm:rounded-3xl border border-outline-variant/5 transition-all bg-white hover:border-outline-variant/20 hover:shadow-xl hover:shadow-primary/5 ${!product.is_available ? 'grayscale opacity-60' : ''}`}>
-                                <div {...attributes} {...listeners} className="p-2 cursor-grab active:cursor-grabbing text-on-surface-variant/10 hover:text-primary transition-colors">
+                                 <div {...attributes} {...listeners} className="p-2 cursor-grab active:cursor-grabbing text-on-surface-variant/40 hover:text-primary transition-colors">
                                   <GripVertical className="w-4 h-4" />
                                 </div>
                                 
@@ -455,9 +514,9 @@ export default function MenuManagementPage({ params }: { params: Promise<{ 'shop
                                   </div>
                                 </div>
 
-                                <button 
+                                 <button 
                                   onClick={() => handleDeleteProduct(product.id)}
-                                  className="p-2 sm:p-3 text-on-surface-variant/10 hover:text-error hover:bg-error/5 rounded-full transition-all shrink-0"
+                                  className="p-2 sm:p-3 text-on-surface-variant/40 hover:text-error hover:bg-error/5 rounded-full transition-all shrink-0"
                                 >
                                   <Trash2 className="w-4 h-4" />
                                 </button>
