@@ -135,7 +135,7 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
         .from('tables')
         .select('*')
         .eq('shop_id', (await supabase.from('shops').select('id').eq('slug', shopSlug).single()).data?.id || '')
-        .order('table_number')
+        .order('name')
       if (data) setTables(data)
     }
 
@@ -172,7 +172,7 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
       .from('tables')
       .insert({
         shop_id: shop.id,
-        table_number: newTable.number,
+        name: newTable.number,
         capacity: newTable.capacity
       })
       .select()
@@ -638,7 +638,7 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
                     <Trash2 className="w-4 h-4" />
                   </button>
                   <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/40 mb-1">{t('table')}</p>
-                  <p className="text-xl font-black mb-4">{table.table_number}</p>
+                  <p className="text-xl font-black mb-4">{table.name}</p>
                   <div className="flex items-center gap-1.5 pt-4 border-t border-outline-variant/5">
                     <Users className="w-3.5 h-3.5 text-primary" />
                     <span className="text-xs font-bold">{table.capacity} {t('places')}</span>

@@ -102,6 +102,7 @@ export type Database = {
           shop_id: string
           status: string
           subtotal: number
+          table_id: string | null
           table_number: string | null
           total: number
           updated_at: string
@@ -121,6 +122,7 @@ export type Database = {
           shop_id: string
           status?: string
           subtotal: number
+          table_id?: string | null
           table_number?: string | null
           total: number
           updated_at?: string
@@ -140,6 +142,7 @@ export type Database = {
           shop_id?: string
           status?: string
           subtotal?: number
+          table_id?: string | null
           table_number?: string | null
           total?: number
           updated_at?: string
@@ -195,21 +198,21 @@ export type Database = {
           created_at: string
           id: string
           shop_id: string
-          table_number: string
+          name: string
         }
         Insert: {
           capacity?: number
           created_at?: string
           id?: string
           shop_id: string
-          table_number: string
+          name: string
         }
         Update: {
           capacity?: number
           created_at?: string
           id?: string
           shop_id?: string
-          table_number?: string
+          name?: string
         }
         Relationships: [
           {

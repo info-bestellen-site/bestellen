@@ -1,11 +1,12 @@
 'use client'
 
 import { createClient } from '@/lib/supabase/client'
-import { CalendarDays, Loader2, User, Phone, Users, Clock, Plus, MonitorCheck, Save, UtensilsCrossed } from 'lucide-react'
+import { CalendarDays, Loader2, User, Phone, Users, Clock, Plus, MonitorCheck, Save, UtensilsCrossed, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useState, useEffect, use } from 'react'
-import { Shop, Order, OrderStatus } from '@/types/database'
+import { Shop, Order, OrderStatus, Table } from '@/types/database'
 import Link from 'next/link'
 import { useTranslation } from '@/lib/i18n/useTranslation'
+import { Modal } from '@/components/ui/Modal'
 
 interface ReservationPageProps {
   params: Promise<{ 'shop-slug': string }>
@@ -18,12 +19,16 @@ export default function ReservationsPage({ params }: ReservationPageProps) {
   const [shop, setShop] = useState<Shop | null>(null)
   const [loading, setLoading] = useState(true)
   const [reservations, setReservations] = useState<Order[]>([])
+  const [tables, setTables] = useState<Table[]>([])
+  const [selectedDate, setSelectedDate] = useState(new Date())
   
   // Manual Reservation Form State
   const [showForm, setShowForm] = useState(false)
   const [newResGuestCount, setNewResGuestCount] = useState(2)
   const [newResName, setNewResName] = useState('')
   const [newResTime, setNewResTime] = useState('')
+  const [newResDate, setNewResDate] = useState(new Date().toISOString().split('T')[0])
+  const [newResTableId, setNewResTableId] = useState<string>('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { t } = useTranslation()
 
@@ -37,24 +42,39 @@ export default function ReservationsPage({ params }: ReservationPageProps) {
       
       if (shopData) {
         setShop(shopData)
-        await loadReservations(shopData.id)
+        await Promise.all([
+          loadReservations(shopData.id, selectedDate),
+          loadTables(shopData.id)
+        ])
       }
       setLoading(false)
     }
 
     init()
-  }, [shopSlug, supabase])
+  }, [shopSlug, supabase, selectedDate])
 
-  const loadReservations = async (shopId: string) => {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
+  const loadTables = async (shopId: string) => {
+    const { data } = await supabase
+      .from('tables')
+      .select('*')
+      .eq('shop_id', shopId)
+      .order('name')
+    if (data) setTables(data)
+  }
+
+  const loadReservations = async (shopId: string, date: Date) => {
+    const startOfDay = new Date(date)
+    startOfDay.setHours(0, 0, 0, 0)
+    const endOfDay = new Date(date)
+    endOfDay.setHours(23, 59, 59, 999)
 
     const { data } = await supabase
       .from('orders')
       .select('*')
       .eq('shop_id', shopId)
       .eq('fulfillment_type', 'dine_in')
-      .gte('estimated_ready_at', today.toISOString())
+      .gte('estimated_ready_at', startOfDay.toISOString())
+      .lte('estimated_ready_at', endOfDay.toISOString())
       .order('estimated_ready_at', { ascending: true })
 
     if (data) {
@@ -64,13 +84,13 @@ export default function ReservationsPage({ params }: ReservationPageProps) {
 
   const handleCreateManualReservation = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!shop || !newResTime || !newResName) return
+    if (!shop || !newResTime || !newResName || !newResDate) return
 
     setIsSubmitting(true)
     
-    const today = new Date()
+    const targetDate = new Date(newResDate)
     const [hours, minutes] = newResTime.split(':')
-    today.setHours(parseInt(hours), parseInt(minutes), 0, 0)
+    targetDate.setHours(parseInt(hours), parseInt(minutes), 0, 0)
     
     const { error } = await supabase
       .from('orders')
@@ -83,9 +103,10 @@ export default function ReservationsPage({ params }: ReservationPageProps) {
         delivery_fee: 0,
         total: 0,
         notes: 'Manuelle Reservierung (System)',
-        estimated_ready_at: today.toISOString(),
+        estimated_ready_at: targetDate.toISOString(),
         guest_count: newResGuestCount,
-        status: 'pending' // pending keeps it active
+        table_id: newResTableId || null,
+        status: 'pending'
       })
 
     if (!error) {
@@ -93,7 +114,8 @@ export default function ReservationsPage({ params }: ReservationPageProps) {
       setNewResName('')
       setNewResTime('')
       setNewResGuestCount(2)
-      await loadReservations(shop.id)
+      setNewResTableId('')
+      await loadReservations(shop.id, selectedDate)
     } else {
       alert('Fehler beim Speichern der Reservierung.')
     }
@@ -112,6 +134,17 @@ export default function ReservationsPage({ params }: ReservationPageProps) {
     }
   }
 
+  const updateReservationTable = async (id: string, tableId: string | null) => {
+    const { error } = await supabase
+      .from('orders')
+      .update({ table_id: tableId })
+      .eq('id', id)
+      
+    if (!error) {
+      setReservations(prev => prev.map(r => r.id === id ? { ...r, table_id: tableId } : r))
+    }
+  }
+
   if (loading) return (
     <div className="flex h-screen items-center justify-center">
       <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -124,9 +157,41 @@ export default function ReservationsPage({ params }: ReservationPageProps) {
   return (
     <div className="p-4 sm:p-10 space-y-8 sm:space-y-10 max-w-6xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
-        <div>
+        <div className="flex-1">
           <h1 className="text-2xl sm:text-4xl font-black tracking-tight mb-2">{t('reservations')}</h1>
-          <p className="text-sm sm:text-lg text-on-surface-variant font-medium">{t('reservations_subtitle')}</p>
+          <p className="text-sm sm:text-lg text-on-surface-variant font-medium mb-6">{t('reservations_subtitle')}</p>
+          
+          <div className="inline-flex items-center gap-4 bg-surface-container-low p-2 rounded-2xl border border-outline-variant/10">
+            <button 
+              onClick={() => {
+                const d = new Date(selectedDate)
+                d.setDate(d.getDate() - 1)
+                setSelectedDate(d)
+              }}
+              className="p-2 hover:bg-surface-container-high rounded-xl transition-all"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <div className="flex items-center gap-2 px-2">
+              <CalendarDays className="w-5 h-5 text-primary" />
+              <input 
+                type="date" 
+                value={selectedDate.toISOString().split('T')[0]}
+                onChange={(e) => setSelectedDate(new Date(e.target.value))}
+                className="bg-transparent border-none font-black text-sm p-0 focus:ring-0 cursor-pointer"
+              />
+            </div>
+            <button 
+              onClick={() => {
+                const d = new Date(selectedDate)
+                d.setDate(d.getDate() + 1)
+                setSelectedDate(d)
+              }}
+              className="p-2 hover:bg-surface-container-high rounded-xl transition-all"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
         </div>
         <button 
           onClick={() => setShowForm(!showForm)}
@@ -139,10 +204,14 @@ export default function ReservationsPage({ params }: ReservationPageProps) {
       {showForm && (
         <form onSubmit={handleCreateManualReservation} className="bg-surface-container-low p-8 rounded-[2rem] border border-outline-variant/10 shadow-sm animate-[fadeIn_0.3s_ease] space-y-6 mb-10">
           <h2 className="text-xl font-bold">{t('manual_reservation_title')}</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div>
               <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2 ml-1">{t('name')}</label>
               <input required type="text" value={newResName} onChange={e => setNewResName(e.target.value)} className="w-full px-4 py-3 bg-white border-none focus:ring-2 focus:ring-primary/20 rounded-xl font-medium shadow-sm" placeholder="z.B. Müller" />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2 ml-1">{t('date')}</label>
+              <input required type="date" value={newResDate} onChange={e => setNewResDate(e.target.value)} className="w-full px-4 py-3 bg-white border-none focus:ring-2 focus:ring-primary/20 rounded-xl font-medium shadow-sm" />
             </div>
             <div>
               <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2 ml-1">{t('time')} (HH:MM)</label>
@@ -151,6 +220,19 @@ export default function ReservationsPage({ params }: ReservationPageProps) {
             <div>
               <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2 ml-1">{t('persons')}</label>
               <input required type="number" min="1" value={newResGuestCount} onChange={e => setNewResGuestCount(parseInt(e.target.value))} className="w-full px-4 py-3 bg-white border-none focus:ring-2 focus:ring-primary/20 rounded-xl font-black text-primary shadow-sm" />
+            </div>
+            <div className="md:col-span-4">
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2 ml-1">{t('assign_table')}</label>
+              <select 
+                value={newResTableId} 
+                onChange={e => setNewResTableId(e.target.value)}
+                className="w-full px-4 py-3 bg-white border-none focus:ring-2 focus:ring-primary/20 rounded-xl font-medium shadow-sm appearance-none"
+              >
+                <option value="">-- {t('unassigned')} --</option>
+                {tables.map(table => (
+                  <option key={table.id} value={table.id}>{table.name} ({table.capacity} {t('guests')})</option>
+                ))}
+              </select>
             </div>
           </div>
           <div className="flex justify-end pt-4">
@@ -198,23 +280,49 @@ export default function ReservationsPage({ params }: ReservationPageProps) {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3 mb-6 flex-1">
-                    <div className="bg-surface-container-low p-3 rounded-xl flex items-center gap-3">
-                      <Users className="w-5 h-5 text-primary" />
-                      <div className="flex flex-col">
-                        <span className="text-[10px] font-bold uppercase tracking-widest opacity-50">Gäste</span>
-                        <span className="font-black leading-none">{res.guest_count}</span>
-                      </div>
-                    </div>
-                    {hasOrderItems && (
-                      <div className="bg-success/10 text-success p-3 rounded-xl flex items-center gap-3">
-                        <UtensilsCrossed className="w-5 h-5" />
+                  <div className="grid grid-cols-1 gap-3 mb-6 flex-1">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-surface-container-low p-3 rounded-xl flex items-center gap-3">
+                        <Users className="w-5 h-5 text-primary" />
                         <div className="flex flex-col">
-                          <span className="text-[10px] font-bold uppercase tracking-widest opacity-50">{t('orders')}</span>
-                          <span className="font-black leading-none">{t('with_food')}</span>
+                          <span className="text-[10px] font-bold uppercase tracking-widest opacity-50">Gäste</span>
+                          <span className="font-black leading-none">{res.guest_count}</span>
                         </div>
                       </div>
-                    )}
+                      <div className="bg-surface-container-low p-3 rounded-xl flex items-center gap-3">
+                        <CalendarDays className="w-5 h-5 text-primary" />
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-bold uppercase tracking-widest opacity-50">{t('date')}</span>
+                          <span className="font-black leading-none text-[10px]">
+                            {new Date(res.estimated_ready_at!).toLocaleDateString('de-DE')}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-surface-container-low p-3 rounded-xl space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <UtensilsCrossed className="w-5 h-5 text-primary" />
+                          <div className="flex flex-col">
+                            <span className="text-[10px] font-bold uppercase tracking-widest opacity-50">{t('table')}</span>
+                            <span className="font-black leading-none">
+                              {tables.find(t => t.id === res.table_id)?.name || t('unassigned')}
+                            </span>
+                          </div>
+                        </div>
+                        <select 
+                          value={res.table_id || ''} 
+                          onChange={(e) => updateReservationTable(res.id, e.target.value || null)}
+                          className="text-[10px] font-bold bg-white border-outline-variant/10 rounded-lg px-2 py-1 focus:ring-primary/20"
+                        >
+                          <option value="">-- {t('assign_table')} --</option>
+                          {tables.map(table => (
+                            <option key={table.id} value={table.id}>{table.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="flex gap-2 mt-auto">

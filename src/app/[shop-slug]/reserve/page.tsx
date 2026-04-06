@@ -22,6 +22,7 @@ export default function ReservePage({ params }: ReservePageProps) {
   const [loading, setLoading] = useState(true)
   
   // Form State
+  const [selectedDate, setSelectedDate] = useState(new Date())
   const [guestCount, setGuestCount] = useState(2)
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null)
   const [name, setName] = useState('')
@@ -58,7 +59,7 @@ export default function ReservePage({ params }: ReservePageProps) {
 
   if (!shop) return <div>Shop nicht gefunden</div>
 
-  const availableSlots = getAvailableReservationSlots(hours, tables, existingOrders, guestCount)
+  const availableSlots = getAvailableReservationSlots(hours, tables, existingOrders, guestCount, selectedDate)
 
   const handleReserve = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -66,7 +67,7 @@ export default function ReservePage({ params }: ReservePageProps) {
 
     setIsSubmitting(true)
 
-    const targetDate = new Date()
+    const targetDate = new Date(selectedDate)
     const [h, m] = selectedSlot.split(':')
     targetDate.setHours(parseInt(h), parseInt(m), 0, 0)
 
@@ -132,10 +133,33 @@ export default function ReservePage({ params }: ReservePageProps) {
       <div className="max-w-2xl mx-auto px-6">
         <form onSubmit={handleReserve} className="space-y-10">
           
-          {/* Step 1: Guest Count */}
+          {/* Step 1: Date Selection */}
           <div className="bg-white p-8 rounded-[2rem] shadow-xl shadow-primary/5 border border-outline-variant/10">
             <h2 className="text-xl font-black tracking-tight mb-6 flex items-center gap-3">
               <span className="w-8 h-8 bg-primary/10 text-primary rounded-full flex items-center justify-center text-sm">1</span> 
+              Wann möchten Sie kommen?
+            </h2>
+            <div className="space-y-4">
+              <div className="relative">
+                <input 
+                  type="date" 
+                  min={new Date().toISOString().split('T')[0]}
+                  value={selectedDate.toISOString().split('T')[0]}
+                  onChange={(e) => {
+                    setSelectedDate(new Date(e.target.value))
+                    setSelectedSlot(null)
+                  }}
+                  className="w-full px-6 py-4 bg-surface-container-lowest border-2 border-outline-variant/10 rounded-2xl font-bold focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all appearance-none cursor-pointer"
+                />
+                <Calendar className="absolute right-6 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant/40 pointer-events-none" />
+              </div>
+            </div>
+          </div>
+
+          {/* Step 2: Guest Count */}
+          <div className="bg-white p-8 rounded-[2rem] shadow-xl shadow-primary/5 border border-outline-variant/10">
+            <h2 className="text-xl font-black tracking-tight mb-6 flex items-center gap-3">
+              <span className="w-8 h-8 bg-primary/10 text-primary rounded-full flex items-center justify-center text-sm">2</span> 
               Wie viele Personen?
             </h2>
             <div className="flex gap-4 overflow-x-auto pb-4 hide-scrollbar">
@@ -165,8 +189,8 @@ export default function ReservePage({ params }: ReservePageProps) {
           {/* Step 2: Time Selection */}
           <div className="bg-white p-8 rounded-[2rem] shadow-xl shadow-primary/5 border border-outline-variant/10">
             <h2 className="text-xl font-black tracking-tight mb-6 flex items-center gap-3">
-              <span className="w-8 h-8 bg-primary/10 text-primary rounded-full flex items-center justify-center text-sm">2</span> 
-              Wann möchten Sie kommen?
+              <span className="w-8 h-8 bg-primary/10 text-primary rounded-full flex items-center justify-center text-sm">3</span> 
+              Freie Uhrzeiten
             </h2>
             {availableSlots.length > 0 ? (
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
