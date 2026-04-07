@@ -59,8 +59,7 @@ export default function MenuManagementPage({ params }: { params: Promise<{ 'shop
     description: '',
     price: '',
     image_url: '',
-    preparation_time_minutes: '15',
-    parallel_capacity: '1'
+    preparation_time_minutes: '15'
   })
   const [isSaving, setIsSaving] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
@@ -165,8 +164,7 @@ export default function MenuManagementPage({ params }: { params: Promise<{ 'shop
       description: '', 
       price: '', 
       image_url: '',
-      preparation_time_minutes: '15',
-      parallel_capacity: '1'
+      preparation_time_minutes: '15'
     })
     setIsProductModalOpen(true)
   }
@@ -186,7 +184,6 @@ export default function MenuManagementPage({ params }: { params: Promise<{ 'shop
         price: parseFloat(newProduct.price) || 0,
         image_url: newProduct.image_url,
         preparation_time_minutes: parseInt(newProduct.preparation_time_minutes) || 15,
-        parallel_capacity: parseInt(newProduct.parallel_capacity) || 1,
         sort_order: products.filter(p => p.category_id === selectedCategoryId).length
       })
       .select()
@@ -603,7 +600,7 @@ export default function MenuManagementPage({ params }: { params: Promise<{ 'shop
               onChange={(e) => setNewProduct(prev => ({ ...prev, price: e.target.value }))}
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">{t('preparation_time')}</label>
               <input 
@@ -613,17 +610,6 @@ export default function MenuManagementPage({ params }: { params: Promise<{ 'shop
                 placeholder={t('prep_time_placeholder')}
                 value={newProduct.preparation_time_minutes}
                 onChange={(e) => setNewProduct(prev => ({ ...prev, preparation_time_minutes: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">{t('parallel_capacity')}</label>
-              <input 
-                type="number" 
-                required
-                className="w-full px-6 py-4 rounded-2xl bg-surface-container-low border-none focus:ring-2 focus:ring-primary/20 text-sm font-bold"
-                placeholder={t('capacity_placeholder')}
-                value={newProduct.parallel_capacity}
-                onChange={(e) => setNewProduct(prev => ({ ...prev, parallel_capacity: e.target.value }))}
               />
             </div>
           </div>

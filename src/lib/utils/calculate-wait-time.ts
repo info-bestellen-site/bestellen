@@ -1,16 +1,14 @@
 export function calculateWaitTime(
   activeOrders: number,
-  items: { product: { preparation_time_minutes: number; parallel_capacity: number }; quantity: number }[]
+  items: { product: { preparation_time_minutes: number }; quantity: number }[]
 ): number {
   if (items.length === 0) return 0
 
-  // Calculate prep time for each item type, considering parallel capacity
+  // Calculate prep time for each item type
   const itemPrepTimes = items.map(item => {
     // Default to 5 minutes if no prep time is set
     const baseTime = item.product.preparation_time_minutes || 5
-    const capacity = item.product.parallel_capacity || 1
-    const batches = Math.ceil(item.quantity / capacity)
-    return baseTime * batches
+    return baseTime * item.quantity
   })
 
   // Start with the longest item time

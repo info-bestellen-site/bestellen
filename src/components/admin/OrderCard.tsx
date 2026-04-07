@@ -54,8 +54,7 @@ export function OrderCard({ order, onStatusChange, activeOrdersCount = 0 }: Orde
   const basePrepTime = useMemo(() => {
     const itemsData = order.order_items.map(item => ({
       product: {
-        preparation_time_minutes: (item as any).product?.preparation_time_minutes || 15,
-        parallel_capacity: (item as any).product?.parallel_capacity || 1
+        preparation_time_minutes: (item as any).product?.preparation_time_minutes || 15
       },
       quantity: item.quantity
     }))

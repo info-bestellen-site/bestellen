@@ -237,7 +237,6 @@ export type Database = {
           price: number
           shop_id: string
           preparation_time_minutes: number
-          parallel_capacity: number
           sort_order: number
           updated_at: string
         }
@@ -250,7 +249,6 @@ export type Database = {
           image_url?: string | null
           is_available?: boolean
           name: string
-          parallel_capacity?: number
           preparation_time_minutes?: number
           price: number
           shop_id: string
@@ -266,7 +264,6 @@ export type Database = {
           image_url?: string | null
           is_available?: boolean
           name?: string
-          parallel_capacity?: number
           preparation_time_minutes?: number
           price?: number
           shop_id?: string
