@@ -144,7 +144,7 @@ export default function ReservePage({ params }: ReservePageProps) {
                 <input 
                   type="date" 
                   min={new Date().toISOString().split('T')[0]}
-                  value={selectedDate.toISOString().split('T')[0]}
+                  value={(!selectedDate || isNaN(selectedDate.getTime())) ? '' : selectedDate.toISOString().split('T')[0]}
                   onChange={(e) => {
                     setSelectedDate(new Date(e.target.value))
                     setSelectedSlot(null)

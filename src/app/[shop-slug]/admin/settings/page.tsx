@@ -622,7 +622,7 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
                   onClick={handleAddTable}
                   className="px-6 bg-primary text-on-primary rounded-xl font-bold text-sm hover:scale-105 transition-transform"
                 >
-                  {t('add_category').split(' ')[0]} {/* Needs a better key, but reuse for now */}
+                  Hinzufügen
                 </button>
               </div>
             </div>
