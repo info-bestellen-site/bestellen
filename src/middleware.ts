@@ -34,8 +34,14 @@ export async function middleware(request: NextRequest) {
 
   // Protect admin routes
   const isAdminRoute = request.nextUrl.pathname.includes('/admin')
+  const isDemoAdminRoute = request.nextUrl.pathname.includes('/demo-admin')
   const isOnboardingRoute = request.nextUrl.pathname.startsWith('/onboarding')
   const isAuthRoute = request.nextUrl.pathname.startsWith('/auth')
+
+  // Special case: Allow demo admin for sakura-sushi
+  if (isDemoAdminRoute && request.nextUrl.pathname.startsWith('/sakura-sushi/demo-admin')) {
+    return supabaseResponse
+  }
 
   // Protect admin routes — redirect to /auth/login if not logged in
   if (isAdminRoute && !user) {

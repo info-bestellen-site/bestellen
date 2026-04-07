@@ -121,8 +121,8 @@ export function ShopHeader({ shop, isCurrentlyOpen }: { shop: Shop, isCurrentlyO
           <Link
             href={`/${shop.slug}`}
             className={`text-sm font-black uppercase tracking-widest px-4 py-2 rounded-full transition-all ${pathname === `/${shop.slug}`
-                ? 'bg-primary text-on-primary shadow-lg shadow-primary/20'
-                : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low'
+              ? 'bg-primary text-on-primary shadow-lg shadow-primary/20'
+              : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low'
               }`}
           >
             Speisekarte
@@ -131,8 +131,8 @@ export function ShopHeader({ shop, isCurrentlyOpen }: { shop: Shop, isCurrentlyO
             <Link
               href={`/${shop.slug}/reserve`}
               className={`text-sm font-black uppercase tracking-widest px-4 py-2 rounded-full transition-all flex items-center gap-2 ${pathname === `/${shop.slug}/reserve`
-                  ? 'bg-primary text-on-primary shadow-lg shadow-primary/20'
-                  : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low'
+                ? 'bg-primary text-on-primary shadow-lg shadow-primary/20'
+                : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low'
                 }`}
             >
               <Store className="w-4 h-4" /> Tisch reservieren
@@ -144,8 +144,8 @@ export function ShopHeader({ shop, isCurrentlyOpen }: { shop: Shop, isCurrentlyO
           {isOwner && (
             <>
               <div className={`flex items-center gap-2 px-3 py-2 rounded-full border border-outline-variant/10 shadow-sm transition-all ${isOpen
-                  ? 'bg-success/5 text-success'
-                  : 'bg-error/5 text-error'
+                ? 'bg-success/5 text-success'
+                : 'bg-error/5 text-error'
                 }`}>
                 <div className={`w-2 h-2 rounded-full ${isOpen ? 'bg-success animate-pulse' : 'bg-error'}`} />
                 <span className="text-[10px] font-black uppercase tracking-[0.15em]">
