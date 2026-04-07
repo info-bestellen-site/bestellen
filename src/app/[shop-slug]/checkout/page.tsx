@@ -33,6 +33,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
   const [loading, setLoading] = useState(true)
   const [orderLoading, setOrderLoading] = useState(false)
   const [activeOrders, setActiveOrders] = useState(0)
+  const [isAdmin, setIsAdmin] = useState(false)
 
   // Form state
   const [fulfillmentType, setFulfillmentType] = useState<FulfillmentType>('pickup')
@@ -40,6 +41,10 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
   const [customerPhone, setCustomerPhone] = useState('')
   const [deliveryAddress, setDeliveryAddress] = useState('')
   const [notes, setNotes] = useState('')
+
+  // Admin specific form state
+  const [adminFulfillment, setAdminFulfillment] = useState<'terminal' | 'table'>('terminal')
+  const [adminSelectedTable, setAdminSelectedTable] = useState<string>('')
   
   // Booking State
   const [openingHours, setOpeningHours] = useState<OpeningHour[]>([])
@@ -58,6 +63,11 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
       
       if (shopData) {
         setShop(shopData)
+
+        // Check if user is admin
+        const { data: { user } } = await supabase.auth.getUser()
+        const isOwner = user?.id === shopData.owner_id
+        setIsAdmin(isOwner)
         
         let defaultType: FulfillmentType = 'pickup'
         if (shopData.has_pickup) defaultType = 'pickup'
@@ -144,19 +154,21 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
         .from('orders')
         .insert({
           shop_id: shop.id,
-          customer_name: customerName,
-          customer_phone: customerPhone,
-          delivery_address: fulfillmentType === 'delivery' ? deliveryAddress : null,
-          table_number: null, // Table assigned by restaurant on arrival
-          fulfillment_type: fulfillmentType,
+          customer_name: isAdmin ? 'Admin' : customerName,
+          customer_phone: isAdmin ? (shop.phone || 'Admin') : customerPhone,
+          delivery_address: (!isAdmin && fulfillmentType === 'delivery') ? deliveryAddress : null,
+          table_number: (isAdmin && adminFulfillment === 'table') ? adminSelectedTable : null,
+          fulfillment_type: isAdmin 
+            ? (adminFulfillment === 'table' ? 'dine_in' : 'pickup')
+            : fulfillmentType,
           subtotal,
-          delivery_fee: deliveryFee,
-          total,
+          delivery_fee: isAdmin ? 0 : deliveryFee,
+          total: isAdmin ? subtotal : total,
           notes,
-          estimated_ready_at: (fulfillmentType === 'dine_in' && selectedSlot)
+          estimated_ready_at: (!isAdmin && fulfillmentType === 'dine_in' && selectedSlot)
             ? new Date(new Date().setHours(parseInt(selectedSlot.split(':')[0]), 0, 0, 0)).toISOString()
             : new Date(Date.now() + waitTime * 60000).toISOString(),
-          guest_count: fulfillmentType === 'dine_in' ? guestCount : null,
+          guest_count: (!isAdmin && fulfillmentType === 'dine_in') ? guestCount : null,
           status: 'pending'
         })
         .select()
@@ -247,33 +259,99 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
           </div>
         </div>
 
-        {/* Fulfillment Selection */}
-        <div className="bg-white rounded-2xl p-6 border border-outline-variant/10 shadow-sm">
-          <h3 className="text-sm font-bold uppercase tracking-widest text-on-surface-variant mb-4">Wie möchtest du bestellen?</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {[
-              ...(shop?.has_pickup ? [{ id: 'pickup', label: 'Abholung', icon: Store }] : []),
-              ...(shop?.has_delivery ? [{ id: 'delivery', label: 'Lieferung', icon: Truck }] : []),
-              ...(shop?.has_dine_in ? [{ id: 'dine_in', label: 'Vor Ort', icon: Utensils }] : []),
-            ].filter(type => type.id !== 'dine_in').map((type) => (
+        {/* Fulfillment Selection (Regular Customer) */}
+        {!isAdmin && (
+          <div className="bg-white rounded-2xl p-6 border border-outline-variant/10 shadow-sm">
+            <h3 className="text-sm font-bold uppercase tracking-widest text-on-surface-variant mb-4">Wie möchtest du bestellen?</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {[
+                ...(shop?.has_pickup ? [{ id: 'pickup', label: 'Abholung', icon: Store }] : []),
+                ...(shop?.has_delivery ? [{ id: 'delivery', label: 'Lieferung', icon: Truck }] : []),
+                ...(shop?.has_dine_in ? [{ id: 'dine_in', label: 'Vor Ort', icon: Utensils }] : []),
+              ].filter(type => type.id !== 'dine_in').map((type) => (
+                <button
+                  key={type.id}
+                  onClick={() => setFulfillmentType(type.id as FulfillmentType)}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                    fulfillmentType === type.id 
+                      ? 'border-primary bg-primary/5 text-primary' 
+                      : 'border-transparent bg-surface-container-low text-on-surface-variant grayscale opacity-60'
+                  }`}
+                >
+                  <type.icon className="w-5 h-5" />
+                  <span className="text-[10px] font-bold uppercase tracking-wide">{type.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Admin Specific Selection */}
+        {isAdmin && (
+          <div className="bg-white rounded-[2rem] p-8 border border-primary/20 shadow-xl shadow-primary/5 animate-[fadeIn_0.3s_ease] space-y-8">
+            <div>
+              <div className="flex items-center gap-2 text-primary mb-2">
+                <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                <h3 className="text-sm font-black uppercase tracking-widest">Admin-Modus: Schnellbestellung</h3>
+              </div>
+              <p className="text-xs text-on-surface-variant font-medium">Wähle die Art der Bereitstellung für diese Bestellung.</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
               <button
-                key={type.id}
-                onClick={() => setFulfillmentType(type.id as FulfillmentType)}
-                className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
-                  fulfillmentType === type.id 
+                type="button"
+                onClick={() => setAdminFulfillment('terminal')}
+                className={`flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all ${
+                  adminFulfillment === 'terminal' 
                     ? 'border-primary bg-primary/5 text-primary' 
-                    : 'border-transparent bg-surface-container-low text-on-surface-variant grayscale opacity-60'
+                    : 'border-outline-variant/10 bg-surface-container-low text-on-surface-variant/40'
                 }`}
               >
-                <type.icon className="w-5 h-5" />
-                <span className="text-[10px] font-bold uppercase tracking-wide">{type.label}</span>
+                <div className={`p-3 rounded-xl ${adminFulfillment === 'terminal' ? 'bg-primary text-on-primary' : 'bg-white text-on-surface-variant/20'}`}>
+                  <Store className="w-6 h-6" />
+                </div>
+                <span className="text-xs font-black uppercase tracking-widest">Abholung Terminal</span>
               </button>
-            ))}
+
+              <button
+                type="button"
+                onClick={() => setAdminFulfillment('table')}
+                className={`flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all ${
+                  adminFulfillment === 'table' 
+                    ? 'border-primary bg-primary/5 text-primary' 
+                    : 'border-outline-variant/10 bg-surface-container-low text-on-surface-variant/40'
+                }`}
+              >
+                <div className={`p-3 rounded-xl ${adminFulfillment === 'table' ? 'bg-primary text-on-primary' : 'bg-white text-on-surface-variant/20'}`}>
+                  <Utensils className="w-6 h-6" />
+                </div>
+                <span className="text-xs font-black uppercase tracking-widest">Lieferung am Tisch</span>
+              </button>
+            </div>
+
+            {adminFulfillment === 'table' && (
+              <div className="animate-[fadeIn_0.2s_ease]">
+                <label className="block text-[10px] font-black uppercase tracking-widest text-on-surface-variant mb-2 ml-1">Tisch Auswählen</label>
+                <select
+                  required
+                  value={adminSelectedTable}
+                  onChange={(e) => setAdminSelectedTable(e.target.value)}
+                  className="w-full px-6 py-4 bg-surface-container-low border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-primary/20"
+                >
+                  <option value="">-- Tisch wählen --</option>
+                  {tables.map(table => (
+                    <option key={table.id} value={table.name}>
+                      Tisch {table.name} ({table.capacity} Personen)
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
-        </div>
+        )}
 
         {/* Time Slot Selection */}
-        {fulfillmentType === 'dine_in' && (
+        {fulfillmentType === 'dine_in' && !isAdmin && (
           <div className="bg-white rounded-2xl p-6 border border-outline-variant/10 shadow-sm animate-[fadeIn_0.3s_ease]">
             <div className="flex items-center gap-3 mb-4">
               <Clock className="w-4 h-4 text-primary" />
@@ -307,7 +385,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
         )}
 
         {/* Guest Count (Dine In only) */}
-        {fulfillmentType === 'dine_in' && (
+        {fulfillmentType === 'dine_in' && !isAdmin && (
           <div className="bg-white rounded-2xl p-6 border border-outline-variant/10 shadow-sm animate-[fadeIn_0.3s_ease]">
             <div className="flex items-center justify-between">
               <div>
@@ -338,45 +416,51 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
 
         {/* Checkout Form */}
         <form onSubmit={handlePlaceOrder} className="bg-white rounded-2xl p-6 border border-outline-variant/10 shadow-sm space-y-4">
-          <h3 className="text-sm font-bold uppercase tracking-widest text-on-surface-variant mb-2">Deine Daten</h3>
+          <h3 className="text-sm font-bold uppercase tracking-widest text-on-surface-variant mb-2">
+            {isAdmin ? 'Optionale Anmerkungen' : 'Deine Daten'}
+          </h3>
           
           <div className="space-y-4">
-            <div>
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5 ml-1">Vollständiger Name</label>
-              <input 
-                required
-                type="text" 
-                value={customerName}
-                onChange={e => setCustomerName(e.target.value)}
-                placeholder="z.B. Max Mustermann"
-                className="w-full px-4 py-3 bg-surface-container-low border-none rounded-xl text-sm focus:ring-2 focus:ring-primary/10"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5 ml-1">Telefonnummer</label>
-              <input 
-                required
-                type="tel" 
-                value={customerPhone}
-                onChange={e => setCustomerPhone(e.target.value)}
-                placeholder="Für Rückfragen bei der Bestellung"
-                className="w-full px-4 py-3 bg-surface-container-low border-none rounded-xl text-sm focus:ring-2 focus:ring-primary/10"
-              />
-            </div>
+            {!isAdmin && (
+              <>
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5 ml-1">Vollständiger Name</label>
+                  <input 
+                    required
+                    type="text" 
+                    value={customerName}
+                    onChange={e => setCustomerName(e.target.value)}
+                    placeholder="z.B. Max Mustermann"
+                    className="w-full px-4 py-3 bg-surface-container-low border-none rounded-xl text-sm focus:ring-2 focus:ring-primary/10"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5 ml-1">Telefonnummer</label>
+                  <input 
+                    required
+                    type="tel" 
+                    value={customerPhone}
+                    onChange={e => setCustomerPhone(e.target.value)}
+                    placeholder="Für Rückfragen bei der Bestellung"
+                    className="w-full px-4 py-3 bg-surface-container-low border-none rounded-xl text-sm focus:ring-2 focus:ring-primary/10"
+                  />
+                </div>
 
-            {fulfillmentType === 'delivery' && (
-              <div className="animate-[fadeIn_0.3s_ease]">
-                <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5 ml-1">Lieferadresse</label>
-                <textarea 
-                  required
-                  rows={3}
-                  value={deliveryAddress}
-                  onChange={e => setDeliveryAddress(e.target.value)}
-                  placeholder="Strasse, Hausnummer, PLZ, Ort"
-                  className="w-full px-4 py-3 bg-surface-container-low border-none rounded-xl text-sm focus:ring-2 focus:ring-primary/10 resize-none"
-                />
-              </div>
+                {fulfillmentType === 'delivery' && (
+                  <div className="animate-[fadeIn_0.3s_ease]">
+                    <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5 ml-1">Lieferadresse</label>
+                    <textarea 
+                      required
+                      rows={3}
+                      value={deliveryAddress}
+                      onChange={e => setDeliveryAddress(e.target.value)}
+                      placeholder="Strasse, Hausnummer, PLZ, Ort"
+                      className="w-full px-4 py-3 bg-surface-container-low border-none rounded-xl text-sm focus:ring-2 focus:ring-primary/10 resize-none"
+                    />
+                  </div>
+                )}
+              </>
             )}
 
 

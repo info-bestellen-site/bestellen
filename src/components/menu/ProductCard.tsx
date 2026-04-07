@@ -16,6 +16,7 @@ interface ProductCardProps {
   shopSlug: string
   onOpenDetail: (product: Product) => void
   isAdmin?: boolean
+  isManagementMode?: boolean
   isCurrentlyOpen?: boolean
 }
 
@@ -24,6 +25,7 @@ export function ProductCard({
   shopSlug, 
   onOpenDetail,
   isAdmin = false,
+  isManagementMode = false,
   isCurrentlyOpen = true 
 }: ProductCardProps) {
   const supabase = createClient()
@@ -162,7 +164,7 @@ export function ProductCard({
           </div>
         )}
 
-        {isAdmin ? (
+        {isManagementMode && isAdmin ? (
           <div className="absolute inset-0 bg-primary/10 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
             <button
               onClick={(e) => {
