@@ -1,4 +1,5 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type TestInfo } from '@playwright/test';
+import { createClient } from '@supabase/supabase-js';
 
 /**
  * FULL LIFECYCLE E2E TEST
@@ -18,6 +19,26 @@ test.describe('Full Shop Lifecycle', () => {
   const testPassword = 'Password123!';
   const shopName = `Test Restaurant ${timestamp}`;
   const shopSlug = `test-res-${timestamp}`;
+  
+  // Initialize Supabase client for cleanup (using static keys for test runner consistency)
+  const supabase = createClient(
+    'https://udjcoctehnyvgbkuehut.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkamNvY3RlaG55dmdia3VlaHV0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5NTQzNTQsImV4cCI6MjA5MDUzMDM1NH0.sf_uf11H2B-__CONT1NeaQ8sgL-7vHHMigd2T8BnWLQ'
+  );
+
+  test.afterEach(async ({}, testInfo: TestInfo) => {
+    if (testInfo.status === 'passed') {
+      console.log(`\n--- CLEANUP: Test passed. Deleting test data for ${shopSlug}... ---`);
+      const { error } = await supabase.rpc('cleanup_test_data', { p_shop_slug: shopSlug });
+      if (error) {
+        console.error('Cleanup RPC failed:', error.message);
+      } else {
+        console.log('Cleanup successful.');
+      }
+    } else {
+      console.log(`\n--- CLEANUP SKIPPED: Test status is ${testInfo.status}. Keeping ${shopSlug} for debugging. ---`);
+    }
+  });
 
   test('should complete the entire shop lifecycle', async ({ page, browser }) => {
     console.log(`Starting test with email: ${testEmail}`);
