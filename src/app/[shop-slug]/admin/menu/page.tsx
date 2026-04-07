@@ -61,6 +61,7 @@ export default function MenuManagementPage({ params }: { params: Promise<{ 'shop
     image_url: '',
     preparation_time_minutes: '15'
   })
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [imageToCrop, setImageToCrop] = useState<string | null>(null)
@@ -158,6 +159,7 @@ export default function MenuManagementPage({ params }: { params: Promise<{ 'shop
   }
 
   const openProductModal = (categoryId: string) => {
+    setEditingProduct(null)
     setSelectedCategoryId(categoryId)
     setNewProduct({ 
       name: '', 
@@ -169,29 +171,61 @@ export default function MenuManagementPage({ params }: { params: Promise<{ 'shop
     setIsProductModalOpen(true)
   }
 
+  const openEditProductModal = (product: Product) => {
+    setEditingProduct(product)
+    setSelectedCategoryId(product.category_id)
+    setNewProduct({
+      name: product.name,
+      description: product.description || '',
+      price: product.price.toString(),
+      image_url: product.image_url || '',
+      preparation_time_minutes: product.preparation_time_minutes.toString()
+    })
+    setIsProductModalOpen(true)
+  }
+
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!shopId || !selectedCategoryId || !newProduct.name.trim()) return
     setIsSaving(true)
 
-    const { data } = await supabase
-      .from('products')
-      .insert({
-        shop_id: shopId,
-        category_id: selectedCategoryId,
-        name: newProduct.name.trim(),
-        description: newProduct.description.trim(),
-        price: parseFloat(newProduct.price) || 0,
-        image_url: newProduct.image_url,
-        preparation_time_minutes: parseInt(newProduct.preparation_time_minutes) || 15,
-        sort_order: products.filter(p => p.category_id === selectedCategoryId).length
-      })
-      .select()
-      .single()
-    
-    if (data) {
-      setProducts([...products, data])
-      setIsProductModalOpen(false)
+    const productData = {
+      shop_id: shopId,
+      category_id: selectedCategoryId,
+      name: newProduct.name.trim(),
+      description: newProduct.description.trim(),
+      price: parseFloat(newProduct.price) || 0,
+      image_url: newProduct.image_url,
+      preparation_time_minutes: parseInt(newProduct.preparation_time_minutes) || 15,
+    }
+
+    if (editingProduct) {
+      const { data } = await supabase
+        .from('products')
+        .update(productData)
+        .eq('id', editingProduct.id)
+        .select()
+        .single()
+      
+      if (data) {
+        setProducts(products.map(p => p.id === data.id ? data : p))
+        setIsProductModalOpen(false)
+        setEditingProduct(null)
+      }
+    } else {
+      const { data } = await supabase
+        .from('products')
+        .insert({
+          ...productData,
+          sort_order: products.filter(p => p.category_id === selectedCategoryId).length
+        })
+        .select()
+        .single()
+      
+      if (data) {
+        setProducts([...products, data])
+        setIsProductModalOpen(false)
+      }
     }
     setIsSaving(false)
   }
@@ -241,7 +275,7 @@ export default function MenuManagementPage({ params }: { params: Promise<{ 'shop
         }
         setSelectedProductForImage(null)
       } else {
-        // Update state for new product modal
+        // Update state for product modal
         setNewProduct(prev => ({ ...prev, image_url: publicUrl }))
       }
     } catch (error) {
@@ -497,26 +531,34 @@ export default function MenuManagementPage({ params }: { params: Promise<{ 'shop
                                     <p className="text-xs text-on-surface-variant font-medium line-clamp-1 mt-0.5">{product.description}</p>
                                   )}
                                   <div className="flex items-center gap-4 mt-3">
-                                    <button 
-                                      onClick={() => toggleAvailability(product)}
-                                      className={`text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all ${
-                                        product.is_available 
-                                          ? 'bg-success/5 text-success' 
-                                          : 'bg-error/5 text-error'
-                                      }`}
-                                    >
-                                      <div className={`w-1.5 h-1.5 rounded-full ${product.is_available ? 'bg-success animate-pulse' : 'bg-error'}`} />
-                                      {product.is_available ? t('available') : t('sold_out')}
-                                    </button>
+                                      <button 
+                                        onClick={() => toggleAvailability(product)}
+                                        className={`text-xs font-black uppercase tracking-widest flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
+                                          product.is_available 
+                                            ? 'bg-success/5 text-success' 
+                                            : 'bg-error/5 text-error'
+                                        }`}
+                                      >
+                                        <div className={`w-2 h-2 rounded-full ${product.is_available ? 'bg-success animate-pulse' : 'bg-error'}`} />
+                                        {product.is_available ? t('available') : t('sold_out')}
+                                      </button>
                                   </div>
                                 </div>
 
-                                 <button 
-                                  onClick={() => handleDeleteProduct(product.id)}
-                                  className="p-2 sm:p-3 text-on-surface-variant/40 hover:text-error hover:bg-error/5 rounded-full transition-all shrink-0"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
+                                  <div className="flex items-center gap-1">
+                                    <button 
+                                      onClick={() => openEditProductModal(product)}
+                                      className="p-2 sm:p-3 text-on-surface-variant/40 hover:text-primary hover:bg-primary/5 rounded-full transition-all shrink-0"
+                                    >
+                                      <Edit2 className="w-4 h-4" />
+                                    </button>
+                                    <button 
+                                      onClick={() => handleDeleteProduct(product.id)}
+                                      className="p-2 sm:p-3 text-on-surface-variant/40 hover:text-error hover:bg-error/5 rounded-full transition-all shrink-0"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </div>
                               </div>
                             )}
                           </SortableItem>
@@ -564,7 +606,7 @@ export default function MenuManagementPage({ params }: { params: Promise<{ 'shop
       <Modal 
         isOpen={isProductModalOpen} 
         onClose={() => setIsProductModalOpen(false)} 
-        title={t('new_product')}
+        title={editingProduct ? t('edit_product') : t('new_product')}
       >
         <form onSubmit={handleSaveProduct} className="space-y-6">
           <div className="space-y-2">
@@ -643,7 +685,7 @@ export default function MenuManagementPage({ params }: { params: Promise<{ 'shop
             disabled={isSaving}
             className="w-full py-4 bg-primary text-on-primary rounded-full font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/10 active:scale-95 transition-all disabled:opacity-50"
           >
-            {isSaving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : t('save_product')}
+            {isSaving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : (editingProduct ? t('update_product') : t('save_product'))}
           </button>
         </form>
       </Modal>

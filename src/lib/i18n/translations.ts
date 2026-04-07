@@ -188,6 +188,8 @@ export const translations: Record<Language, Record<string, string>> = {
     status_update_failed: 'Status konnte nicht geändert werden.',
     trending: 'Trending',
     admin: 'Admin',
+    to_admin: 'Zu Admin',
+    to_shop: 'Zu Shop',
   },
   en: {
     dashboard: 'Dashboard',
@@ -357,6 +359,8 @@ export const translations: Record<Language, Record<string, string>> = {
     status_update_failed: 'Status update failed.',
     trending: 'Trending',
     admin: 'Admin',
+    to_admin: 'To Admin',
+    to_shop: 'To Shop',
   },
   it: {
     dashboard: 'Pannello di controllo',

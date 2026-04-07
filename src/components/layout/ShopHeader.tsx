@@ -101,10 +101,18 @@ export function ShopHeader({ shop, isCurrentlyOpen }: { shop: Shop, isCurrentlyO
 
           {isOwner && (
             <Link
-              href={`/${shop.slug}/admin`}
+              href={pathname.includes('/admin') ? `/${shop.slug}` : `/${shop.slug}/admin`}
               className="px-4 py-2 bg-surface-container-low hover:bg-surface-container-high rounded-full text-on-surface-variant hover:text-primary transition-all flex items-center gap-2 text-xs font-bold"
             >
-              <Settings className="w-4 h-4" /> Admin
+              {pathname.includes('/admin') ? (
+                <>
+                  <Store className="w-4 h-4" /> {t('to_shop')}
+                </>
+              ) : (
+                <>
+                  <Settings className="w-4 h-4" /> {t('to_admin')}
+                </>
+              )}
             </Link>
           )}
         </div>

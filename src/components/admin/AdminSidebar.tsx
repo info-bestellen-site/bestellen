@@ -97,14 +97,6 @@ export function AdminSidebar({
         </div>
 
         <div className="mt-auto p-8 border-t border-outline-variant/5 space-y-4">
-          <Link
-            href={`/${shopSlug}`}
-            target="_blank"
-            className="flex items-center justify-between gap-3 px-4 py-3 rounded-2xl text-xs font-bold text-on-surface-variant bg-surface-container-low hover:bg-surface-container-high transition-all"
-          >
-            <span>{t('view_shop')}</span>
-            <ExternalLink className="w-3.5 h-3.5 opacity-40" />
-          </Link>
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl text-sm font-bold text-error border border-transparent hover:border-error/10 hover:bg-error/5 transition-all"
