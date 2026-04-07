@@ -335,20 +335,6 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
           </div>
         )}
 
-        {/* Wait Time Info (For Pickup and Delivery) */}
-        {(fulfillmentType === 'delivery' || fulfillmentType === 'pickup') && (
-          <div className="flex items-center gap-4 p-4 bg-primary/5 border border-primary/10 rounded-xl">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-              <Clock className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <p className="text-xs text-primary/60 font-medium leading-none mb-1">
-                {fulfillmentType === 'delivery' ? 'Voraussichtliche Lieferzeit' : 'Voraussichtliche Abholzeit'}
-              </p>
-              <p className="text-sm font-bold text-primary">{formatWaitTime(waitTime)}</p>
-            </div>
-          </div>
-        )}
 
         {/* Checkout Form */}
         <form onSubmit={handlePlaceOrder} className="bg-white rounded-2xl p-6 border border-outline-variant/10 shadow-sm space-y-4">

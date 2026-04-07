@@ -1,5 +1,5 @@
 export function calculateWaitTime(
-  activeOrders: number, 
+  activeOrders: number,
   items: { product: { preparation_time_minutes: number; parallel_capacity: number }; quantity: number }[]
 ): number {
   if (items.length === 0) return 0
@@ -15,10 +15,10 @@ export function calculateWaitTime(
 
   // Start with the longest item time
   const maxPrepTime = Math.max(...itemPrepTimes)
-  
+
   // Add 1 minute per active order as a realistic delay
   const overhead = activeOrders * 1
-  
+
   return maxPrepTime + overhead
 }
 

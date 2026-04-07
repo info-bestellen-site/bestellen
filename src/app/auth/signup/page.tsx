@@ -1,11 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { ChefHat, Mail, Lock, Loader2, CheckCircle2 } from 'lucide-react'
 
 export default function SignupPage() {
+  const router = useRouter()
   const supabase = createClient()
   
   const [email, setEmail] = useState('')
@@ -35,6 +37,7 @@ export default function SignupPage() {
 
     setSuccess(true)
     setLoading(false)
+    router.push('/onboarding')
   }
 
   if (success) {

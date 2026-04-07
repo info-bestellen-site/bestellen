@@ -7,6 +7,7 @@ import { differenceInMinutes } from 'date-fns'
 import { de } from 'date-fns/locale'
 import { useEffect, useState, useMemo } from 'react'
 import { calculateWaitTime } from '@/lib/utils/calculate-wait-time'
+import { useTranslation } from '@/lib/i18n/useTranslation'
 
 interface OrderCardProps {
   order: Order & { order_items: OrderItem[] }
@@ -43,6 +44,7 @@ const fulfillmentLabels: Record<string, string> = {
 }
 
 export function OrderCard({ order, onStatusChange, activeOrdersCount = 0 }: OrderCardProps) {
+  const { t } = useTranslation()
   const [now, setNow] = useState(new Date())
   const [showTimePicker, setShowTimePicker] = useState(false)
   const [customTime, setCustomTime] = useState(15)
@@ -51,7 +53,7 @@ export function OrderCard({ order, onStatusChange, activeOrdersCount = 0 }: Orde
   // Use the wait time utility to calculate a "base" suggestion
   const basePrepTime = useMemo(() => {
     const itemsData = order.order_items.map(item => ({
-      product: { 
+      product: {
         preparation_time_minutes: (item as any).product?.preparation_time_minutes || 15,
         parallel_capacity: (item as any).product?.parallel_capacity || 1
       },
@@ -104,7 +106,99 @@ export function OrderCard({ order, onStatusChange, activeOrdersCount = 0 }: Orde
   const FulfillmentIcon = fulfillmentIcons[order.fulfillment_type] || ShoppingBag
 
   return (
-    <div className={`bg-white rounded-3xl border shadow-xl p-5 sm:p-8 flex flex-col h-full transition-all ${diffMins < 0 && !['completed', 'cancelled'].includes(order.status) ? 'border-error/30 shadow-error/10' : 'border-outline-variant/10 shadow-primary/5 hover:scale-[1.01] hover:shadow-2xl hover:shadow-primary/10'}`}>
+    <div className={`relative bg-white rounded-3xl border shadow-xl p-5 sm:p-8 flex flex-col h-full transition-all ${diffMins < 0 && !['completed', 'cancelled'].includes(order.status) ? 'border-error/30 shadow-error/10' : 'border-outline-variant/10 shadow-primary/5 hover:scale-[1.01] hover:shadow-2xl hover:shadow-primary/10'}`}>
+      {/* PERFECT OVERLAY POPUP */}
+      {showTimePicker && (
+        <div className="absolute inset-0 z-50 animate-in fade-in zoom-in duration-200">
+          {/* Solid background covering everything */}
+          <div className="absolute inset-0 bg-white rounded-3xl border-2 border-primary shadow-2xl" />
+          
+          <div className="relative h-full flex flex-col p-6 sm:p-8">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary mb-1">
+                  {t('kitchen_wait_time_title') === 'kitchen_wait_time_title' ? 'Zubereitungszeit' : t('kitchen_wait_time_title')}
+                </p>
+                <p className="text-[10px] text-on-surface-variant/60 font-medium">Bereitstellungszeit festlegen</p>
+              </div>
+              <button 
+                onClick={() => { setShowTimePicker(false); setShowSlider(false); }} 
+                className="p-1.5 hover:bg-surface-container-low rounded-full transition-colors"
+              >
+                <XCircle className="w-5 h-5 text-on-surface-variant/20 hover:text-error transition-colors" />
+              </button>
+            </div>
+
+            {!showSlider ? (
+              <div className="flex-1 flex flex-col justify-center space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  {[10, 15, 20, 30].map((mins) => (
+                    <button
+                      key={mins}
+                      onClick={() => {
+                        onStatusChange(order.id, 'preparing', mins)
+                        setShowTimePicker(false)
+                      }}
+                      className="py-4 flex flex-col items-center justify-center bg-surface-container-low hover:bg-primary hover:text-on-primary rounded-[1.5rem] transition-all group scale-100 active:scale-95 shadow-sm hover:shadow-xl hover:shadow-primary/20"
+                    >
+                      <span className="text-2xl font-black">{mins}</span>
+                      <span className="text-[10px] font-bold uppercase tracking-widest opacity-40 group-hover:opacity-100">Minuten</span>
+                    </button>
+                  ))}
+                </div>
+                
+                <button
+                  onClick={() => setShowSlider(true)}
+                  className="w-full py-3 border-2 border-dashed border-outline-variant/20 text-on-surface-variant/60 hover:text-primary hover:border-primary/40 hover:bg-primary/5 rounded-[1.25rem] text-[10px] font-black uppercase tracking-widest transition-all"
+                >
+                  Individuell festlegen
+                </button>
+              </div>
+            ) : (
+              <div className="flex-1 flex flex-col justify-center space-y-10 animate-in slide-in-from-bottom-6 duration-300">
+                <div className="text-center">
+                  <div className="text-7xl font-black text-primary tabular-nums tracking-tighter">
+                    {customTime}
+                    <span className="text-2xl ml-2 opacity-20">min</span>
+                  </div>
+                </div>
+                
+                <div className="space-y-8">
+                  <input
+                    type="range"
+                    min="5"
+                    max="120"
+                    step="5"
+                    value={customTime}
+                    onChange={(e) => setCustomTime(parseInt(e.target.value))}
+                    className="w-full h-2 bg-surface-container-high rounded-full appearance-none cursor-pointer accent-primary"
+                  />
+                  
+                  <div className="flex gap-4">
+                    <button
+                      onClick={() => setShowSlider(false)}
+                      className="flex-1 py-5 bg-surface-container-low text-on-surface-variant font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-surface-container-high transition-all"
+                    >
+                      Zurück
+                    </button>
+                    <button
+                      onClick={() => {
+                        onStatusChange(order.id, 'preparing', customTime)
+                        setShowTimePicker(false)
+                        setShowSlider(false)
+                      }}
+                      className="flex-[2] py-5 bg-primary text-on-primary rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 hover:shadow-2xl active:scale-95 transition-all"
+                    >
+                      Starten
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex justify-between items-start mb-4 sm:mb-8 gap-4">
         <div className="flex-1">
@@ -132,7 +226,7 @@ export function OrderCard({ order, onStatusChange, activeOrdersCount = 0 }: Orde
                 {countdownText}
               </div>
               {order.status === 'preparing' && (
-                <button 
+                <button
                   onClick={() => setShowTimePicker(true)}
                   className="p-1.5 rounded-full hover:bg-primary/10 text-primary transition-colors border border-primary/10"
                   title="Zeit anpassen"
@@ -172,78 +266,12 @@ export function OrderCard({ order, onStatusChange, activeOrdersCount = 0 }: Orde
             <p className="text-sm font-bold">{order.delivery_address || `Tisch ${order.table_number}`}</p>
           </div>
         )}
-      </div>
-
-      {/* Actions */}
+      </div>      {/* Actions */}
       <div className="relative mt-auto">
-        {showTimePicker && (
-          <div className="absolute inset-0 -top-40 bg-white rounded-3xl p-6 border-2 border-primary shadow-2xl flex flex-col gap-4 z-50 animate-in fade-in slide-in-from-bottom-4 duration-200">
-            <div className="flex justify-between items-center">
-              <p className="text-xs font-black uppercase tracking-widest text-primary">Wie lange wird es dauern?</p>
-              <button onClick={() => { setShowTimePicker(false); setShowSlider(false); }} className="p-1 hover:bg-surface-container-low rounded">
-                <XCircle className="w-4 h-4 text-on-surface-variant/40" />
-              </button>
-            </div>
-
-            {!showSlider ? (
-              <div className="grid grid-cols-2 gap-2">
-                {[basePrepTime, basePrepTime + 5, basePrepTime + 10, basePrepTime + 15].map((mins) => (
-                  <button
-                    key={mins}
-                    onClick={() => {
-                      onStatusChange(order.id, 'preparing', mins)
-                      setShowTimePicker(false)
-                    }}
-                    className="py-3 bg-surface-container-low hover:bg-primary hover:text-white rounded-xl text-sm font-black transition-all"
-                  >
-                    {mins} Min.
-                  </button>
-                ))}
-                <button
-                  onClick={() => setShowSlider(true)}
-                  className="col-span-2 py-3 border-2 border-dashed border-primary/20 text-primary hover:bg-primary/5 rounded-xl text-xs font-black uppercase tracking-widest transition-colors"
-                >
-                  Individuell anpassen
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="flex justify-between items-end">
-                  <span className="text-4xl font-black text-primary">{customTime}<span className="text-sm ml-1 text-primary/60">Min.</span></span>
-                  <button 
-                     onClick={() => {
-                       onStatusChange(order.id, 'preparing', customTime)
-                       setShowTimePicker(false)
-                       setShowSlider(false)
-                     }}
-                     className="px-6 py-2 bg-primary text-white rounded-full font-black text-xs uppercase tracking-widest shadow-lg"
-                  >
-                    Übernehmen
-                  </button>
-                </div>
-                <input 
-                  type="range"
-                  min="5"
-                  max="60"
-                  step="5"
-                  value={customTime}
-                  onChange={(e) => setCustomTime(parseInt(e.target.value))}
-                  className="w-full accent-primary h-2 bg-surface-container-high rounded-full appearance-none cursor-pointer"
-                />
-                <button 
-                  onClick={() => setShowSlider(false)}
-                  className="w-full text-[10px] font-black uppercase text-on-surface-variant/40 transition-colors hover:text-primary"
-                >
-                  Zurück zu Vorschlägen
-                </button>
-              </div>
-            )}
-          </div>
-        )}
 
         <div className="grid grid-cols-2 gap-3">
           {order.status === 'pending' && (
-            <button 
+            <button
               onClick={() => setShowTimePicker(true)}
               className="col-span-2 py-5 bg-primary text-on-primary rounded-full font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-98 transition-all"
             >
@@ -253,7 +281,7 @@ export function OrderCard({ order, onStatusChange, activeOrdersCount = 0 }: Orde
           )}
 
           {order.status === 'preparing' && (
-            <button 
+            <button
               onClick={() => onStatusChange(order.id, 'ready')}
               className="col-span-2 py-5 bg-success text-white rounded-full font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-success/20 hover:scale-[1.02] active:scale-98 transition-all"
             >
@@ -263,7 +291,7 @@ export function OrderCard({ order, onStatusChange, activeOrdersCount = 0 }: Orde
           )}
 
           {order.status === 'ready' && (
-            <button 
+            <button
               onClick={() => onStatusChange(order.id, 'completed')}
               className="col-span-2 py-5 bg-primary text-on-primary rounded-full font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-98 transition-all"
             >
@@ -273,7 +301,7 @@ export function OrderCard({ order, onStatusChange, activeOrdersCount = 0 }: Orde
           )}
 
           {order.status !== 'completed' && order.status !== 'cancelled' && (
-            <button 
+            <button
               onClick={() => onStatusChange(order.id, 'cancelled')}
               className="col-span-2 mt-2 py-4 text-on-surface-variant/40 rounded-full font-bold text-[10px] uppercase tracking-widest hover:text-error hover:bg-error/5 transition-all"
             >

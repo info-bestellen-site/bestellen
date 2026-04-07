@@ -1,11 +1,11 @@
 'use client'
 
 import Link from 'next/link'
-import { 
-  ShoppingCart, 
-  Store, 
-  ShieldAlert, 
-  ShieldCheck, 
+import {
+  ShoppingCart,
+  Store,
+  ShieldAlert,
+  ShieldCheck,
   Settings,
   Coffee,
   Pizza,
@@ -48,14 +48,14 @@ export function ShopHeader({ shop, isCurrentlyOpen }: { shop: Shop, isCurrentlyO
   const pathname = usePathname()
   const isEmbed = searchParams.get('embed') === 'true'
   const { t } = useTranslation()
-  
+
   // Use the prop if provided, otherwise fallback to shop.is_open (for backward compatibility if needed)
   const isOpen = isCurrentlyOpen !== undefined ? isCurrentlyOpen : shop.is_open
-  
+
   const [itemCount, setItemCount] = useState(0)
   const [isOwner, setIsOwner] = useState(false)
   const { editMode, toggleEditMode } = useAdminStore()
-  
+
   const getItemCount = useCartStore(s => s.getItemCount)
 
   useEffect(() => {
@@ -100,8 +100,8 @@ export function ShopHeader({ shop, isCurrentlyOpen }: { shop: Shop, isCurrentlyO
           </Link>
 
           {isOwner && (
-            <Link 
-              href={`/${shop.slug}/admin`} 
+            <Link
+              href={`/${shop.slug}/admin`}
               className="px-4 py-2 bg-surface-container-low hover:bg-surface-container-high rounded-full text-on-surface-variant hover:text-primary transition-all flex items-center gap-2 text-xs font-bold"
             >
               <Settings className="w-4 h-4" /> Admin
@@ -110,24 +110,22 @@ export function ShopHeader({ shop, isCurrentlyOpen }: { shop: Shop, isCurrentlyO
         </div>
 
         <nav className="hidden md:flex items-center gap-6">
-          <Link 
-            href={`/${shop.slug}`} 
-            className={`text-sm font-black uppercase tracking-widest px-4 py-2 rounded-full transition-all ${
-              pathname === `/${shop.slug}` 
-                ? 'bg-primary text-on-primary shadow-lg shadow-primary/20' 
+          <Link
+            href={`/${shop.slug}`}
+            className={`text-sm font-black uppercase tracking-widest px-4 py-2 rounded-full transition-all ${pathname === `/${shop.slug}`
+                ? 'bg-primary text-on-primary shadow-lg shadow-primary/20'
                 : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low'
-            }`}
+              }`}
           >
             Speisekarte
           </Link>
           {shop.has_reservation && (
-            <Link 
-              href={`/${shop.slug}/reserve`} 
-              className={`text-sm font-black uppercase tracking-widest px-4 py-2 rounded-full transition-all flex items-center gap-2 ${
-                pathname === `/${shop.slug}/reserve`
+            <Link
+              href={`/${shop.slug}/reserve`}
+              className={`text-sm font-black uppercase tracking-widest px-4 py-2 rounded-full transition-all flex items-center gap-2 ${pathname === `/${shop.slug}/reserve`
                   ? 'bg-primary text-on-primary shadow-lg shadow-primary/20'
                   : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low'
-              }`}
+                }`}
             >
               <Store className="w-4 h-4" /> Tisch reservieren
             </Link>
@@ -137,11 +135,10 @@ export function ShopHeader({ shop, isCurrentlyOpen }: { shop: Shop, isCurrentlyO
         <div className="flex items-center gap-3 sm:gap-4">
           {isOwner && (
             <>
-              <div className={`flex items-center gap-2 px-3 py-2 rounded-full border border-outline-variant/10 shadow-sm transition-all ${
-                isOpen 
-                  ? 'bg-success/5 text-success' 
+              <div className={`flex items-center gap-2 px-3 py-2 rounded-full border border-outline-variant/10 shadow-sm transition-all ${isOpen
+                  ? 'bg-success/5 text-success'
                   : 'bg-error/5 text-error'
-              }`}>
+                }`}>
                 <div className={`w-2 h-2 rounded-full ${isOpen ? 'bg-success animate-pulse' : 'bg-error'}`} />
                 <span className="text-[10px] font-black uppercase tracking-[0.15em]">
                   {isOpen ? t('open') : t('closed')}
