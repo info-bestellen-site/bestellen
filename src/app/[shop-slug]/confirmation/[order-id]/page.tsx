@@ -1,7 +1,7 @@
 'use client'
 
 import { createClient } from '@/lib/supabase/client'
-import { useEffect, useState, use } from 'react'
+import { useEffect, useState, use, useCallback } from 'react'
 import { formatCurrency } from '@/lib/utils/format-currency'
 import { formatWaitTime } from '@/lib/utils/calculate-wait-time'
 import { CheckCircle2, ChevronRight, Clock, MapPin, Phone, ChefHat, Loader2 } from 'lucide-react'
@@ -19,30 +19,32 @@ export default function ConfirmationPage({ params }: { params: Promise<{ 'shop-s
   const [order, setOrder] = useState<OrderWithDetails | null>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    async function fetchOrder() {
-      // Validate if orderId is a UUID to avoid Supabase errors
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-      if (!uuidRegex.test(orderId)) {
-        setLoading(false)
-        return
-      }
-
-      const { data, error } = await supabase
-        .from('orders')
-        .select('*, shops(*), order_items(*)')
-        .eq('id', orderId)
-        .maybeSingle()
-      
-      if (data) {
-        setOrder(data as OrderWithDetails)
-      }
+  const fetchOrder = useCallback(async () => {
+    // Validate if orderId is a UUID to avoid Supabase errors
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    if (!uuidRegex.test(orderId)) {
       setLoading(false)
+      return
     }
 
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*, shops(*), order_items(*)')
+      .eq('id', orderId)
+      .maybeSingle()
+    
+    if (data) {
+      setOrder(data as OrderWithDetails)
+    }
+    setLoading(false)
+  }, [orderId, supabase])
+
+  useEffect(() => {
     fetchOrder()
 
     // Realtime subscription
+    // We listen to all changes on the orders table and filter on the client
+    // This is more robust than server-side filters for specific environments
     const channel = supabase
       .channel(`order-status-${orderId}`)
       .on(
@@ -51,18 +53,25 @@ export default function ConfirmationPage({ params }: { params: Promise<{ 'shop-s
           event: 'UPDATE',
           schema: 'public',
           table: 'orders',
-          filter: `id=eq.${orderId}`,
         },
-        (payload) => {
-          setOrder(prev => prev ? { ...prev, ...payload.new } : null)
+        async (payload) => {
+          // Check if the updated order is the one we are interested in
+          if (payload.new && (payload.new as any).id === orderId) {
+            console.log('Order update received via Realtime, refetching...', payload.new)
+            await fetchOrder()
+          }
         }
       )
-      .subscribe()
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('Realtime: Subscribed to order updates')
+        }
+      })
 
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [orderId, supabase])
+  }, [orderId, supabase, fetchOrder])
 
   if (loading) return (
     <div className="flex h-screen items-center justify-center">
