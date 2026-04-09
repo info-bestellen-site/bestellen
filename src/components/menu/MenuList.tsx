@@ -16,6 +16,7 @@ interface MenuListProps {
   isAdmin?: boolean
   isCurrentlyOpen?: boolean
   hours?: OpeningHour[]
+  isLimitReached?: boolean
 }
 
 export function MenuList({
@@ -24,7 +25,8 @@ export function MenuList({
   products,
   isAdmin = false,
   isCurrentlyOpen = true,
-  hours = []
+  hours = [],
+  isLimitReached = false,
 }: MenuListProps) {
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -71,7 +73,7 @@ export function MenuList({
         />
       </div>
 
-      {!isCurrentlyOpen && (
+      {!isCurrentlyOpen && !isLimitReached && (
         <div className="mb-8 p-6 bg-error/5 border border-error/10 rounded-[2rem] flex flex-col items-center text-center animate-fadeIn">
           <div className="w-12 h-12 bg-error/10 text-error rounded-2xl flex items-center justify-center mb-4">
             <span className="font-black text-xl">!</span>
@@ -110,6 +112,26 @@ export function MenuList({
                   })}
                 </div>
               </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {isLimitReached && (
+        <div className="mb-8 p-6 bg-error/5 border border-error/10 rounded-[2rem] flex flex-col items-center text-center animate-fadeIn">
+          <div className="w-12 h-12 bg-error/10 text-error rounded-2xl flex items-center justify-center mb-4">
+            <span className="font-black text-xl">!</span>
+          </div>
+          <h2 className="text-xl font-black tracking-tight text-on-surface mb-2">Bestell-Limit erreicht</h2>
+          <div className="text-sm text-on-surface-variant max-w-md mx-auto space-y-4">
+            <p>
+              Dieses Restaurant hat das monatliche Limit für Online-Bestellungen erreicht. 
+              Bitte bestelle telefonisch oder vor Ort.
+            </p>
+            {isAdmin && (
+              <p className="mt-4 font-bold text-error">
+                Admin-Hinweis: Bitte aktualisiere deinen Plan {`(${shop.name})`} auf Pro oder Max, um wieder Bestellungen anzunehmen.
+              </p>
             )}
           </div>
         </div>

@@ -11,11 +11,14 @@ import {
   LayoutDashboard,
   ExternalLink,
   CalendarDays,
-  X
+  X,
+  CreditCard
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from '@/lib/i18n/useTranslation'
+import { useState, useEffect } from 'react'
+import { hasFeature, SubscriptionTier } from '@/config/subscriptions'
 
 export function AdminSidebar({
   shopSlug,
@@ -30,15 +33,32 @@ export function AdminSidebar({
   const router = useRouter()
   const supabase = createClient()
   const { t } = useTranslation()
+  const [tier, setTier] = useState<SubscriptionTier>('starter')
+
+  useEffect(() => {
+    async function fetchTier() {
+      const { data } = await supabase
+        .from('shops')
+        .select('subscription_tier')
+        .eq('slug', shopSlug)
+        .single()
+      
+      if (data?.subscription_tier) {
+        setTier(data.subscription_tier as SubscriptionTier)
+      }
+    }
+    fetchTier()
+  }, [shopSlug, supabase])
 
   const navItems = [
     { label: t('monitor'), icon: ChefHat, href: `/${shopSlug}/admin` },
-    { label: t('reservations'), icon: CalendarDays, href: `/${shopSlug}/admin/reservations` },
+    { label: t('reservations'), icon: CalendarDays, href: `/${shopSlug}/admin/reservations`, feature: 'reservations' },
     { label: t('orders'), icon: LayoutDashboard, href: `/${shopSlug}/admin/orders` },
     { label: t('menu'), icon: UtensilsCrossed, href: `/${shopSlug}/admin/menu` },
-    { label: t('trending'), icon: TrendingUp, href: `/${shopSlug}/admin/analysis` },
+    { label: t('analytics'), icon: TrendingUp, href: `/${shopSlug}/admin/analytics`, feature: 'analytics', badge: 'AI-Max' },
     { label: t('settings'), icon: Settings, href: `/${shopSlug}/admin/settings` },
-  ]
+    { label: t('subscription'), icon: CreditCard, href: `/${shopSlug}/admin/subscription` },
+  ].filter(item => !item.feature || hasFeature(tier, item.feature))
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -89,7 +109,12 @@ export function AdminSidebar({
                     }`}
                 >
                   <item.icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-on-surface-variant/40'}`} />
-                  {item.label}
+                  <span className="flex-1">{item.label}</span>
+                  {item.badge && (
+                    <span className={`text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md ${isActive ? 'bg-white/20 text-white' : 'bg-primary/10 text-primary'}`}>
+                      {item.badge}
+                    </span>
+                  )}
                 </Link>
               )
             })}

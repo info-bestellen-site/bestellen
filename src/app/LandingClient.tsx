@@ -46,6 +46,7 @@ export default function FancyLandingPage() {
           <span className="text-xl font-bold tracking-tighter uppercase italic">Bestellen.io</span>
         </div>
         <div className="flex items-center gap-4">
+          <Link href="/pricing" className="text-sm font-semibold hover:text-primary transition-colors px-4 py-2">Preise</Link>
           <Link href="/auth/login" className="text-sm font-semibold hover:text-primary transition-colors px-4 py-2">Login</Link>
           <Link href="/auth/signup" className="text-sm font-bold bg-white text-black px-5 py-2.5 rounded-full hover:scale-105 transition-transform">Starten</Link>
         </div>

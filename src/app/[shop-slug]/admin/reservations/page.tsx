@@ -1,12 +1,14 @@
 'use client'
 
 import { createClient } from '@/lib/supabase/client'
-import { CalendarDays, Loader2, User, Phone, Users, Clock, Plus, MonitorCheck, Save, UtensilsCrossed, ChevronLeft, ChevronRight } from 'lucide-react'
+import { CalendarDays, Loader2, User, Phone, Users, Clock, Plus, MonitorCheck, Save, UtensilsCrossed, ChevronLeft, ChevronRight, ShieldAlert, Sparkles, CreditCard } from 'lucide-react'
 import { useState, useEffect, use } from 'react'
 import { Shop, Order, OrderStatus, Table } from '@/types/database'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useTranslation } from '@/lib/i18n/useTranslation'
 import { Modal } from '@/components/ui/Modal'
+import { hasFeature, SubscriptionTier } from '@/config/subscriptions'
 
 interface ReservationPageProps {
   params: Promise<{ 'shop-slug': string }>
@@ -15,12 +17,14 @@ interface ReservationPageProps {
 export default function ReservationsPage({ params }: ReservationPageProps) {
   const { 'shop-slug': shopSlug } = use(params)
   const supabase = createClient()
+  const router = useRouter()
   
   const [shop, setShop] = useState<Shop | null>(null)
   const [loading, setLoading] = useState(true)
   const [reservations, setReservations] = useState<Order[]>([])
   const [tables, setTables] = useState<Table[]>([])
   const [selectedDate, setSelectedDate] = useState(new Date())
+  const [hasReservationFeature, setHasReservationFeature] = useState(true)
   
   // Manual Reservation Form State
   const [showForm, setShowForm] = useState(false)
@@ -42,10 +46,15 @@ export default function ReservationsPage({ params }: ReservationPageProps) {
       
       if (shopData) {
         setShop(shopData)
-        await Promise.all([
-          loadReservations(shopData.id, selectedDate),
-          loadTables(shopData.id)
-        ])
+        const canUseReservations = hasFeature(shopData.subscription_tier as SubscriptionTier, 'reservations')
+        setHasReservationFeature(canUseReservations)
+
+        if (canUseReservations) {
+          await Promise.all([
+            loadReservations(shopData.id, selectedDate),
+            loadTables(shopData.id)
+          ])
+        }
       }
       setLoading(false)
     }
@@ -150,6 +159,39 @@ export default function ReservationsPage({ params }: ReservationPageProps) {
       <Loader2 className="w-8 h-8 animate-spin text-primary" />
     </div>
   )
+
+  if (!hasReservationFeature) {
+    return (
+      <div className="p-4 sm:p-10 max-w-4xl mx-auto h-[80vh] flex items-center justify-center">
+        <div className="bg-white rounded-[3rem] p-10 sm:p-16 border border-outline-variant/10 shadow-2xl shadow-primary/10 text-center space-y-8 relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-8 opacity-[0.03] rotate-12">
+            <Sparkles className="w-64 h-64 text-primary" />
+          </div>
+          
+          <div className="w-24 h-24 bg-primary/10 text-primary rounded-[2rem] flex items-center justify-center mx-auto mb-4 animate-bounce">
+            <CalendarDays className="w-12 h-12" />
+          </div>
+          
+          <div className="space-y-4 relative z-10">
+            <h1 className="text-3xl sm:text-5xl font-black tracking-tight">{t('reservations')}</h1>
+            <p className="text-lg text-on-surface-variant font-medium max-w-md mx-auto">
+              {t('feature_reservations_pro_only')}
+            </p>
+          </div>
+
+          <div className="pt-6 relative z-10">
+            <Link 
+              href={`/${shopSlug}/admin/subscription`}
+              className="inline-flex items-center gap-3 px-10 py-5 bg-primary text-on-primary rounded-[2rem] text-lg font-black uppercase tracking-widest hover:shadow-2xl hover:shadow-primary/30 transition-all active:scale-95 group"
+            >
+              <CreditCard className="w-6 h-6 group-hover:rotate-12 transition-transform" />
+              {t('upgrade_to_business')}
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   const activeReservations = reservations.filter(r => ['pending', 'preparing', 'ready'].includes(r.status))
   const completedReservations = reservations.filter(r => ['completed', 'cancelled'].includes(r.status))

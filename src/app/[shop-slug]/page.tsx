@@ -40,13 +40,31 @@ export default async function ShopPage({ params }: ShopPageProps) {
   const { data: hours } = await supabase.from('opening_hours').select('*').eq('shop_id', shop.id)
   const isCurrentlyOpen = isShopOpen(hours || [], shop.is_open, shop.manual_status_updated_at)
 
+  let isLimitReached = false;
+  if (shop.subscription_tier === 'starter') {
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const { count } = await supabase
+      .from('orders')
+      .select('id', { count: 'exact', head: true })
+      .eq('shop_id', shop.id)
+      .gte('created_at', startOfMonth.toISOString());
+      
+    if (count !== null && count >= 100) { // Limit is 100 for Starter
+      isLimitReached = true;
+    }
+  }
+
   return (
     <MenuList 
       shop={shop} 
       categories={categories || []} 
       products={products || []} 
       isAdmin={isAdmin}
-      isCurrentlyOpen={isCurrentlyOpen}
+      isCurrentlyOpen={isCurrentlyOpen && !isLimitReached}
+      isLimitReached={isLimitReached}
       hours={hours || []}
     />
   )

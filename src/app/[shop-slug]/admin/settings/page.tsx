@@ -77,6 +77,7 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
   const [hasReservation, setHasReservation] = useState(true)
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const [iconName, setIconName] = useState<string | null>(null)
+  const [baseLanguage, setBaseLanguage] = useState<Language>('de')
   const [error, setError] = useState<string | null>(null)
   
   const { t } = useTranslation()
@@ -117,6 +118,7 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
         setManualStatusUpdatedAt(data.manual_status_updated_at)
         setLogoUrl(data.logo_url)
         setIconName(data.icon_name)
+        setBaseLanguage(data.base_language as Language || 'de')
       }
       setLoading(false)
     }
@@ -211,7 +213,8 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
         delivery_fee: deliveryFee,
         has_delivery: hasDelivery,
         logo_url: logoUrl,
-        icon_name: iconName
+        icon_name: iconName,
+        base_language: baseLanguage
       })
       .eq('id', shop.id)
     
@@ -336,8 +339,26 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
                 />
               </div>
             </div>
-
-
+            <div className="col-span-2 md:col-span-1">
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2.5 ml-1">{t('shop_language') || 'Shop Sprache'}</label>
+              <div className="relative">
+                <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant/40" />
+                <select 
+                  value={baseLanguage}
+                  onChange={e => setBaseLanguage(e.target.value as Language)}
+                  className="w-full pl-11 pr-4 py-4 bg-surface-container-low border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-primary/10 transition-all appearance-none"
+                >
+                  {LANGUAGES.map((lang) => (
+                    <option key={lang.code} value={lang.code}>
+                      {lang.flag} {lang.label}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                  <ChevronDown className="w-4 h-4 text-on-surface-variant/40" />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
