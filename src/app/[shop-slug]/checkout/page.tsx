@@ -494,7 +494,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
             </div>
 
             {subtotal < (shop?.min_order_amount || 0) && (
-              <div className="flex items-center gap-2 p-3 bg-error/5 text-error rounded-lg text-xs font-semibold mb-4">
+              <div className="flex items-center gap-2 p-3 bg-surface-container-low text-error rounded-lg text-xs font-semibold mb-4">
                 <AlertCircle className="w-4 h-4" />
                 Mindestbestellwert von {formatCurrency(shop?.min_order_amount || 0)} nicht erreicht.
               </div>

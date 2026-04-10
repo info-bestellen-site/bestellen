@@ -74,8 +74,8 @@ export function MenuList({
       </div>
 
       {!isCurrentlyOpen && !isLimitReached && (
-        <div className="mb-8 p-6 bg-error/5 border border-error/10 rounded-[2rem] flex flex-col items-center text-center animate-fadeIn">
-          <div className="w-12 h-12 bg-error/10 text-error rounded-2xl flex items-center justify-center mb-4">
+        <div className="mb-8 p-6 bg-surface-container-low border border-outline-variant/10 rounded-[2rem] flex flex-col items-center text-center animate-fadeIn">
+          <div className="w-12 h-12 bg-surface-container-high text-on-surface-variant/50 rounded-2xl flex items-center justify-center mb-4">
             <span className="font-black text-xl">!</span>
           </div>
           <h2 className="text-xl font-black tracking-tight text-on-surface mb-2">Wir haben aktuell geschlossen</h2>
@@ -118,8 +118,8 @@ export function MenuList({
       )}
 
       {isLimitReached && (
-        <div className="mb-8 p-6 bg-error/5 border border-error/10 rounded-[2rem] flex flex-col items-center text-center animate-fadeIn">
-          <div className="w-12 h-12 bg-error/10 text-error rounded-2xl flex items-center justify-center mb-4">
+        <div className="mb-8 p-6 bg-surface-container-low border border-outline-variant/10 rounded-[2rem] flex flex-col items-center text-center animate-fadeIn">
+          <div className="w-12 h-12 bg-surface-container-high text-on-surface-variant/50 rounded-2xl flex items-center justify-center mb-4">
             <span className="font-black text-xl">!</span>
           </div>
           <h2 className="text-xl font-black tracking-tight text-on-surface mb-2">Bestell-Limit erreicht</h2>
