@@ -162,7 +162,7 @@ export default function ReservationsPage({ params }: ReservationPageProps) {
 
   if (!hasReservationFeature) {
     return (
-      <div className="p-4 sm:p-10 max-w-4xl mx-auto h-[80vh] flex items-center justify-center">
+      <div className="p-4 sm:p-10 h-[80vh] flex items-center justify-center">
         <div className="bg-white rounded-[3rem] p-10 sm:p-16 border border-outline-variant/10 shadow-2xl shadow-primary/10 text-center space-y-8 relative overflow-hidden">
           <div className="absolute top-0 right-0 p-8 opacity-[0.03] rotate-12">
             <Sparkles className="w-64 h-64 text-primary" />
@@ -197,7 +197,7 @@ export default function ReservationsPage({ params }: ReservationPageProps) {
   const completedReservations = reservations.filter(r => ['completed', 'cancelled'].includes(r.status))
 
   return (
-    <div className="p-4 sm:p-10 space-y-8 sm:space-y-10 max-w-6xl mx-auto">
+    <div className="p-4 sm:p-10 space-y-8 sm:space-y-10">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
         <div className="flex-1">
           <h1 className="text-2xl sm:text-4xl font-black tracking-tight mb-2">{t('reservations')}</h1>

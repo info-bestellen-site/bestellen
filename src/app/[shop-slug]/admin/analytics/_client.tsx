@@ -110,7 +110,7 @@ export function AnalyticsClient({ shopSlug }: { shopSlug: string }) {
   }
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
+    <div className="p-8">
       <div className="flex items-end justify-between mb-10">
         <div>
           <h1 className="text-3xl font-black tracking-tighter text-on-surface mb-2">{t('analysis_title')}</h1>

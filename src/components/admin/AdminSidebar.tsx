@@ -81,20 +81,14 @@ export function AdminSidebar({
         transition-transform duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
-        <div className="p-8">
-          <div className="flex items-center justify-between mb-10">
-            <Link href="/" className="flex items-center gap-3 group">
-              {/*  <div className="w-10 h-10 bg-primary text-on-primary rounded-2xl flex items-center justify-center p-2 shadow-lg shadow-primary/20 transition-all group-hover:scale-105 active:scale-95">
-                <ChefHat className="w-full h-full" />
-              </div>*/}
-              {/*<span className="text-xl font-black tracking-tighter text-on-surface">Bestellen</span>*/}
-            </Link>
-            {onClose && (
-              <button onClick={onClose} className="lg:hidden p-2 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-colors">
+        <div className="p-5 flex-1 flex flex-col min-h-0">
+          {onClose && (
+            <div className="flex items-center justify-end mb-4 lg:hidden">
+              <button onClick={onClose} className="p-2 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-colors">
                 <X className="w-5 h-5" />
               </button>
-            )}
-          </div>
+            </div>
+          )}
 
           <nav className="space-y-1.5">
             {navItems.map((item) => {

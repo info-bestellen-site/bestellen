@@ -422,7 +422,7 @@ export default function MenuManagementPage({ params }: { params: Promise<{ 'shop
   )
 
   return (
-    <div className="p-4 sm:p-10 space-y-8 sm:space-y-10 max-w-5xl mx-auto">
+    <div className="p-4 sm:p-10 space-y-8 sm:space-y-10">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
         <div>
           <h1 className="text-2xl sm:text-4xl font-black tracking-tight mb-2">{t('menu_title')}</h1>

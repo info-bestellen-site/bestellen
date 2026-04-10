@@ -107,7 +107,7 @@ export default function OrderHistoryPage({ params }: { params: Promise<{ 'shop-s
   }
 
   return (
-    <div className="p-4 sm:p-8 max-w-7xl mx-auto space-y-6 sm:space-y-10">
+    <div className="p-4 sm:p-8 space-y-6 sm:space-y-10">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
         <div>
           <h1 className="text-2xl sm:text-3xl font-black tracking-tighter text-on-surface mb-2">{t('history')}</h1>

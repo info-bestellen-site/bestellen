@@ -276,7 +276,7 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
   )
 
   return (
-    <div className="p-4 sm:p-10 max-w-4xl mx-auto space-y-6 sm:space-y-10">
+    <div className="p-4 sm:p-10 space-y-6 sm:space-y-10">
       <div>
         <h1 className="text-2xl sm:text-4xl font-black tracking-tight mb-2">{t('settings')}</h1>
         <p className="text-sm sm:text-lg text-on-surface-variant font-medium">{t('settings_subtitle')}</p>

@@ -71,7 +71,7 @@ export default function SubscriptionPage({ params }: SubscriptionPageProps) {
   const config = SUBSCRIPTION_TIERS[currentTier];
 
   return (
-    <div className="mx-auto max-w-4xl space-y-8 p-4 pt-6 md:p-8">
+    <div className="space-y-8 p-4 pt-6 md:p-8">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">{t('admin.subscription')}</h1>
         <p className="text-muted-foreground">
