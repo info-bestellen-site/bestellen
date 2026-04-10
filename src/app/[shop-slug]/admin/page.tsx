@@ -16,8 +16,15 @@ export default function KitchenDashboard({ params }: { params: Promise<{ 'shop-s
   const supabase = createClient()
   const [orders, setOrders] = useState<OrderWithItems[]>([])
   const [loading, setLoading] = useState(true)
-  const [soundEnabled, setSoundEnabled] = useState(false)
-  const soundEnabledRef = useRef(soundEnabled)
+  const [soundEnabled, setSoundEnabled] = useState(true)
+  const soundEnabledRef = useRef(true)
+
+  useEffect(() => {
+    const saved = localStorage.getItem('kitchen-sound-enabled')
+    if (saved !== null) {
+      setSoundEnabled(saved === 'true')
+    }
+  }, [])
 
   const [activeTab, setActiveTab] = useState<TabFilter>('all')
   const [timeTick, setTimeTick] = useState(0)
@@ -25,6 +32,7 @@ export default function KitchenDashboard({ params }: { params: Promise<{ 'shop-s
 
   useEffect(() => {
     soundEnabledRef.current = soundEnabled
+    localStorage.setItem('kitchen-sound-enabled', soundEnabled.toString())
   }, [soundEnabled])
 
   // Refreshes the tabs automatically every 60 seconds

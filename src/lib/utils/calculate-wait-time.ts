@@ -1,6 +1,6 @@
 export function calculateWaitTime(
   activeOrders: number,
-  items: { product: { preparation_time_minutes: number }; quantity: number }[]
+  items: { product: { preparation_time_minutes: number | null }; quantity: number }[]
 ): number {
   if (items.length === 0) return 0
 

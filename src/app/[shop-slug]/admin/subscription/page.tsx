@@ -171,8 +171,8 @@ export default function SubscriptionPage({ params }: SubscriptionPageProps) {
                       disabled={isCurrent}
                       className={`inline-flex w-full items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2 ${
                         isCurrent 
-                          ? 'bg-secondary text-secondary-foreground' 
-                          : 'bg-primary text-primary-foreground hover:bg-primary/90'
+                          ? 'bg-surface-container-high text-on-surface-variant' 
+                          : 'bg-primary text-on-primary hover:bg-primary-dim'
                       }`}
                    >
                      {isCurrent ? t('admin.current_plan') : t('admin.coming_soon')}

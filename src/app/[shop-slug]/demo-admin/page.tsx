@@ -23,13 +23,21 @@ export default function DemoKitchenDashboard({ params }: { params: Promise<{ 'sh
   const supabase = createClient()
   const [orders, setOrders] = useState<OrderWithItems[]>([])
   const [loading, setLoading] = useState(true)
-  const [soundEnabled, setSoundEnabled] = useState(false)
-  const soundEnabledRef = useRef(soundEnabled)
+  const [soundEnabled, setSoundEnabled] = useState(true)
+  const soundEnabledRef = useRef(true)
+
+  useEffect(() => {
+    const saved = localStorage.getItem('demo-kitchen-sound-enabled')
+    if (saved !== null) {
+      setSoundEnabled(saved === 'true')
+    }
+  }, [])
   const [activeTab, setActiveTab] = useState<TabFilter>('all')
   const { t } = useTranslation()
 
   useEffect(() => {
     soundEnabledRef.current = soundEnabled
+    localStorage.setItem('demo-kitchen-sound-enabled', soundEnabled.toString())
   }, [soundEnabled])
 
   // Realtime logic (Public Access for Demo)

@@ -179,7 +179,7 @@ export default function MenuManagementPage({ params }: { params: Promise<{ 'shop
       description: product.description || '',
       price: product.price.toString(),
       image_url: product.image_url || '',
-      preparation_time_minutes: product.preparation_time_minutes.toString()
+      preparation_time_minutes: (product.preparation_time_minutes ?? 15).toString()
     })
     setIsProductModalOpen(true)
   }
