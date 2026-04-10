@@ -27,7 +27,8 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
   const { 'shop-slug': shopSlug } = use(params)
   const router = useRouter()
   const supabase = createClient()
-  const { items, removeItem, updateQuantity, clearCart, getSubtotal } = useCartStore()
+  const items = useCartStore(s => s.carts[shopSlug] || [])
+  const { removeItem, updateQuantity, clearCart, getSubtotal } = useCartStore()
   
   const [shop, setShop] = useState<Shop | null>(null)
   const [loading, setLoading] = useState(true)
@@ -113,7 +114,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
     init()
   }, [shopSlug, supabase])
 
-  const subtotal = getSubtotal()
+  const subtotal = getSubtotal(shopSlug)
   const deliveryFee = fulfillmentType === 'delivery' ? (shop?.delivery_fee || 0) : 0
   const total = subtotal + deliveryFee
   const waitTime = calculateWaitTime(activeOrders, items)
@@ -192,7 +193,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
       if (itemsError) throw itemsError
 
       // 3. Clear cart and redirect
-      clearCart()
+      clearCart(shopSlug)
       router.push(`/${shop.slug}/confirmation/${order.id}`)
     } catch (err) {
       console.error('Error placing order:', err)
@@ -243,15 +244,15 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
                   <p className="text-xs text-on-surface-variant font-medium">{formatCurrency(item.product.price)}</p>
                 </div>
                 <div className="flex items-center gap-3 bg-surface-container-low px-2 py-1 rounded-full">
-                  <button onClick={() => updateQuantity(item.product.id, item.quantity - 1)} className="p-1 hover:text-primary transition-colors">
+                  <button onClick={() => updateQuantity(item.product.id, item.quantity - 1, shopSlug)} className="p-1 hover:text-primary transition-colors">
                     <Minus className="w-3.5 h-3.5" />
                   </button>
                   <span className="text-xs font-bold w-4 text-center">{item.quantity}</span>
-                  <button onClick={() => updateQuantity(item.product.id, item.quantity + 1)} className="p-1 hover:text-primary transition-colors">
+                  <button onClick={() => updateQuantity(item.product.id, item.quantity + 1, shopSlug)} className="p-1 hover:text-primary transition-colors">
                     <Plus className="w-3.5 h-3.5" />
                   </button>
                 </div>
-                <button onClick={() => removeItem(item.product.id)} className="text-error-dim/40 hover:text-error transition-colors">
+                <button onClick={() => removeItem(item.product.id, shopSlug)} className="text-error-dim/40 hover:text-error transition-colors">
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>

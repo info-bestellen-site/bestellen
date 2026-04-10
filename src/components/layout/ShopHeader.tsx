@@ -69,10 +69,10 @@ export function ShopHeader({ shop, isCurrentlyOpen }: { shop: Shop, isCurrentlyO
   }, [supabase, shop.owner_id])
 
   useEffect(() => {
-    setItemCount(getItemCount())
-    const unsub = useCartStore.subscribe(() => setItemCount(useCartStore.getState().getItemCount()))
+    setItemCount(getItemCount(shop.slug))
+    const unsub = useCartStore.subscribe((state) => setItemCount(state.getItemCount(shop.slug)))
     return unsub
-  }, [getItemCount])
+  }, [getItemCount, shop.slug])
 
   if (isEmbed) return null
 

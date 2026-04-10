@@ -9,52 +9,66 @@ export interface CartItem {
 }
 
 interface CartStore {
-  items: CartItem[]
-  shopSlug: string | null
+  carts: Record<string, CartItem[]>
   addItem: (product: Product, shopSlug: string) => void
-  removeItem: (productId: string) => void
-  updateQuantity: (productId: string, quantity: number) => void
-  clearCart: () => void
-  getSubtotal: () => number
-  getItemCount: () => number
+  removeItem: (productId: string, shopSlug: string) => void
+  updateQuantity: (productId: string, quantity: number, shopSlug: string) => void
+  clearCart: (shopSlug: string) => void
+  getSubtotal: (shopSlug: string) => number
+  getItemCount: (shopSlug: string) => number
+  getItems: (shopSlug: string) => CartItem[]
 }
 
 export const useCartStore = create<CartStore>()(
   persist(
     (set, get) => ({
-      items: [],
-      shopSlug: null,
+      carts: {},
       addItem: (product, shopSlug) => {
-        const state = get()
-        if (state.shopSlug && state.shopSlug !== shopSlug) {
-          set({ items: [], shopSlug })
-        }
-        const existing = state.items.find(i => i.product.id === product.id)
-        if (existing) {
-          set({
-            shopSlug,
-            items: state.items.map(i =>
-              i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i
-            ),
-          })
-        } else {
-          set({ shopSlug, items: [...state.items, { product, quantity: 1 }] })
-        }
+        const carts = get().carts
+        const shopItems = carts[shopSlug] || []
+        const existing = shopItems.find(i => i.product.id === product.id)
+        
+        const newItems = existing
+          ? shopItems.map(i => i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i)
+          : [...shopItems, { product, quantity: 1 }]
+          
+        set({
+          carts: { ...carts, [shopSlug]: newItems }
+        })
       },
-      removeItem: (productId) => {
-        set(s => ({ items: s.items.filter(i => i.product.id !== productId) }))
+      removeItem: (productId, shopSlug) => {
+        const carts = get().carts
+        const shopItems = carts[shopSlug] || []
+        set({
+          carts: { ...carts, [shopSlug]: shopItems.filter(i => i.product.id !== productId) }
+        })
       },
-      updateQuantity: (productId, quantity) => {
-        if (quantity <= 0) { get().removeItem(productId); return }
-        set(s => ({
-          items: s.items.map(i =>
-            i.product.id === productId ? { ...i, quantity } : i
-          ),
-        }))
+      updateQuantity: (productId, quantity, shopSlug) => {
+        const carts = get().carts
+        const shopItems = carts[shopSlug] || []
+        if (quantity <= 0) { get().removeItem(productId, shopSlug); return }
+        set({
+          carts: {
+            ...carts,
+            [shopSlug]: shopItems.map(i => i.product.id === productId ? { ...i, quantity } : i)
+          }
+        })
       },
-      clearCart: () => set({ items: [], shopSlug: null }),
-      getSubtotal: () => get().items.reduce((s, i) => s + i.product.price * i.quantity, 0),
-      getItemCount: () => get().items.reduce((s, i) => s + i.quantity, 0),
+      clearCart: (shopSlug) => {
+        const carts = get().carts
+        set({
+          carts: { ...carts, [shopSlug]: [] }
+        })
+      },
+      getSubtotal: (shopSlug) => {
+        const shopItems = get().carts[shopSlug] || []
+        return shopItems.reduce((s, i) => s + i.product.price * i.quantity, 0)
+      },
+      getItemCount: (shopSlug) => {
+        const shopItems = get().carts[shopSlug] || []
+        return shopItems.reduce((s, i) => s + i.quantity, 0)
+      },
+      getItems: (shopSlug) => get().carts[shopSlug] || [],
     }),
     { name: 'bestellen-cart' }
   )

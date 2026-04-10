@@ -13,10 +13,10 @@ export function MobileNav({ shopSlug, shop }: { shopSlug: string, shop: Shop }) 
   const [count, setCount] = useState(0)
 
   useEffect(() => {
-    setCount(useCartStore.getState().getItemCount())
-    const unsub = useCartStore.subscribe(() => setCount(useCartStore.getState().getItemCount()))
+    setCount(useCartStore.getState().getItemCount(shopSlug))
+    const unsub = useCartStore.subscribe((state) => setCount(state.getItemCount(shopSlug)))
     return unsub
-  }, [])
+  }, [shopSlug])
 
   if (searchParams.get('embed') === 'true') return null
   if (pathname.includes('/admin')) return null
