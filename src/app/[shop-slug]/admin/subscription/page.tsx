@@ -139,43 +139,51 @@ export default function SubscriptionPage({ params }: SubscriptionPageProps) {
             return (
               <div 
                 key={key} 
-                className={`flex flex-col rounded-xl border bg-card text-card-foreground shadow-sm ${isCurrent ? 'border-primary ring-1 ring-primary' : ''}`}
+                className={`flex flex-col rounded-xl border bg-card text-card-foreground shadow-sm ${isCurrent ? 'border-primary ring-1 ring-primary' : ''} ${tier.isComingSoon ? 'grayscale opacity-50' : ''}`}
               >
                 <div className="flex flex-col space-y-1.5 p-6">
                   <h3 className="font-semibold leading-none tracking-tight">{tier.name}</h3>
                   <div className="mt-4 flex items-baseline text-3xl font-bold">
-                    {formatCurrency(tier.price)}
-                    <span className="ml-1 text-sm font-normal text-muted-foreground uppercase">/ {language === 'de' ? 'Mon' : 'mo'}</span>
+                    {tier.isComingSoon ? (
+                      <span className="text-2xl">{t('admin.coming_soon')}</span>
+                    ) : (
+                      <>
+                        {formatCurrency(tier.price)}
+                        <span className="ml-1 text-sm font-normal text-muted-foreground uppercase">/ {language === 'de' ? 'Mon' : 'mo'}</span>
+                      </>
+                    )}
                   </div>
                 </div>
                 <div className="flex-1 p-6 pt-0">
-                  <ul className="space-y-3">
-                    <li className="flex items-center gap-2 text-sm">
-                      <Check className="h-4 w-4 text-primary" />
-                      <span>
-                        {tier.monthlyOrderLimit === Infinity 
-                          ? t('admin.unlimited') 
-                          : t('admin.up_to', { count: tier.monthlyOrderLimit })}
-                      </span>
-                    </li>
-                    {tier.features.map(feature => (
-                      <li key={feature} className="flex items-center gap-2 text-sm">
+                  {!tier.isComingSoon && (
+                    <ul className="space-y-3">
+                      <li className="flex items-center gap-2 text-sm">
                         <Check className="h-4 w-4 text-primary" />
-                        <span>{t(`feature.${feature}`)}</span>
+                        <span>
+                          {tier.monthlyOrderLimit === Infinity 
+                            ? t('admin.unlimited') 
+                            : t('admin.up_to', { count: tier.monthlyOrderLimit })}
+                        </span>
                       </li>
-                    ))}
-                  </ul>
+                      {tier.features.map(feature => (
+                        <li key={feature} className="flex items-center gap-2 text-sm">
+                          <Check className="h-4 w-4 text-primary" />
+                          <span>{t(`feature.${feature}`)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
                 <div className="p-6 pt-0 mt-auto">
                    <button 
-                      disabled={isCurrent}
+                      disabled={isCurrent || tier.isComingSoon}
                       className={`inline-flex w-full items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2 ${
                         isCurrent 
                           ? 'bg-surface-container-high text-on-surface-variant' 
                           : 'bg-primary text-on-primary hover:bg-primary-dim'
                       }`}
                    >
-                     {isCurrent ? t('admin.current_plan') : t('admin.coming_soon')}
+                     {isCurrent ? t('admin.current_plan') : tier.isComingSoon ? t('admin.coming_soon') : t('admin.choose_plan')}
                    </button>
                 </div>
               </div>

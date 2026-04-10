@@ -48,13 +48,9 @@ export async function middleware(request: NextRequest) {
 
   // Protect admin routes
   const isAdminRoute = pathname.includes('/admin')
-  const isDemoAdminRoute = pathname.includes('/demo-admin')
   const isOnboardingRoute = pathname.startsWith('/onboarding')
 
-  // Special case: Allow demo admin for sakura-sushi
-  if (isDemoAdminRoute && pathname.startsWith('/sakura-sushi/demo-admin')) {
-    // Continue to subdomain check or return
-  } else if (isAdminRoute && !user) {
+  if (isAdminRoute && !user) {
     // Protect admin routes — redirect to /auth/login if not logged in
     const loginUrl = request.nextUrl.clone()
     loginUrl.pathname = '/auth/login'

@@ -8,7 +8,7 @@ import { ChefHat, Store, Link as LinkIcon, Loader2, CheckCircle2 } from 'lucide-
 export default function OnboardingPage() {
   const router = useRouter()
   const supabase = createClient()
-  
+
   const [shopName, setShopName] = useState('')
   const [slug, setSlug] = useState('')
   const [loading, setLoading] = useState(false)
@@ -31,7 +31,7 @@ export default function OnboardingPage() {
         .select('slug')
         .eq('owner_id', user.id)
         .single()
-      
+
       if (shop) {
         router.push(`/${shop.slug}/admin`)
       }
@@ -64,7 +64,7 @@ export default function OnboardingPage() {
         .select('slug')
         .eq('slug', slug)
         .single()
-      
+
       setSlugAvailable(!data)
       setChecking(false)
     }, 500)
@@ -85,7 +85,7 @@ export default function OnboardingPage() {
         owner_id: userId,
         is_open: true
       })
-    
+
     if (error) {
       alert(error.message)
       setLoading(false)
@@ -112,9 +112,9 @@ export default function OnboardingPage() {
               <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2.5 ml-1">Restaurant Name</label>
               <div className="relative">
                 <Store className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant/30" />
-                <input 
+                <input
                   required
-                  type="text" 
+                  type="text"
                   value={shopName}
                   onChange={e => setShopName(e.target.value)}
                   placeholder="z.B. Sushi Gallery"
@@ -127,25 +127,24 @@ export default function OnboardingPage() {
               <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2.5 ml-1">Dein Slug (URL Pfad)</label>
               <div className="relative">
                 <LinkIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant/30" />
-                <input 
+                <input
                   required
-                  type="text" 
+                  type="text"
                   value={slug}
                   onChange={e => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, '-'))}
                   placeholder="sushi-gallery"
-                  className={`w-full pl-12 pr-12 py-4 bg-surface-container-low border-none rounded-2xl text-base font-bold transition-all ${
-                    slugAvailable === true ? 'ring-2 ring-success/20' : 
-                    slugAvailable === false ? 'ring-2 ring-error/20' : ''
-                  }`}
+                  className={`w-full pl-12 pr-12 py-4 bg-surface-container-low border-none rounded-2xl text-base font-bold transition-all ${slugAvailable === true ? 'ring-2 ring-success/20' :
+                      slugAvailable === false ? 'ring-2 ring-error/20' : ''
+                    }`}
                 />
                 <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                  {checking ? <Loader2 className="w-5 h-5 animate-spin text-on-surface-variant/40" /> : 
-                   slugAvailable === true ? <CheckCircle2 className="w-5 h-5 text-success" /> : 
-                   slugAvailable === false ? <CheckCircle2 className="w-5 h-5 text-error rotate-45" /> : null}
+                  {checking ? <Loader2 className="w-5 h-5 animate-spin text-on-surface-variant/40" /> :
+                    slugAvailable === true ? <CheckCircle2 className="w-5 h-5 text-success" /> :
+                      slugAvailable === false ? <CheckCircle2 className="w-5 h-5 text-error rotate-45" /> : null}
                 </div>
               </div>
               <p className="mt-2.5 ml-1 text-xs text-on-surface-variant font-medium">
-                Deine Kunden bestellen unter: <span className="text-primary font-bold">bestelle.at/{slug || '...'}</span>
+                Deine Kunden bestellen unter: <span className="text-primary font-bold">bestellen.site/{slug || '...'}</span>
               </p>
             </div>
           </div>

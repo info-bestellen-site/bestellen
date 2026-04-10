@@ -30,7 +30,6 @@ export default async function ShopLayout({ children, params }: ShopLayoutProps) 
   // Fetch opening hours
   const { data: hours } = await supabase.from('opening_hours').select('*').eq('shop_id', shop.id)
   let isCurrentlyOpen = isShopOpen(hours || [], shop.is_open, shop.manual_status_updated_at)
-  
   // FORCE OPEN for Demo Shop
   if (slug === 'sakura-sushi') {
     isCurrentlyOpen = true

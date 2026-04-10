@@ -93,7 +93,7 @@ export default function FancyLandingPage() {
           <Link href="/auth/signup" className="w-full sm:w-auto px-10 py-5 bg-primary text-on-primary rounded-full font-black text-sm uppercase tracking-widest shadow-xl shadow-primary/20 hover:shadow-primary/40 hover:-translate-y-1 transition-all">
             Jetzt kostenlos starten
           </Link>
-          <Link href="/sakura-sushi/demo" className="w-full sm:w-auto px-10 py-5 bg-white/5 border border-white/10 text-white rounded-full font-bold text-sm uppercase tracking-widest hover:bg-white/10 transition-colors flex items-center justify-center gap-2">
+          <Link href="/sakura-sushi" className="w-full sm:w-auto px-10 py-5 bg-white/5 border border-white/10 text-white rounded-full font-bold text-sm uppercase tracking-widest hover:bg-white/10 transition-colors flex items-center justify-center gap-2">
             Live Demo ansehen
             <ArrowRight className="w-4 h-4" />
           </Link>

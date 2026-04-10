@@ -8,6 +8,7 @@ export interface TierConfig {
   price: number;
   monthlyOrderLimit: number;
   features: string[];
+  isComingSoon?: boolean;
 }
 
 export const SUBSCRIPTION_TIERS: Record<SubscriptionTier, TierConfig> = {
@@ -16,7 +17,7 @@ export const SUBSCRIPTION_TIERS: Record<SubscriptionTier, TierConfig> = {
     fokus: 'Testen',
     price: 0,
     monthlyOrderLimit: 30,
-    features: ['menu', 'standard-design', 'powered-by-branding'],
+    features: ['menu', 'custom-branding', 'powered-by-branding'],
   },
   pro: {
     name: 'Business',
@@ -24,9 +25,10 @@ export const SUBSCRIPTION_TIERS: Record<SubscriptionTier, TierConfig> = {
     price: 39,
     monthlyOrderLimit: Infinity,
     features: ['menu', 'order-management', 'reservations', 'custom-branding', 'support'],
+    isComingSoon: true,
   },
   max: {
-    name: 'AI-Max',
+    name: 'Max',
     fokus: 'Automatisieren',
     price: 89,
     monthlyOrderLimit: Infinity,
@@ -38,6 +40,7 @@ export const SUBSCRIPTION_TIERS: Record<SubscriptionTier, TierConfig> = {
       'smart-marketing',
       'ai-telephon-agent'
     ],
+    isComingSoon: true,
   },
 };
 

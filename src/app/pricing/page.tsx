@@ -14,8 +14,7 @@ const FEATURES_MATRIX = [
   { label: 'Bestell-System', starter: '20 Orders', pro: 'Unlimited', max: 'Unlimited' },
   { label: 'Bestellverwaltung (Küchen-Monitor)', starter: true, pro: true, max: true },
   { label: 'Abholung, Lieferung & Vor-Ort', starter: true, pro: true, max: true },
-  { label: 'Standard Design', starter: true, pro: true, max: true },
-  { label: 'Eigenes Branding', starter: false, pro: true, max: true },
+  { label: 'Eigenes Branding', starter: true, pro: true, max: true },
   { label: 'Ohne "Bestellen" Branding', starter: false, pro: true, max: true },
   { label: 'Premium Support', starter: false, pro: true, max: true },
   { label: 'Analytics Dashboard', starter: false, pro: false, max: true },
@@ -116,7 +115,7 @@ export default function PricingPage() {
                 initial={{ opacity: 0, y: 40 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.1 + i * 0.1 }}
-                className={`relative flex flex-col rounded-[2rem] border p-8 overflow-hidden ${isMax
+                className={`relative flex flex-col rounded-[2rem] border p-8 overflow-hidden ${tier.isComingSoon ? 'grayscale opacity-50 pointer-events-none' : ''} ${isMax
                   ? 'bg-gradient-to-br from-primary/20 to-primary/5 border-primary/30 shadow-2xl shadow-primary/10'
                   : isPopular
                     ? 'bg-white/[0.07] border-white/20'
@@ -153,7 +152,9 @@ export default function PricingPage() {
                 </div>
 
                 <div className="flex items-baseline gap-1 mb-8">
-                  {tier.price === 0 ? (
+                  {tier.isComingSoon ? (
+                    <span className="text-4xl font-black">Demnächst</span>
+                  ) : tier.price === 0 ? (
                     <span className="text-5xl font-black">Kostenlos</span>
                   ) : (
                     <>
@@ -163,36 +164,39 @@ export default function PricingPage() {
                   )}
                 </div>
 
-                <ul className="space-y-3 mb-8 flex-1">
-                  {FEATURES_MATRIX.filter(f => {
-                    const val = f[key as keyof typeof f]
-                    return val !== false
-                  }).map((f, j) => (
-                    <li key={j} className="flex items-start gap-3 text-sm">
-                      <div className={`mt-0.5 w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center ${isMax ? 'bg-white/20' : 'bg-white/5'}`}>
-                        <Check className={`w-3 h-3 ${isMax ? 'text-white' : 'text-white/80'}`} strokeWidth={3} />
-                      </div>
-                      <span className="text-white">
-                        {f.label}
-                        {typeof f[key as keyof typeof f] === 'string' && (
-                          <span className="ml-1.5 text-[10px] font-bold text-white bg-white/10 px-1.5 py-0.5 rounded-full">
-                            {f[key as keyof typeof f] as string}
-                          </span>
-                        )}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
+                {!tier.isComingSoon && (
+                  <ul className="space-y-3 mb-8 flex-1">
+                    {FEATURES_MATRIX.filter(f => {
+                      const val = f[key as keyof typeof f]
+                      return val !== false
+                    }).map((f, j) => (
+                      <li key={j} className="flex items-start gap-3 text-sm">
+                        <div className={`mt-0.5 w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center ${isMax ? 'bg-white/20' : 'bg-white/5'}`}>
+                          <Check className={`w-3 h-3 ${isMax ? 'text-white' : 'text-white/80'}`} strokeWidth={3} />
+                        </div>
+                        <span className="text-white">
+                          {f.label}
+                          {typeof f[key as keyof typeof f] === 'string' && (
+                            <span className="ml-1.5 text-[10px] font-bold text-white bg-white/10 px-1.5 py-0.5 rounded-full">
+                              {f[key as keyof typeof f] as string}
+                            </span>
+                          )}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {tier.isComingSoon && <div className="flex-1" />}
 
                 <Link
                   href="/auth/signup"
-                  className={`inline-flex items-center justify-center gap-2 w-full py-4 rounded-2xl text-sm font-black uppercase tracking-widest transition-all ${isMax
+                  className={`inline-flex items-center justify-center gap-2 w-full py-4 rounded-2xl text-sm font-black uppercase tracking-widest transition-all ${isMax && !tier.isComingSoon
                     ? 'bg-primary text-on-primary shadow-xl shadow-primary/30 hover:shadow-primary/50 hover:-translate-y-0.5'
                     : 'bg-white/10 text-white hover:bg-white/15 border border-white/10'
                     }`}
                 >
-                  {tier.price === 0 ? 'Kostenlos starten' : `${tier.name} wählen`}
-                  <ArrowRight className="w-4 h-4" />
+                  {tier.isComingSoon ? 'Coming Soon' : tier.price === 0 ? 'Kostenlos starten' : `${tier.name} wählen`}
+                  {!tier.isComingSoon && <ArrowRight className="w-4 h-4" />}
                 </Link>
               </motion.div>
             )
@@ -200,7 +204,7 @@ export default function PricingPage() {
         </div>
 
         {/* Feature comparison table */}
-        <motion.div
+        {/* <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.5 }}
@@ -239,7 +243,7 @@ export default function PricingPage() {
               </tbody>
             </table>
           </div>
-        </motion.div>
+        </motion.div> */}
       </section>
 
       {/* FAQ / reassurance */}
