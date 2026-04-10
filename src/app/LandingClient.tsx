@@ -43,7 +43,7 @@ export default function FancyLandingPage() {
           <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
             <ChefHat className="w-6 h-6 text-on-primary" />
           </div>
-          <span className="text-xl font-bold tracking-tighter uppercase italic">Bestellen.io</span>
+          <span className="text-xl font-bold tracking-tighter uppercase italic">Bestellen</span>
         </div>
         <div className="flex items-center gap-4">
           <Link href="/pricing" className="text-sm font-semibold hover:text-primary transition-colors px-4 py-2">Preise</Link>
@@ -150,7 +150,7 @@ export default function FancyLandingPage() {
       {/* Simple Footer */}
       <footer className="border-t border-white/10 py-12 px-6 text-center z-10 relative">
         <p className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-white/30">
-          © {new Date().getFullYear()} Bestellen.io — Made for Restaurants.
+          © {new Date().getFullYear()} Bestellen — Made for Restaurants.
         </p>
       </footer>
     </div>

@@ -42,7 +42,7 @@ export function AdminSidebar({
         .select('subscription_tier')
         .eq('slug', shopSlug)
         .single()
-      
+
       if (data?.subscription_tier) {
         setTier(data.subscription_tier as SubscriptionTier)
       }
@@ -84,10 +84,10 @@ export function AdminSidebar({
         <div className="p-8">
           <div className="flex items-center justify-between mb-10">
             <Link href="/" className="flex items-center gap-3 group">
-              <div className="w-10 h-10 bg-primary text-on-primary rounded-2xl flex items-center justify-center p-2 shadow-lg shadow-primary/20 transition-all group-hover:scale-105 active:scale-95">
+              {/*  <div className="w-10 h-10 bg-primary text-on-primary rounded-2xl flex items-center justify-center p-2 shadow-lg shadow-primary/20 transition-all group-hover:scale-105 active:scale-95">
                 <ChefHat className="w-full h-full" />
-              </div>
-              <span className="text-xl font-black tracking-tighter text-on-surface">Bestellen</span>
+              </div>*/}
+              {/*<span className="text-xl font-black tracking-tighter text-on-surface">Bestellen</span>*/}
             </Link>
             {onClose && (
               <button onClick={onClose} className="lg:hidden p-2 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-colors">
@@ -104,8 +104,8 @@ export function AdminSidebar({
                   key={item.href}
                   href={item.href}
                   className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${isActive
-                      ? 'bg-primary text-on-primary shadow-lg shadow-primary/10 translate-x-1'
-                      : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'
+                    ? 'bg-primary text-on-primary shadow-lg shadow-primary/10 translate-x-1'
+                    : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface'
                     }`}
                 >
                   <item.icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-on-surface-variant/40'}`} />
