@@ -20,13 +20,13 @@ interface ProductCardProps {
   isCurrentlyOpen?: boolean
 }
 
-export function ProductCard({ 
-  product: initialProduct, 
-  shopSlug, 
+export function ProductCard({
+  product: initialProduct,
+  shopSlug,
   onOpenDetail,
   isAdmin = false,
   isManagementMode = false,
-  isCurrentlyOpen = true 
+  isCurrentlyOpen = true
 }: ProductCardProps) {
   const supabase = createClient()
   const addItem = useCartStore(s => s.addItem)
@@ -61,15 +61,15 @@ export function ProductCard({
 
     const { data, error } = await supabase
       .from('products')
-      .update({ 
-        name: editForm.name, 
+      .update({
+        name: editForm.name,
         price: parseFloat(editForm.price) || 0,
-        description: editForm.description 
+        description: editForm.description
       })
       .eq('id', product.id)
       .select()
       .single()
-    
+
     if (!error && data) {
       setProduct(data)
       setIsEditModalOpen(false)
@@ -114,7 +114,7 @@ export function ProductCard({
         .eq('id', product.id)
         .select()
         .single()
-      
+
       if (!updateError && data) {
         setProduct(data)
       }
@@ -143,7 +143,7 @@ export function ProductCard({
     <div className="group relative">
       <div
         className="aspect-[4/5] rounded-lg overflow-hidden bg-surface-container-low mb-3 relative cursor-pointer"
-        onClick={() => isAdmin ? fileInputRef.current?.click() : onOpenDetail(product)}
+        onClick={() => onOpenDetail(product)}
       >
         {product.image_url ? (
           <img
@@ -187,9 +187,8 @@ export function ProductCard({
             </button>
             <button
               onClick={handleToggleAvailability}
-              className={`w-10 h-10 rounded-full shadow-lg flex items-center justify-center hover:scale-110 transition-transform ${
-                product.is_available ? 'bg-white text-on-surface' : 'bg-primary text-on-primary'
-              }`}
+              className={`w-10 h-10 rounded-full shadow-lg flex items-center justify-center hover:scale-110 transition-transform ${product.is_available ? 'bg-white text-on-surface' : 'bg-primary text-on-primary'
+                }`}
             >
               <Plus className={`w-5 h-5 transition-transform ${product.is_available ? 'rotate-45' : ''}`} />
             </button>
@@ -218,16 +217,16 @@ export function ProductCard({
       {/* Edit Modal (Inline for Edit-in-Place) */}
       {isAdmin && (
         <div onClick={e => e.stopPropagation()}>
-          <Modal 
-            isOpen={isEditModalOpen} 
-            onClose={() => setIsEditModalOpen(false)} 
+          <Modal
+            isOpen={isEditModalOpen}
+            onClose={() => setIsEditModalOpen(false)}
             title="Produkt bearbeiten"
           >
             <form onSubmit={handleSaveEdit} className="space-y-6">
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">Name</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   required
                   className="w-full px-6 py-4 rounded-2xl bg-surface-container-low border-none focus:ring-2 focus:ring-primary/20 text-sm font-bold"
                   value={editForm.name}
@@ -236,7 +235,7 @@ export function ProductCard({
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">Beschreibung</label>
-                <textarea 
+                <textarea
                   className="w-full px-6 py-4 rounded-2xl bg-surface-container-low border-none focus:ring-2 focus:ring-primary/20 text-sm font-bold min-h-[100px]"
                   value={editForm.description}
                   onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
@@ -244,8 +243,8 @@ export function ProductCard({
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">Preis (€)</label>
-                <input 
-                  type="number" 
+                <input
+                  type="number"
                   step="0.01"
                   required
                   className="w-full px-6 py-4 rounded-2xl bg-surface-container-low border-none focus:ring-2 focus:ring-primary/20 text-sm font-bold"
@@ -253,8 +252,8 @@ export function ProductCard({
                   onChange={(e) => setEditForm(prev => ({ ...prev, price: e.target.value }))}
                 />
               </div>
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 disabled={isSaving}
                 className="w-full py-4 bg-primary text-on-primary rounded-full font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/10 active:scale-95 transition-all disabled:opacity-50"
               >
@@ -265,17 +264,17 @@ export function ProductCard({
         </div>
       )}
 
-      <div className="flex justify-between items-start mb-1">
-        <h3 className="text-base font-semibold tracking-tight text-on-surface">{product.name}</h3>
-        <span className="text-sm font-bold tracking-tight text-on-surface ml-2 whitespace-nowrap">
+      <div className="flex justify-between items-start mb-1.5">
+        <h3 className="text-lg font-bold tracking-tight text-on-surface leading-snug">{product.name}</h3>
+        <span className="text-base font-black tracking-tight text-primary ml-4 whitespace-nowrap">
           {formatCurrency(product.price)}
         </span>
       </div>
       {product.description && (
-        <p className="text-sm text-on-surface-variant leading-relaxed line-clamp-2">{product.description}</p>
+        <p className="text-sm text-on-surface-variant leading-relaxed line-clamp-2 font-medium">{product.description}</p>
       )}
 
-      <input 
+      <input
         type="file"
         ref={fileInputRef}
         className="hidden"
@@ -284,8 +283,8 @@ export function ProductCard({
       />
 
       {imageToCrop && (
-        <ImageCropper 
-          image={imageToCrop} 
+        <ImageCropper
+          image={imageToCrop}
           onCancel={() => setImageToCrop(null)}
           onCropComplete={onCropComplete}
         />

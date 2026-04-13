@@ -12,11 +12,11 @@ interface ImageCropperProps {
   circularCrop?: boolean
 }
 
-export function ImageCropper({ 
-  image, 
-  onCropComplete, 
-  onCancel, 
-  aspectRatio = 4 / 5,
+export function ImageCropper({
+  image,
+  onCropComplete,
+  onCancel,
+  aspectRatio = 3 / 2,
   circularCrop = false
 }: ImageCropperProps) {
   const [crop, setCrop] = useState({ x: 0, y: 0 })
@@ -88,15 +88,15 @@ export function ImageCropper({
   }
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex flex-col">
-      <div className="flex justify-between items-center p-6 text-white">
-        <button onClick={onCancel} className="p-3 hover:bg-white/10 rounded-full transition-all">
+    <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex flex-col">
+      <div className="flex justify-between items-center px-4 py-3 sm:p-6 text-white border-b border-white/5 bg-black/20">
+        <button onClick={onCancel} className="p-2 hover:bg-white/10 rounded-full transition-all">
           <X className="w-6 h-6" />
         </button>
-        <h2 className="text-sm font-black uppercase tracking-[0.2em]">Bild anpassen</h2>
-        <button 
+        <h2 className="text-xs font-black uppercase tracking-[0.2em] opacity-60 hidden xs:block">Bild anpassen</h2>
+        <button
           onClick={handleConfirm}
-          className="flex items-center gap-2 px-6 py-3 bg-white text-black rounded-full font-black text-xs uppercase tracking-widest hover:scale-105 active:scale-95 transition-all"
+          className="flex items-center gap-2 px-5 py-2.5 bg-primary text-on-primary rounded-full font-black text-xs uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-lg shadow-primary/20"
         >
           <Check className="w-4 h-4" />
           Speichern
@@ -117,9 +117,9 @@ export function ImageCropper({
         />
       </div>
 
-      <div className="p-10 bg-black/40 backdrop-blur-xl border-t border-white/5">
-        <div className="max-w-xs mx-auto flex items-center gap-6">
-          <ZoomOut className="w-5 h-5 text-white/40" />
+      <div className="p-6 sm:p-10 bg-black/40 backdrop-blur-xl border-t border-white/5">
+        <div className="max-w-xs mx-auto flex items-center gap-4 sm:gap-6">
+          <ZoomOut className="w-5 h-5 text-white/40 shrink-0" />
           <input
             type="range"
             value={zoom}
@@ -128,9 +128,9 @@ export function ImageCropper({
             step={0.1}
             aria-labelledby="Zoom"
             onChange={(e) => setZoom(Number(e.target.value))}
-            className="flex-1 h-1.5 bg-white/10 rounded-full appearance-none cursor-pointer accent-white"
+            className="flex-1 h-1.5 bg-white/10 rounded-full appearance-none cursor-pointer accent-primary"
           />
-          <ZoomIn className="w-5 h-5 text-white/40" />
+          <ZoomIn className="w-5 h-5 text-white/40 shrink-0" />
         </div>
       </div>
     </div>

@@ -17,7 +17,7 @@ export function ProductDetailModal({ product, shopSlug, onClose }: ProductDetail
   const supabase = createClient()
   const addItem = useCartStore(s => s.addItem)
 
-  const [step, setStep] = useState<'modifiers' | 'upsell'>('modifiers')
+  const [step, setStep] = useState<'overview' | 'modifiers' | 'upsell'>('overview')
   const [groups, setGroups] = useState<ModifierGroupWithOptions[]>([])
   const [upsellRules, setUpsellRules] = useState<(UpsellRuleWithProduct & { upsell_product: Product })[]>([])
   const [loading, setLoading] = useState(false)
@@ -33,7 +33,7 @@ export function ProductDetailModal({ product, shopSlug, onClose }: ProductDetail
       setUpsellRules([])
       setSelections({})
       setUpsellSelections({})
-      setStep('modifiers')
+      setStep('overview')
       return
     }
 
@@ -143,6 +143,38 @@ export function ProductDetailModal({ product, shopSlug, onClose }: ProductDetail
 
   const grandTotal = productTotal + upsellTotal
 
+  const hasModifiers = groups.length > 0
+
+  function handleNext() {
+    if (step === 'overview') {
+      if (hasModifiers) {
+        setStep('modifiers')
+      } else if (hasUpsell) {
+        setStep('upsell')
+      } else {
+        handleAddToCart()
+      }
+    } else if (step === 'modifiers') {
+      if (hasUpsell) {
+        setStep('upsell')
+      } else {
+        handleAddToCart()
+      }
+    }
+  }
+
+  function handleBack() {
+    if (step === 'modifiers') {
+      setStep('overview')
+    } else if (step === 'upsell') {
+      if (hasModifiers) {
+        setStep('modifiers')
+      } else {
+        setStep('overview')
+      }
+    }
+  }
+
   function handleOptionToggle(group: ModifierGroupWithOptions, optionId: string) {
     setSelections(prev => {
       const current = new Set(prev[group.id] || [])
@@ -180,68 +212,97 @@ export function ProductDetailModal({ product, shopSlug, onClose }: ProductDetail
     onClose()
   }
 
-  function handleNext() {
-    if (!isValid) return
-    if (hasUpsell) {
-      setStep('upsell')
-    } else {
-      handleAddToCart()
-    }
-  }
-
+  const hasOptions = groups.length > 0 || hasUpsell
   if (!product) return null
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center font-sans" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-xl" />
       <div
-        className="relative bg-surface-container-lowest rounded-t-3xl sm:rounded-3xl w-full sm:max-w-lg max-h-[92vh] overflow-hidden flex flex-col"
-        style={{ animation: 'slideUp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)' }}
+        className="relative bg-surface-container-lowest rounded-t-[2.5rem] sm:rounded-[3rem] w-full sm:max-w-2xl h-[90vh] overflow-hidden flex flex-col shadow-2xl"
+        style={{ animation: 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)' }}
         onClick={e => e.stopPropagation()}
       >
         {/* Step indicator */}
-        {hasUpsell && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
-            <div className={`w-6 h-1.5 rounded-full transition-all ${step === 'modifiers' ? 'bg-primary' : 'bg-primary/30'}`} />
-            <div className={`w-6 h-1.5 rounded-full transition-all ${step === 'upsell' ? 'bg-primary' : 'bg-outline-variant/30'}`} />
+        {(hasModifiers || hasUpsell) && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-50">
+            <div className={`w-6 h-1.5 rounded-full transition-all ${step === 'overview' ? 'bg-primary' : 'bg-primary/20'}`} />
+            {hasModifiers && (
+              <div className={`w-6 h-1.5 rounded-full transition-all ${step === 'modifiers' ? 'bg-primary' : 'bg-primary/20'}`} />
+            )}
+            {hasUpsell && (
+              <div className={`w-6 h-1.5 rounded-full transition-all ${step === 'upsell' ? 'bg-primary' : 'bg-primary/20'}`} />
+            )}
           </div>
         )}
 
-        {/* Close button */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-black/20 backdrop-blur-md flex items-center justify-center text-white hover:bg-black/30 transition-colors"
-        >
-          <X className="w-4 h-4" />
-        </button>
+        {/* Header navigation */}
+        <div className="absolute top-4 inset-x-4 z-50 flex justify-between items-center">
+          {step !== 'overview' ? (
+            <button
+              onClick={handleBack}
+              className="w-10 h-10 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white hover:bg-black/40 transition-all active:scale-95 shadow-lg"
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+          ) : <div />}
+          <button
+            onClick={onClose}
+            className="w-10 h-10 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white hover:bg-black/40 transition-all active:scale-95 shadow-lg"
+          >
+            <X className="w-6 h-6" />
+          </button>
+        </div>
 
-        {/* ===== STEP 1: MODIFIERS ===== */}
-        {step === 'modifiers' && (
-          <>
-            {/* Product image */}
-            <div className="aspect-[16/9] bg-surface-container-low relative shrink-0">
+        {/* ===== STEP 0: OVERVIEW ===== */}
+        {step === 'overview' && (
+          <div key="overview" className="flex flex-col h-full overflow-hidden" style={{ animation: 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+            {/* Huge Hero Image */}
+            <div className="h-[65vh] sm:h-[70vh] bg-surface-container-low relative shrink-0">
               {product.image_url ? (
                 <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
-                  <ImageIcon className="w-16 h-16 text-outline-variant/30" />
+                  <ImageIcon className="w-20 h-20 text-outline-variant/30" />
                 </div>
               )}
-              {/* Gradient overlay at bottom */}
               <div className="absolute bottom-0 inset-x-0 h-16 bg-gradient-to-t from-surface-container-lowest to-transparent" />
             </div>
 
-            {/* Scrollable content */}
-            <div className="overflow-y-auto flex-1">
-              <div className="px-6 pt-4 pb-2">
-                <div className="flex justify-between items-start gap-3 mb-2">
-                  <h2 className="text-xl font-black tracking-tight leading-tight">{product.name}</h2>
-                  <span className="text-lg font-black text-primary whitespace-nowrap">{formatCurrency(product.price)}</span>
-                </div>
-                {product.description && (
-                  <p className="text-sm text-on-surface-variant leading-relaxed mb-4">{product.description}</p>
-                )}
+            <div className="flex-1 overflow-y-auto px-8 pt-6 pb-4">
+              <div className="flex justify-between items-start gap-4 mb-3">
+                <h2 className="text-3xl font-black tracking-tighter leading-none">{product.name}</h2>
+                <span className="text-2xl font-black text-primary">{formatCurrency(product.price)}</span>
               </div>
+              {product.description && (
+                <p className="text-base text-on-surface-variant leading-relaxed">{product.description}</p>
+              )}
+            </div>
+
+            <div className="p-6 shrink-0 bg-surface-container-lowest">
+              <button
+                onClick={handleNext}
+                className="w-full py-5 bg-primary text-on-primary rounded-full font-black text-lg flex items-center justify-center gap-2 shadow-xl shadow-primary/30 hover:opacity-90 active:scale-[0.98] transition-all"
+              >
+                {hasModifiers ? 'Anpassen' : 'Hinzufügen'}
+                {hasModifiers && <ChevronRight className="w-5 h-5" />}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ===== STEP 1: MODIFIERS ===== */}
+        {step === 'modifiers' && (
+          <div key="modifiers" className="flex flex-col h-full overflow-hidden" style={{ animation: 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+            {/* Header for context */}
+            <div className="px-6 pt-16 pb-4 border-b border-outline-variant/10 shrink-0">
+              <h2 className="text-xl font-black tracking-tight">{product.name}</h2>
+              <p className="text-xs text-on-surface-variant font-medium uppercase tracking-widest mt-1">Auswahl konfigurieren</p>
+            </div>
+
+            {/* Scrollable Modifiers */}
+            <div className="overflow-y-auto flex-1">
+              <div className="px-6 py-6 space-y-8">
 
               {/* Modifier Groups */}
               {!loading && groups.length > 0 && (
@@ -275,21 +336,21 @@ export function ProductDetailModal({ product, shopSlug, onClose }: ProductDetail
                                 key={option.id}
                                 type="button"
                                 onClick={() => handleOptionToggle(group, option.id)}
-                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl border-2 transition-all text-left ${
+                                className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl border-2 transition-all text-left ${
                                   isSelected
                                     ? 'border-primary bg-primary/5'
                                     : 'border-outline-variant/15 hover:border-outline-variant/40 bg-surface-container-low'
                                 }`}
                               >
                                 {/* Radio / Checkbox indicator */}
-                                <div className={`w-5 h-5 shrink-0 flex items-center justify-center transition-all ${
-                                  isRadio ? 'rounded-full' : 'rounded-md'
+                                <div className={`w-6 h-6 shrink-0 flex items-center justify-center transition-all ${
+                                  isRadio ? 'rounded-full' : 'rounded-lg'
                                 } border-2 ${isSelected ? 'border-primary bg-primary' : 'border-outline-variant/40'}`}>
-                                  {isSelected && <Check className="w-3 h-3 text-white" />}
+                                  {isSelected && <Check className="w-4 h-4 text-white" />}
                                 </div>
-                                <span className="flex-1 text-sm font-semibold">{option.name}</span>
+                                <span className="flex-1 text-base font-bold">{option.name}</span>
                                 {option.price_delta > 0 && (
-                                  <span className="text-sm font-black text-primary">+{formatCurrency(option.price_delta)}</span>
+                                  <span className="text-base font-black text-primary">+{formatCurrency(option.price_delta)}</span>
                                 )}
                                 {option.price_delta === 0 && (
                                   <span className="text-xs text-on-surface-variant/40 font-medium">inkl.</span>
@@ -317,6 +378,7 @@ export function ProductDetailModal({ product, shopSlug, onClose }: ProductDetail
                   </div>
                 </div>
               )}
+              </div>
             </div>
 
             {/* CTA */}
@@ -354,25 +416,16 @@ export function ProductDetailModal({ product, shopSlug, onClose }: ProductDetail
                 </div>
               )}
             </div>
-          </>
+          </div>
         )}
 
         {/* ===== STEP 2: UPSELLING ===== */}
         {step === 'upsell' && (
-          <>
+          <div key="upsell" className="flex flex-col h-full overflow-hidden" style={{ animation: 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)' }}>
             {/* Header */}
-            <div className="px-6 pt-8 pb-4 shrink-0">
-              <button
-                onClick={() => setStep('modifiers')}
-                className="flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors mb-4"
-              >
-                <ChevronLeft className="w-3.5 h-3.5" />
-                Zurück
-              </button>
-              <div className="text-center">
-                <h2 className="text-xl font-black tracking-tight mb-1">Lust auf etwas dazu? 🍹</h2>
-                <p className="text-sm text-on-surface-variant">Entdecke passende Extras zu deiner Bestellung</p>
-              </div>
+            <div className="px-6 pt-16 pb-4 shrink-0 text-center">
+              <h2 className="text-2xl font-black tracking-tight mb-1">Lust auf etwas dazu? 🍹</h2>
+              <p className="text-sm text-on-surface-variant">Entdecke passende Extras zu deiner Bestellung</p>
             </div>
 
             {/* Upsell cards */}
@@ -457,7 +510,7 @@ export function ProductDetailModal({ product, shopSlug, onClose }: ProductDetail
                 Nein danke, ohne Extras
               </button>
             </div>
-          </>
+          </div>
         )}
       </div>
 
