@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, use, useRef } from 'react'
+import { useState, useEffect, use, useRef, Fragment } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Category, Product } from '@/types/database'
 import { 
@@ -13,7 +13,11 @@ import {
   Settings2,
   X,
   Upload,
-  Edit2
+  Edit2,
+  Puzzle,
+  TrendingUp,
+  Eye,
+  EyeOff,
 } from 'lucide-react'
 import { useTranslation } from '@/lib/i18n/useTranslation'
 import { formatCurrency } from '@/lib/utils/format-currency'
@@ -37,6 +41,8 @@ import {
   rectSortingStrategy,
 } from '@dnd-kit/sortable'
 import { SortableItem } from '@/components/admin/menu/SortableItem'
+import { ModifierGroupEditor } from '@/components/admin/menu/ModifierGroupEditor'
+import { UpsellEditor } from '@/components/admin/menu/UpsellEditor'
 
 export default function MenuManagementPage({ params }: { params: Promise<{ 'shop-slug': string }> }) {
   const { 'shop-slug': shopSlug } = use(params)
@@ -46,6 +52,10 @@ export default function MenuManagementPage({ params }: { params: Promise<{ 'shop
   const [categories, setCategories] = useState<Category[]>([])
   const [products, setProducts] = useState<Product[]>([])
   const { t } = useTranslation()
+
+  // Tab & modifier editor state
+  const [activeTab, setActiveTab] = useState<'menu' | 'upselling'>('menu')
+  const [modifierProductId, setModifierProductId] = useState<string | null>(null)
 
   // Modal states
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false)
@@ -292,6 +302,18 @@ export default function MenuManagementPage({ params }: { params: Promise<{ 'shop
     setProducts(products.filter(p => p.id !== id))
   }
 
+  const toggleVisibility = async (product: Product) => {
+    const newVal = !product.is_hidden_from_menu
+    const { error } = await supabase
+      .from('products')
+      .update({ is_hidden_from_menu: newVal })
+      .eq('id', product.id)
+    
+    if (!error) {
+      setProducts(products.map(p => p.id === product.id ? { ...p, is_hidden_from_menu: newVal } : p))
+    }
+  }
+
   const toggleAvailability = async (product: Product) => {
     const newVal = !product.is_available
     const { error } = await supabase
@@ -428,15 +450,52 @@ export default function MenuManagementPage({ params }: { params: Promise<{ 'shop
           <h1 className="text-2xl sm:text-4xl font-black tracking-tight mb-2">{t('menu_title')}</h1>
           <p className="text-sm sm:text-lg text-on-surface-variant font-medium">{t('menu_subtitle')}</p>
         </div>
-        <button 
-          onClick={() => setIsCategoryModalOpen(true)}
-          className="flex items-center justify-center gap-3 px-8 py-4 bg-primary text-on-primary rounded-full font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/10 hover:scale-[1.02] active:scale-95 transition-all w-full sm:w-auto"
+        {activeTab === 'menu' && (
+          <button 
+            onClick={() => setIsCategoryModalOpen(true)}
+            className="flex items-center justify-center gap-3 px-8 py-4 bg-primary text-on-primary rounded-full font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/10 hover:scale-[1.02] active:scale-95 transition-all w-full sm:w-auto"
+          >
+            <Plus className="w-4 h-4" />
+            {t('category')}
+          </button>
+        )}
+      </div>
+
+      {/* Tab Navigation */}
+      <div className="flex gap-2 border-b border-outline-variant/10 pb-0">
+        <button
+          onClick={() => setActiveTab('menu')}
+          className={`flex items-center gap-2 px-5 py-3 text-xs font-black uppercase tracking-widest rounded-t-xl transition-all border-b-2 ${
+            activeTab === 'menu'
+              ? 'border-primary text-primary bg-primary/5'
+              : 'border-transparent text-on-surface-variant hover:text-on-surface'
+          }`}
         >
-          <Plus className="w-4 h-4" />
-          {t('category')}
+          <UtensilsCrossed className="w-4 h-4" />
+          Speisekarte
+        </button>
+        <button
+          onClick={() => setActiveTab('upselling')}
+          className={`flex items-center gap-2 px-5 py-3 text-xs font-black uppercase tracking-widest rounded-t-xl transition-all border-b-2 ${
+            activeTab === 'upselling'
+              ? 'border-primary text-primary bg-primary/5'
+              : 'border-transparent text-on-surface-variant hover:text-on-surface'
+          }`}
+        >
+          <TrendingUp className="w-4 h-4" />
+          Upselling
         </button>
       </div>
 
+      {/* Upselling Tab */}
+      {activeTab === 'upselling' && shopId && (
+        <div className="pb-20">
+          <UpsellEditor shopId={shopId} products={products} />
+        </div>
+      )}
+
+      {/* Menu Tab */}
+      {activeTab === 'menu' && (
       <div className="space-y-12 pb-20">
         {categories.length === 0 && (
           <div className="py-40 text-center rounded-[2rem] border-2 border-dashed border-outline-variant/20">
@@ -498,7 +557,8 @@ export default function MenuManagementPage({ params }: { params: Promise<{ 'shop
                     >
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {products.filter(p => p.category_id === category.id).map((product) => (
-                          <SortableItem key={product.id} id={product.id} data={{ type: 'product', categoryId: category.id }}>
+                          <Fragment key={product.id}>
+                          <SortableItem id={product.id} data={{ type: 'product', categoryId: category.id }}>
                             {({ attributes, listeners }) => (
                               <div className={`flex items-center gap-3 sm:gap-6 p-3 sm:p-4 rounded-2xl sm:rounded-3xl border border-outline-variant/5 transition-all bg-white hover:border-outline-variant/20 hover:shadow-xl hover:shadow-primary/5 ${!product.is_available ? 'grayscale opacity-60' : ''}`}>
                                  <div {...attributes} {...listeners} className="p-2 cursor-grab active:cursor-grabbing text-on-surface-variant/40 hover:text-primary transition-colors">
@@ -522,15 +582,22 @@ export default function MenuManagementPage({ params }: { params: Promise<{ 'shop
                                   </button>
                                 </div>
 
-                                <div className="flex-1 min-w-0">
+                              <div className="flex-1 min-w-0">
                                   <div className="flex justify-between items-start">
-                                    <h4 className="font-black text-sm truncate">{product.name}</h4>
+                                    <div className="flex items-center gap-2 min-w-0">
+                                      <h4 className="font-black text-sm truncate">{product.name}</h4>
+                                      {product.is_hidden_from_menu && (
+                                        <span className="shrink-0 text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full bg-outline-variant/15 text-on-surface-variant/60">
+                                          Nur als Option
+                                        </span>
+                                      )}
+                                    </div>
                                     <span className="text-sm font-black text-primary ml-2">{formatCurrency(product.price)}</span>
                                   </div>
                                   {product.description && (
                                     <p className="text-xs text-on-surface-variant font-medium line-clamp-1 mt-0.5">{product.description}</p>
                                   )}
-                                  <div className="flex items-center gap-4 mt-3">
+                                  <div className="flex items-center gap-2 mt-3 flex-wrap">
                                       <button 
                                         onClick={() => toggleAvailability(product)}
                                         className={`text-xs font-black uppercase tracking-widest flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
@@ -542,10 +609,36 @@ export default function MenuManagementPage({ params }: { params: Promise<{ 'shop
                                         <div className={`w-2 h-2 rounded-full ${product.is_available ? 'bg-success animate-pulse' : 'bg-error'}`} />
                                         {product.is_available ? t('available') : t('sold_out')}
                                       </button>
+                                      <button 
+                                        onClick={() => toggleVisibility(product)}
+                                        className={`text-xs font-black uppercase tracking-widest flex items-center gap-1.5 px-3 py-2 rounded-full transition-all ${
+                                          product.is_hidden_from_menu 
+                                            ? 'bg-outline-variant/10 text-on-surface-variant' 
+                                            : 'bg-surface-container-low text-on-surface-variant/50'
+                                        }`}
+                                        title={product.is_hidden_from_menu ? 'Im Menü versteckt' : 'Im Menü sichtbar'}
+                                      >
+                                        {product.is_hidden_from_menu
+                                          ? <EyeOff className="w-3 h-3" />
+                                          : <Eye className="w-3 h-3" />
+                                        }
+                                        <span className="hidden sm:inline">{product.is_hidden_from_menu ? 'Versteckt' : 'Sichtbar'}</span>
+                                      </button>
                                   </div>
                                 </div>
 
                                   <div className="flex items-center gap-1">
+                                    <button 
+                                      onClick={() => setModifierProductId(modifierProductId === product.id ? null : product.id)}
+                                      className={`p-2 sm:p-3 rounded-full transition-all shrink-0 ${
+                                        modifierProductId === product.id
+                                          ? 'text-primary bg-primary/10'
+                                          : 'text-on-surface-variant/40 hover:text-primary hover:bg-primary/5'
+                                      }`}
+                                      title="Modifier konfigurieren"
+                                    >
+                                      <Puzzle className="w-4 h-4" />
+                                    </button>
                                     <button 
                                       onClick={() => openEditProductModal(product)}
                                       className="p-2 sm:p-3 text-on-surface-variant/40 hover:text-primary hover:bg-primary/5 rounded-full transition-all shrink-0"
@@ -562,6 +655,18 @@ export default function MenuManagementPage({ params }: { params: Promise<{ 'shop
                               </div>
                             )}
                           </SortableItem>
+
+                          {/* Modifier Editor - inline below product */}
+                          {modifierProductId === product.id && shopId && (
+                            <div className="col-span-1 md:col-span-2 mt-1 p-5 rounded-2xl border-2 border-primary/15 animate-fadeIn" style={{ background: 'color-mix(in srgb, var(--color-primary) 3%, white)' }}>
+                              <ModifierGroupEditor
+                                product={product}
+                                shopId={shopId}
+                                onClose={() => setModifierProductId(null)}
+                              />
+                            </div>
+                          )}
+                        </Fragment> 
                         ))}
                       </div>
                     </SortableContext>
@@ -572,6 +677,7 @@ export default function MenuManagementPage({ params }: { params: Promise<{ 'shop
           </SortableContext>
         </DndContext>
       </div>
+      )} {/* end activeTab === 'menu' */}
 
       {/* Category Modal */}
       <Modal 

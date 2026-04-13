@@ -178,13 +178,18 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
       if (orderError) throw orderError
 
       // 2. Create order items
-      const orderItems = items.map(item => ({
-        order_id: order.id,
-        product_id: item.product.id,
-        product_name: item.product.name,
-        quantity: item.quantity,
-        unit_price: item.product.price
-      }))
+      const orderItems = items.map(item => {
+        const modifierSummary = item.selectedModifiers && item.selectedModifiers.length > 0
+          ? ` (${item.selectedModifiers.map(m => m.optionName).join(', ')})`
+          : ''
+        return {
+          order_id: order.id,
+          product_id: item.product.id,
+          product_name: item.product.name + modifierSummary,
+          quantity: item.quantity,
+          unit_price: item.totalPrice,
+        }
+      })
 
       const { error: itemsError } = await supabase
         .from('order_items')
@@ -238,21 +243,26 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
           <h3 className="text-sm font-bold uppercase tracking-widest text-on-surface-variant mb-4">Deine Auswahl</h3>
           <div className="divide-y divide-outline-variant/5">
             {items.map((item) => (
-              <div key={item.product.id} className="py-4 first:pt-0 last:pb-0 flex items-center justify-between gap-4">
+              <div key={item.cartItemKey} className="py-4 first:pt-0 last:pb-0 flex items-center justify-between gap-4">
                 <div className="flex-1">
                   <h4 className="font-semibold text-sm">{item.product.name}</h4>
-                  <p className="text-xs text-on-surface-variant font-medium">{formatCurrency(item.product.price)}</p>
+                  {item.selectedModifiers && item.selectedModifiers.length > 0 && (
+                    <p className="text-xs text-primary/70 font-medium mt-0.5">
+                      {item.selectedModifiers.map(m => m.optionName).join(', ')}
+                    </p>
+                  )}
+                  <p className="text-xs text-on-surface-variant font-medium">{formatCurrency(item.totalPrice)}</p>
                 </div>
                 <div className="flex items-center gap-3 bg-surface-container-low px-2 py-1 rounded-full">
-                  <button onClick={() => updateQuantity(item.product.id, item.quantity - 1, shopSlug)} className="p-1 hover:text-primary transition-colors">
+                  <button onClick={() => updateQuantity(item.cartItemKey, item.quantity - 1, shopSlug)} className="p-1 hover:text-primary transition-colors">
                     <Minus className="w-3.5 h-3.5" />
                   </button>
                   <span className="text-xs font-bold w-4 text-center">{item.quantity}</span>
-                  <button onClick={() => updateQuantity(item.product.id, item.quantity + 1, shopSlug)} className="p-1 hover:text-primary transition-colors">
+                  <button onClick={() => updateQuantity(item.cartItemKey, item.quantity + 1, shopSlug)} className="p-1 hover:text-primary transition-colors">
                     <Plus className="w-3.5 h-3.5" />
                   </button>
                 </div>
-                <button onClick={() => removeItem(item.product.id, shopSlug)} className="text-error-dim/40 hover:text-error transition-colors">
+                <button onClick={() => removeItem(item.cartItemKey, shopSlug)} className="text-error-dim/40 hover:text-error transition-colors">
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>

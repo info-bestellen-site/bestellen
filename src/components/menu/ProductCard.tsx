@@ -205,7 +205,7 @@ export function ProductCard({
             <button
               onClick={(e) => {
                 e.stopPropagation()
-                addItem(product, shopSlug)
+                onOpenDetail(product)
               }}
               className="absolute bottom-3 right-3 w-10 h-10 rounded-full bg-white/80 backdrop-blur-md flex items-center justify-center text-primary shadow-lg border border-white/20 active:scale-90 transition-transform hover:bg-white"
             >

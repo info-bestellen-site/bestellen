@@ -36,6 +36,7 @@ export function MenuList({
   const { t } = useTranslation()
 
   const filteredProducts = products.filter((product) => {
+    if (!isAdmin && product.is_hidden_from_menu) return false  // hide from customers
     const matchesCategory = activeCategoryId ? product.category_id === activeCategoryId : true
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (product.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)

@@ -4,6 +4,7 @@ import React from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { ChefHat, ArrowRight, Zap, Target, ShieldCheck, Banknote, Store, Smartphone } from 'lucide-react'
+import { LandingNav } from '@/components/layout/LandingNav'
 
 const FEATURES = [
   {
@@ -38,19 +39,7 @@ export default function FancyLandingPage() {
       <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none mix-blend-overlay" />
 
       {/* Navigation Layer */}
-      <nav className="absolute top-0 w-full p-6 z-50 flex items-center justify-between max-w-7xl mx-auto left-0 right-0">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
-            <ChefHat className="w-6 h-6 text-on-primary" />
-          </div>
-          <span className="text-xl font-bold tracking-tighter uppercase italic">Bestellen</span>
-        </div>
-        <div className="flex items-center gap-4">
-          <Link href="/pricing" className="text-sm font-semibold hover:text-primary transition-colors px-4 py-2">Preise</Link>
-          <Link href="/auth/login" className="text-sm font-semibold hover:text-primary transition-colors px-4 py-2">Login</Link>
-          <Link href="/auth/signup" className="text-sm font-bold bg-white text-black px-5 py-2.5 rounded-full hover:scale-105 transition-transform">Starten</Link>
-        </div>
-      </nav>
+      <LandingNav />
 
       {/* Hero Section */}
       <section className="relative pt-40 pb-20 md:pt-52 md:pb-32 px-6 max-w-7xl mx-auto flex flex-col items-center text-center z-10">

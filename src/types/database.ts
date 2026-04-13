@@ -207,6 +207,153 @@ export type Database = {
           },
         ]
       }
+      modifier_groups: {
+        Row: {
+          id: string
+          shop_id: string
+          product_id: string
+          name: string
+          description: string | null
+          is_required: boolean
+          min_selections: number
+          max_selections: number
+          sort_order: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          shop_id: string
+          product_id: string
+          name: string
+          description?: string | null
+          is_required?: boolean
+          min_selections?: number
+          max_selections?: number
+          sort_order?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          shop_id?: string
+          product_id?: string
+          name?: string
+          description?: string | null
+          is_required?: boolean
+          min_selections?: number
+          max_selections?: number
+          sort_order?: number
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "modifier_groups_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "modifier_groups_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      modifier_options: {
+        Row: {
+          id: string
+          group_id: string
+          name: string
+          price_delta: number
+          is_default: boolean
+          sort_order: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          group_id: string
+          name: string
+          price_delta?: number
+          is_default?: boolean
+          sort_order?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          group_id?: string
+          name?: string
+          price_delta?: number
+          is_default?: boolean
+          sort_order?: number
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "modifier_options_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "modifier_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      upsell_rules: {
+        Row: {
+          id: string
+          shop_id: string
+          trigger_product_id: string | null
+          upsell_product_id: string
+          bundle_price: number | null
+          sort_order: number
+          is_active: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          shop_id: string
+          trigger_product_id?: string | null
+          upsell_product_id: string
+          bundle_price?: number | null
+          sort_order?: number
+          is_active?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          shop_id?: string
+          trigger_product_id?: string | null
+          upsell_product_id?: string
+          bundle_price?: number | null
+          sort_order?: number
+          is_active?: boolean
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "upsell_rules_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "upsell_rules_trigger_product_id_fkey"
+            columns: ["trigger_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "upsell_rules_upsell_product_id_fkey"
+            columns: ["upsell_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           allergens: string[] | null
@@ -216,6 +363,7 @@ export type Database = {
           id: string
           image_url: string | null
           is_available: boolean
+          is_hidden_from_menu: boolean
           name: string
           preparation_time_minutes: number | null
           price: number
@@ -231,6 +379,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_available?: boolean
+          is_hidden_from_menu?: boolean
           name: string
           preparation_time_minutes?: number | null
           price: number
@@ -246,6 +395,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_available?: boolean
+          is_hidden_from_menu?: boolean
           name?: string
           preparation_time_minutes?: number | null
           price?: number
@@ -540,6 +690,27 @@ export type Order = Tables<'orders'>
 export type OrderItem = Tables<'order_items'>
 export type OpeningHour = Tables<'opening_hours'>
 export type Table = Tables<'tables'>
+export type ModifierGroup = Tables<'modifier_groups'>
+export type ModifierOption = Tables<'modifier_options'>
+export type UpsellRule = Tables<'upsell_rules'>
 
 export type OrderStatus = Order['status']
 export type FulfillmentType = Order['fulfillment_type']
+
+// Extended types with relations
+export type ModifierGroupWithOptions = ModifierGroup & {
+  modifier_options: ModifierOption[]
+}
+
+export type UpsellRuleWithProduct = UpsellRule & {
+  upsell_product: Product
+}
+
+// Cart modifier selection
+export interface SelectedModifier {
+  groupId: string
+  groupName: string
+  optionId: string
+  optionName: string
+  priceDelta: number
+}
