@@ -3,14 +3,14 @@
 import { useState, useEffect, use } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Shop } from '@/types/database'
-import { 
-  Store, 
-  MapPin, 
-  Phone, 
-  Clock, 
-  Euro, 
-  Save, 
-  Loader2, 
+import {
+  Store,
+  MapPin,
+  Phone,
+  Clock,
+  Euro,
+  Save,
+  Loader2,
   CheckCircle2,
   Globe,
   Plus,
@@ -79,9 +79,9 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
   const [iconName, setIconName] = useState<string | null>(null)
   const [baseLanguage, setBaseLanguage] = useState<Language>('de')
   const [error, setError] = useState<string | null>(null)
-  
+
   const { t } = useTranslation()
-  
+
   const [isUploading, setIsUploading] = useState(false)
   const [imageToCrop, setImageToCrop] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -101,7 +101,7 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
         .select('*')
         .eq('slug', shopSlug)
         .single()
-      
+
       if (data) {
         setShop(data)
         setName(data.name)
@@ -158,7 +158,7 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
       })
       .select()
       .single()
-    
+
     if (data) setOpeningHours([...openingHours, data])
     if (error) alert(error.message)
   }
@@ -179,7 +179,7 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
       })
       .select()
       .single()
-    
+
     if (data) {
       setTables([...tables, data])
       setNewTable({ number: '', capacity: 2 })
@@ -217,7 +217,7 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
         base_language: baseLanguage
       })
       .eq('id', shop.id)
-    
+
     if (error) {
       alert(error.message)
     } else {
@@ -293,9 +293,9 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
           <div className="grid grid-cols-2 gap-6">
             <div className="col-span-2 md:col-span-1">
               <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2.5 ml-1">{t('restaurant_name')}</label>
-              <input 
+              <input
                 required
-                type="text" 
+                type="text"
                 value={name}
                 onChange={e => setName(e.target.value)}
                 className="w-full px-4 py-4 bg-surface-container-low border-none rounded-2xl text-base font-bold focus:ring-2 focus:ring-primary/10 transition-all"
@@ -305,9 +305,9 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
               <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2.5 ml-1">{t('shop_url_slug')}</label>
               <div className="relative">
                 <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant/40" />
-                <input 
+                <input
                   required
-                  type="text" 
+                  type="text"
                   value={slug}
                   onChange={e => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, '-'))}
                   className="w-full pl-11 pr-4 py-4 bg-surface-container-low border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-primary/10 transition-all"
@@ -318,8 +318,8 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
               <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2.5 ml-1">{t('address_label')}</label>
               <div className="relative">
                 <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant/40" />
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={address}
                   onChange={e => setAddress(e.target.value)}
                   placeholder={t('address_placeholder')}
@@ -331,32 +331,12 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
               <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2.5 ml-1">{t('phone_label')}</label>
               <div className="relative">
                 <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant/40" />
-                <input 
-                  type="tel" 
+                <input
+                  type="tel"
                   value={phone}
                   onChange={e => setPhone(e.target.value)}
                   className="w-full pl-11 pr-4 py-4 bg-surface-container-low border-none rounded-2xl text-sm font-semibold focus:ring-2 focus:ring-primary/10 transition-all"
                 />
-              </div>
-            </div>
-            <div className="col-span-2 md:col-span-1">
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2.5 ml-1">{t('shop_language') || 'Shop Sprache'}</label>
-              <div className="relative">
-                <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant/40" />
-                <select 
-                  value={baseLanguage}
-                  onChange={e => setBaseLanguage(e.target.value as Language)}
-                  className="w-full pl-11 pr-4 py-4 bg-surface-container-low border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-primary/10 transition-all appearance-none"
-                >
-                  {LANGUAGES.map((lang) => (
-                    <option key={lang.code} value={lang.code}>
-                      {lang.flag} {lang.label}
-                    </option>
-                  ))}
-                </select>
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                  <ChevronDown className="w-4 h-4 text-on-surface-variant/40" />
-                </div>
               </div>
             </div>
           </div>
@@ -397,7 +377,7 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
                     {t('logo_hint')}
                   </p>
                   {logoUrl && (
-                    <button 
+                    <button
                       type="button"
                       onClick={() => setLogoUrl(null)}
                       className="text-[10px] font-bold text-error uppercase tracking-widest hover:underline"
@@ -420,11 +400,10 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
                       key={item.name}
                       type="button"
                       onClick={() => setIconName(item.name)}
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
-                        iconName === item.name 
-                          ? 'bg-primary text-on-primary shadow-lg shadow-primary/20 scale-110' 
-                          : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high'
-                      }`}
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${iconName === item.name
+                        ? 'bg-primary text-on-primary shadow-lg shadow-primary/20 scale-110'
+                        : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high'
+                        }`}
                     >
                       <Icon className="w-5 h-5" />
                     </button>
@@ -446,13 +425,12 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            
-            <button 
+
+            <button
               type="button"
               onClick={() => setHasDelivery(!hasDelivery)}
-              className={`flex items-center justify-between p-5 rounded-3xl transition-all border-2 ${
-                hasDelivery ? 'border-primary bg-primary/5 text-primary' : 'border-outline-variant/10 bg-surface text-on-surface-variant'
-              }`}
+              className={`flex items-center justify-between p-5 rounded-3xl transition-all border-2 ${hasDelivery ? 'border-primary bg-primary/5 text-primary' : 'border-outline-variant/10 bg-surface text-on-surface-variant'
+                }`}
             >
               <div className="text-left">
                 <p className="font-bold">{t('delivery')}</p>
@@ -463,12 +441,11 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
               <div className={`w-3 h-3 rounded-full ${hasDelivery ? 'bg-primary' : 'bg-outline-variant/30'}`} />
             </button>
 
-            <button 
+            <button
               type="button"
               onClick={() => setHasPickup(!hasPickup)}
-              className={`flex items-center justify-between p-5 rounded-3xl transition-all border-2 ${
-                hasPickup ? 'border-primary bg-primary/5 text-primary' : 'border-outline-variant/10 bg-surface text-on-surface-variant'
-              }`}
+              className={`flex items-center justify-between p-5 rounded-3xl transition-all border-2 ${hasPickup ? 'border-primary bg-primary/5 text-primary' : 'border-outline-variant/10 bg-surface text-on-surface-variant'
+                }`}
             >
               <div className="text-left">
                 <p className="font-bold">{t('pickup')}</p>
@@ -480,12 +457,11 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
             </button>
 
 
-            <button 
+            <button
               type="button"
               onClick={() => setHasReservation(!hasReservation)}
-              className={`flex items-center justify-between p-5 rounded-3xl transition-all border-2 ${
-                hasReservation ? 'border-primary bg-primary/5 text-primary' : 'border-outline-variant/10 bg-surface text-on-surface-variant'
-              }`}
+              className={`flex items-center justify-between p-5 rounded-3xl transition-all border-2 ${hasReservation ? 'border-primary bg-primary/5 text-primary' : 'border-outline-variant/10 bg-surface text-on-surface-variant'
+                }`}
             >
               <div className="text-left">
                 <p className="font-bold">{t('reservation_feature')}</p>
@@ -495,7 +471,7 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
               </div>
               <div className={`w-3 h-3 rounded-full ${hasReservation ? 'bg-primary' : 'bg-outline-variant/30'}`} />
             </button>
-            
+
           </div>
         </div>
 
@@ -510,17 +486,16 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
 
             <div className="col-span-2 md:col-span-1 md:border-l md:border-outline-variant/5 md:pl-8">
               <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-4 ml-1">{t('manual_status_override')}</label>
-              <button 
+              <button
                 type="button"
                 onClick={() => {
                   setIsOpen(!isOpen)
                   setManualStatusUpdatedAt(new Date().toISOString())
                 }}
-                className={`w-full flex items-center justify-between px-6 py-4 rounded-3xl transition-all ${
-                  isOpen 
-                    ? 'bg-success/5 text-success ring-2 ring-inset ring-success/20' 
-                    : 'bg-error/5 text-error ring-2 ring-inset ring-error/20'
-                }`}
+                className={`w-full flex items-center justify-between px-6 py-4 rounded-3xl transition-all ${isOpen
+                  ? 'bg-success/5 text-success ring-2 ring-inset ring-success/20'
+                  : 'bg-error/5 text-error ring-2 ring-inset ring-error/20'
+                  }`}
               >
                 <div className="flex flex-col items-start text-left">
                   <span className="text-sm font-black uppercase tracking-widest leading-none mb-1">
@@ -550,26 +525,26 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
               <div className="space-y-4">
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">{t('new_time_slot')}</p>
                 <div className="grid grid-cols-3 gap-3">
-                  <select 
+                  <select
                     value={newSlot.day}
-                    onChange={e => setNewSlot({...newSlot, day: parseInt(e.target.value)})}
+                    onChange={e => setNewSlot({ ...newSlot, day: parseInt(e.target.value) })}
                     className="col-span-3 px-4 py-3 bg-white rounded-xl text-sm font-bold border-none ring-1 ring-outline-variant/10"
                   >
                     {DAYS_OF_WEEK.map((day, i) => <option key={i} value={i}>{t(DAY_KEYS[i])}</option>)}
                   </select>
-                  <input 
-                    type="time" 
+                  <input
+                    type="time"
                     value={newSlot.start}
-                    onChange={e => setNewSlot({...newSlot, start: e.target.value})}
+                    onChange={e => setNewSlot({ ...newSlot, start: e.target.value })}
                     className="px-4 py-3 bg-white rounded-xl text-sm font-bold border-none ring-1 ring-outline-variant/10"
                   />
-                  <input 
-                    type="time" 
+                  <input
+                    type="time"
                     value={newSlot.end}
-                    onChange={e => setNewSlot({...newSlot, end: e.target.value})}
+                    onChange={e => setNewSlot({ ...newSlot, end: e.target.value })}
                     className="px-4 py-3 bg-white rounded-xl text-sm font-bold border-none ring-1 ring-outline-variant/10"
                   />
-                  <button 
+                  <button
                     type="button"
                     onClick={handleAddSlot}
                     className="bg-primary text-on-primary rounded-xl flex items-center justify-center hover:scale-105 transition-transform"
@@ -591,7 +566,7 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
                         daySlots.map(slot => (
                           <div key={slot.id} className="flex items-center gap-2 px-3 py-1.5 bg-primary/5 text-primary rounded-full border border-primary/10">
                             <span className="text-[11px] font-black">{slot.start_time.substring(0, 5)} - {slot.end_time.substring(0, 5)}</span>
-                            <button 
+                            <button
                               type="button"
                               onClick={() => handleDeleteSlot(slot.id)}
                               className="hover:text-error transition-colors"
@@ -622,23 +597,23 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
             <div className="bg-surface-container-low/50 p-6 rounded-3xl border border-outline-variant/5">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary mb-4">{t('add_table')}</p>
               <div className="flex gap-4">
-                <input 
+                <input
                   placeholder={t('table_name_nr')}
                   value={newTable.number}
-                  onChange={e => setNewTable({...newTable, number: e.target.value})}
+                  onChange={e => setNewTable({ ...newTable, number: e.target.value })}
                   className="flex-1 px-4 py-3 bg-white rounded-xl text-sm font-bold border-none ring-1 ring-outline-variant/10"
                 />
                 <div className="flex items-center gap-3 px-4 py-3 bg-white rounded-xl ring-1 ring-outline-variant/10">
                   <Users className="w-4 h-4 text-on-surface-variant/40" />
-                  <input 
+                  <input
                     type="number"
                     min="1"
                     value={newTable.capacity}
-                    onChange={e => setNewTable({...newTable, capacity: parseInt(e.target.value)})}
+                    onChange={e => setNewTable({ ...newTable, capacity: parseInt(e.target.value) })}
                     className="w-12 text-sm font-bold border-none p-0 focus:ring-0"
                   />
                 </div>
-                <button 
+                <button
                   type="button"
                   onClick={handleAddTable}
                   className="px-6 bg-primary text-on-primary rounded-xl font-bold text-sm hover:scale-105 transition-transform"
@@ -651,7 +626,7 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               {tables.map(table => (
                 <div key={table.id} className="p-5 bg-white rounded-[1.5rem] border border-outline-variant/10 shadow-sm hover:shadow-md transition-all relative group">
-                  <button 
+                  <button
                     type="button"
                     onClick={() => handleDeleteTable(table.id)}
                     className="absolute top-4 right-4 text-on-surface-variant/20 hover:text-error transition-colors"
@@ -686,8 +661,8 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
           <div className="grid grid-cols-2 gap-6">
             <div className="col-span-2 md:col-span-1">
               <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2.5 ml-1">{t('delivery_fee_label')}</label>
-              <input 
-                type="number" 
+              <input
+                type="number"
                 step="0.50"
                 value={deliveryFee}
                 onChange={e => setDeliveryFee(parseFloat(e.target.value))}
@@ -696,8 +671,8 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
             </div>
             <div className="col-span-2 md:col-span-1">
               <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2.5 ml-1">{t('min_order_label')}</label>
-              <input 
-                type="number" 
+              <input
+                type="number"
                 step="0.50"
                 value={minOrder}
                 onChange={e => setMinOrder(parseFloat(e.target.value))}
@@ -711,20 +686,19 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
         <div className="fixed bottom-6 right-6 sm:bottom-10 sm:right-10 z-50">
           <button
             disabled={saving}
-            className={`flex items-center gap-3 px-6 sm:px-10 py-4 sm:py-5 rounded-full font-black text-xs sm:text-sm uppercase tracking-widest transition-all shadow-2xl ${
-              success 
-                ? 'bg-success text-white' 
-                : 'bg-primary text-on-primary shadow-primary/20 hover:scale-[1.02] active:scale-95'
-            }`}
+            className={`flex items-center gap-3 px-6 sm:px-10 py-4 sm:py-5 rounded-full font-black text-xs sm:text-sm uppercase tracking-widest transition-all shadow-2xl ${success
+              ? 'bg-success text-white'
+              : 'bg-primary text-on-primary shadow-primary/20 hover:scale-[1.02] active:scale-95'
+              }`}
           >
-            {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : 
-             success ? <CheckCircle2 className="w-5 h-5" /> : <Save className="w-5 h-5" />}
+            {saving ? <Loader2 className="w-5 h-5 animate-spin" /> :
+              success ? <CheckCircle2 className="w-5 h-5" /> : <Save className="w-5 h-5" />}
             {success ? t('saved_success') : t('save_settings')}
           </button>
         </div>
       </form>
 
-      <input 
+      <input
         type="file"
         ref={fileInputRef}
         className="hidden"
@@ -733,8 +707,8 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
       />
 
       {imageToCrop && (
-        <ImageCropper 
-          image={imageToCrop} 
+        <ImageCropper
+          image={imageToCrop}
           onCancel={() => setImageToCrop(null)}
           onCropComplete={onCropComplete}
           aspectRatio={1}
@@ -743,9 +717,9 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
       )}
 
       {error && (
-        <Modal 
-          isOpen={!!error} 
-          onClose={() => setError(null)} 
+        <Modal
+          isOpen={!!error}
+          onClose={() => setError(null)}
           title={t('error')}
         >
           <div className="p-10 text-center space-y-6">
@@ -756,7 +730,7 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
               <p className="text-sm font-black uppercase tracking-widest text-error">{t('upload_failed')}</p>
               <p className="text-on-surface-variant text-sm font-medium">{error}</p>
             </div>
-            <button 
+            <button
               onClick={() => setError(null)}
               className="w-full py-4 bg-surface-container-high rounded-2xl font-bold text-sm hover:bg-surface-container-highest transition-colors"
             >
