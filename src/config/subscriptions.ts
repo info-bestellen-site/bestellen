@@ -17,14 +17,14 @@ export const SUBSCRIPTION_TIERS: Record<SubscriptionTier, TierConfig> = {
     fokus: 'Testen',
     price: 0,
     monthlyOrderLimit: 30,
-    features: ['menu', 'custom-branding', 'powered-by-branding'],
+    features: ['menu', 'custom-branding', 'powered-by-branding', 'reservations'],
   },
   pro: {
     name: 'Business',
     fokus: 'Wachsen',
     price: 39,
     monthlyOrderLimit: Infinity,
-    features: ['menu', 'order-management', 'reservations', 'custom-branding', 'support'],
+    features: ['menu', 'order-management', 'custom-branding', 'support'],
     isComingSoon: true,
   },
   max: {

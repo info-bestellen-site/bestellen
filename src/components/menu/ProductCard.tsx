@@ -140,7 +140,7 @@ export function ProductCard({
   if (isDeleting) return null
 
   return (
-    <div className="group relative">
+    <div className={`group relative ${isManagementMode ? 'cursor-default' : 'cursor-pointer'}`} onClick={() => !isManagementMode && onOpenDetail(product)} suppressHydrationWarning>
       <div
         className="aspect-[4/5] rounded-lg overflow-hidden bg-surface-container-low mb-3 relative cursor-pointer"
         onClick={() => onOpenDetail(product)}
@@ -264,14 +264,14 @@ export function ProductCard({
         </div>
       )}
 
-      <div className="flex justify-between items-start mb-1.5">
-        <h3 className="text-lg font-bold tracking-tight text-on-surface leading-snug">{product.name}</h3>
-        <span className="text-base font-black tracking-tight text-primary ml-4 whitespace-nowrap">
+      <div className="flex justify-between items-start mb-1 gap-2" suppressHydrationWarning>
+        <h3 className="text-sm sm:text-lg font-bold tracking-tight text-on-surface leading-tight sm:leading-snug line-clamp-2">{product.name}</h3>
+        <span className="text-sm sm:text-base font-black tracking-tight text-primary whitespace-nowrap">
           {formatCurrency(product.price)}
         </span>
       </div>
       {product.description && (
-        <p className="text-sm text-on-surface-variant leading-relaxed line-clamp-2 font-medium">{product.description}</p>
+        <p className="text-[11px] sm:text-sm text-on-surface-variant leading-normal line-clamp-2 font-medium">{product.description}</p>
       )}
 
       <input

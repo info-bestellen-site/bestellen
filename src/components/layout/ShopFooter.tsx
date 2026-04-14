@@ -35,8 +35,8 @@ export function ShopFooter({ shop }: { shop: Shop }) {
   if (searchParams.get('embed') === 'true') return null
 
   return (
-    <footer className="hidden lg:block w-full mt-12 bg-surface-container-low border-t border-outline-variant/10">
-      <div className="flex flex-col md:flex-row justify-between items-center px-8 py-10 max-w-7xl mx-auto gap-4">
+    <footer className="hidden lg:block w-full mt-12 bg-surface-container-low border-t border-outline-variant/10" suppressHydrationWarning>
+        <div className="flex flex-col md:flex-row justify-between items-center px-8 py-10 max-w-7xl mx-auto gap-4" suppressHydrationWarning>
         <div className="flex items-center gap-3">
           {shop.logo_url ? (
             <img src={shop.logo_url} alt={shop.name} className="w-8 h-8 rounded-full object-cover border border-outline-variant/15" />
@@ -48,7 +48,7 @@ export function ShopFooter({ shop }: { shop: Shop }) {
               })()}
             </div>
           )}
-          <div className="text-base font-black tracking-tight text-on-surface">{shop.name}</div>
+          <div className="text-base font-black tracking-tight text-on-surface" suppressHydrationWarning>{shop.name}</div>
         </div>
         {shop.phone && (
           <a href={`tel:${shop.phone}`} className="text-xs text-on-surface-variant hover:text-on-surface transition-colors">

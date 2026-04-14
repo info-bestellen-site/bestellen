@@ -141,7 +141,7 @@ export function MenuList({
       {/* Grid */}
       <div className="space-y-12 pb-20">
         {activeCategoryId || searchQuery ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-10">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10">
             {filteredProducts.map((product) => (
               <ProductCard
                 key={product.id}
@@ -160,7 +160,7 @@ export function MenuList({
                 {category.name}
                 <span className="h-px flex-1 bg-outline-variant/10" />
               </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-10">
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10">
                 {category.products.map((product) => (
                   <ProductCard
                     key={product.id}

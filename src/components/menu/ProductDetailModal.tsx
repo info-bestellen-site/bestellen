@@ -258,7 +258,7 @@ export function ProductDetailModal({ product, shopSlug, onClose }: ProductDetail
         {step === 'overview' && (
           <div key="overview" className="flex flex-col h-full overflow-hidden" style={{ animation: 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)' }}>
             {/* Huge Hero Image */}
-            <div className="h-[65vh] sm:h-[70vh] bg-surface-container-low relative shrink-0">
+            <div className="h-[65vh] sm:h-[65vh] bg-surface-container-low relative shrink-0">
               {product.image_url ? (
                 <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
               ) : (
@@ -266,23 +266,24 @@ export function ProductDetailModal({ product, shopSlug, onClose }: ProductDetail
                   <ImageIcon className="w-20 h-20 text-outline-variant/30" />
                 </div>
               )}
-              <div className="absolute bottom-0 inset-x-0 h-16 bg-gradient-to-t from-surface-container-lowest to-transparent" />
+              {/* Deeper, smoother gradient to transition from image to text */}
+              <div className="absolute -bottom-1 inset-x-0 h-48 sm:h-35 bg-gradient-to-t from-surface-container-lowest via-surface-container-lowest/90 via-surface-container-lowest/40 to-transparent" />
             </div>
 
-            <div className="flex-1 overflow-y-auto px-8 pt-6 pb-4">
+            <div className="flex-1 overflow-y-auto px-6 sm:px-10 pt-3 sm:pt-6 pb-4">
               <div className="flex justify-between items-start gap-4 mb-3">
-                <h2 className="text-3xl font-black tracking-tighter leading-none">{product.name}</h2>
-                <span className="text-2xl font-black text-primary">{formatCurrency(product.price)}</span>
+                <h2 className="text-xl sm:text-3xl font-black tracking-tighter leading-none">{product.name}</h2>
+                <span className="text-lg sm:text-2xl font-black text-primary">{formatCurrency(product.price)}</span>
               </div>
               {product.description && (
-                <p className="text-base text-on-surface-variant leading-relaxed">{product.description}</p>
+                <p className="text-sm text-on-surface-variant leading-relaxed">{product.description}</p>
               )}
             </div>
 
             <div className="p-6 shrink-0 bg-surface-container-lowest">
               <button
                 onClick={handleNext}
-                className="w-full py-5 bg-primary text-on-primary rounded-full font-black text-lg flex items-center justify-center gap-2 shadow-xl shadow-primary/30 hover:opacity-90 active:scale-[0.98] transition-all"
+                className="w-full py-4 bg-primary text-on-primary rounded-full font-black text-base flex items-center justify-center gap-2 shadow-xl shadow-primary/30 hover:opacity-90 active:scale-[0.98] transition-all"
               >
                 {hasModifiers ? 'Anpassen' : 'Hinzufügen'}
                 {hasModifiers && <ChevronRight className="w-5 h-5" />}
@@ -304,80 +305,77 @@ export function ProductDetailModal({ product, shopSlug, onClose }: ProductDetail
             <div className="overflow-y-auto flex-1">
               <div className="px-6 py-6 space-y-8">
 
-              {/* Modifier Groups */}
-              {!loading && groups.length > 0 && (
-                <div className="px-6 space-y-5 pb-4">
-                  {groups.map(group => {
-                    const selectedIds = selections[group.id] || new Set()
-                    const isMissing = group.is_required && selectedIds.size === 0
-                    return (
-                      <div key={group.id}>
-                        <div className="flex items-center gap-2 mb-3">
-                          <h3 className="text-sm font-black tracking-tight">{group.name}</h3>
-                          {group.is_required && (
-                            <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${
-                              isMissing ? 'bg-error/10 text-error' : 'bg-success/10 text-success'
-                            }`}>
-                              {isMissing ? 'Pflichtfeld' : '✓ Gewählt'}
-                            </span>
-                          )}
-                          {group.max_selections > 1 && (
-                            <span className="text-[9px] text-on-surface-variant/50 font-medium">
-                              (max. {group.max_selections})
-                            </span>
-                          )}
-                        </div>
-                        <div className="space-y-2">
-                          {group.modifier_options.map(option => {
-                            const isSelected = selectedIds.has(option.id)
-                            const isRadio = group.max_selections === 1
-                            return (
-                              <button
-                                key={option.id}
-                                type="button"
-                                onClick={() => handleOptionToggle(group, option.id)}
-                                className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl border-2 transition-all text-left ${
-                                  isSelected
+                {/* Modifier Groups */}
+                {!loading && groups.length > 0 && (
+                  <div className="px-6 space-y-5 pb-4">
+                    {groups.map(group => {
+                      const selectedIds = selections[group.id] || new Set()
+                      const isMissing = group.is_required && selectedIds.size === 0
+                      return (
+                        <div key={group.id}>
+                          <div className="flex items-center gap-2 mb-3">
+                            <h3 className="text-sm font-black tracking-tight">{group.name}</h3>
+                            {group.is_required && (
+                              <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${isMissing ? 'bg-error/10 text-error' : 'bg-success/10 text-success'
+                                }`}>
+                                {isMissing ? 'Pflichtfeld' : '✓ Gewählt'}
+                              </span>
+                            )}
+                            {group.max_selections > 1 && (
+                              <span className="text-[9px] text-on-surface-variant/50 font-medium">
+                                (max. {group.max_selections})
+                              </span>
+                            )}
+                          </div>
+                          <div className="space-y-2">
+                            {group.modifier_options.map(option => {
+                              const isSelected = selectedIds.has(option.id)
+                              const isRadio = group.max_selections === 1
+                              return (
+                                <button
+                                  key={option.id}
+                                  type="button"
+                                  onClick={() => handleOptionToggle(group, option.id)}
+                                  className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl border-2 transition-all text-left ${isSelected
                                     ? 'border-primary bg-primary/5'
                                     : 'border-outline-variant/15 hover:border-outline-variant/40 bg-surface-container-low'
-                                }`}
-                              >
-                                {/* Radio / Checkbox indicator */}
-                                <div className={`w-6 h-6 shrink-0 flex items-center justify-center transition-all ${
-                                  isRadio ? 'rounded-full' : 'rounded-lg'
-                                } border-2 ${isSelected ? 'border-primary bg-primary' : 'border-outline-variant/40'}`}>
-                                  {isSelected && <Check className="w-4 h-4 text-white" />}
-                                </div>
-                                <span className="flex-1 text-base font-bold">{option.name}</span>
-                                {option.price_delta > 0 && (
-                                  <span className="text-base font-black text-primary">+{formatCurrency(option.price_delta)}</span>
-                                )}
-                                {option.price_delta === 0 && (
-                                  <span className="text-xs text-on-surface-variant/40 font-medium">inkl.</span>
-                                )}
-                              </button>
-                            )
-                          })}
+                                    }`}
+                                >
+                                  {/* Radio / Checkbox indicator */}
+                                  <div className={`w-6 h-6 shrink-0 flex items-center justify-center transition-all ${isRadio ? 'rounded-full' : 'rounded-lg'
+                                    } border-2 ${isSelected ? 'border-primary bg-primary' : 'border-outline-variant/40'}`}>
+                                    {isSelected && <Check className="w-4 h-4 text-white" />}
+                                  </div>
+                                  <span className="flex-1 text-base font-bold">{option.name}</span>
+                                  {option.price_delta > 0 && (
+                                    <span className="text-base font-black text-primary">+{formatCurrency(option.price_delta)}</span>
+                                  )}
+                                  {option.price_delta === 0 && (
+                                    <span className="text-xs text-on-surface-variant/40 font-medium">inkl.</span>
+                                  )}
+                                </button>
+                              )
+                            })}
+                          </div>
                         </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-
-              {/* Allergens */}
-              {product.allergens && product.allergens.length > 0 && (
-                <div className="px-6 pb-4">
-                  <h4 className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">Allergene</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {product.allergens.map((allergen, i) => (
-                      <span key={i} className="px-3 py-1 rounded-full bg-surface-container-low text-xs font-medium text-on-surface-variant">
-                        {allergen}
-                      </span>
-                    ))}
+                      )
+                    })}
                   </div>
-                </div>
-              )}
+                )}
+
+                {/* Allergens */}
+                {product.allergens && product.allergens.length > 0 && (
+                  <div className="px-6 pb-4">
+                    <h4 className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-2">Allergene</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {product.allergens.map((allergen, i) => (
+                        <span key={i} className="px-3 py-1 rounded-full bg-surface-container-low text-xs font-medium text-on-surface-variant">
+                          {allergen}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -392,11 +390,10 @@ export function ProductDetailModal({ product, shopSlug, onClose }: ProductDetail
                 <button
                   onClick={handleNext}
                   disabled={!isValid}
-                  className={`w-full py-4 rounded-full font-black text-sm flex items-center justify-center gap-2 transition-all ${
-                    isValid
-                      ? 'bg-primary text-on-primary shadow-lg shadow-primary/20 hover:opacity-90 active:scale-[0.98]'
-                      : 'bg-surface-container-low text-on-surface-variant/50 cursor-not-allowed'
-                  }`}
+                  className={`w-full py-4 rounded-full font-black text-sm flex items-center justify-center gap-2 transition-all ${isValid
+                    ? 'bg-primary text-on-primary shadow-lg shadow-primary/20 hover:opacity-90 active:scale-[0.98]'
+                    : 'bg-surface-container-low text-on-surface-variant/50 cursor-not-allowed'
+                    }`}
                 >
                   {hasUpsell ? (
                     <>
@@ -442,11 +439,10 @@ export function ProductDetailModal({ product, shopSlug, onClose }: ProductDetail
                     key={rule.id}
                     type="button"
                     onClick={() => setUpsellSelections(prev => ({ ...prev, [rule.id]: !prev[rule.id] }))}
-                    className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all text-left ${
-                      isSelected
-                        ? 'border-primary bg-primary/5'
-                        : 'border-outline-variant/15 hover:border-outline-variant/30 bg-surface-container-low'
-                    }`}
+                    className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all text-left ${isSelected
+                      ? 'border-primary bg-primary/5'
+                      : 'border-outline-variant/15 hover:border-outline-variant/30 bg-surface-container-low'
+                      }`}
                   >
                     {/* Product image */}
                     <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 bg-surface-container-low">
@@ -478,9 +474,8 @@ export function ProductDetailModal({ product, shopSlug, onClose }: ProductDetail
                     </div>
 
                     {/* Toggle */}
-                    <div className={`w-6 h-6 rounded-full border-2 shrink-0 flex items-center justify-center transition-all ${
-                      isSelected ? 'border-primary bg-primary' : 'border-outline-variant/40'
-                    }`}>
+                    <div className={`w-6 h-6 rounded-full border-2 shrink-0 flex items-center justify-center transition-all ${isSelected ? 'border-primary bg-primary' : 'border-outline-variant/40'
+                      }`}>
                       {isSelected && <Check className="w-3.5 h-3.5 text-white" />}
                     </div>
                   </button>

@@ -11,6 +11,9 @@ export interface CartItem {
   cartItemKey: string // unique key: productId + modifier combo hash
 }
 
+export const EMPTY_ITEMS: CartItem[] = []
+const EMPTY_CARTS = {}
+
 interface CartStore {
   carts: Record<string, CartItem[]>
   addItem: (product: Product, shopSlug: string, modifiers?: SelectedModifier[]) => void
@@ -39,7 +42,7 @@ function calculateTotalPrice(product: Product, modifiers?: SelectedModifier[]): 
 export const useCartStore = create<CartStore>()(
   persist(
     (set, get) => ({
-      carts: {},
+      carts: EMPTY_CARTS,
       addItem: (product, shopSlug, modifiers) => {
         const carts = get().carts
         const shopItems = carts[shopSlug] || []
@@ -78,14 +81,14 @@ export const useCartStore = create<CartStore>()(
         set({ carts: { ...carts, [shopSlug]: [] } })
       },
       getSubtotal: (shopSlug) => {
-        const shopItems = get().carts[shopSlug] || []
+        const shopItems = get().carts[shopSlug] || EMPTY_ITEMS
         return shopItems.reduce((s, i) => s + i.totalPrice * i.quantity, 0)
       },
       getItemCount: (shopSlug) => {
-        const shopItems = get().carts[shopSlug] || []
+        const shopItems = get().carts[shopSlug] || EMPTY_ITEMS
         return shopItems.reduce((s, i) => s + i.quantity, 0)
       },
-      getItems: (shopSlug) => get().carts[shopSlug] || [],
+      getItems: (shopSlug) => get().carts[shopSlug] || EMPTY_ITEMS,
     }),
     { name: 'bestellen-cart-v2' } // v2 to reset old incompatible carts
   )

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, use } from 'react'
-import { useCartStore } from '@/lib/store/cart-store'
+import { useCartStore, EMPTY_ITEMS } from '@/lib/store/cart-store'
 import { formatCurrency } from '@/lib/utils/format-currency'
 import { calculateWaitTime, formatWaitTime } from '@/lib/utils/calculate-wait-time'
 import { createClient } from '@/lib/supabase/client'
@@ -27,7 +27,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
   const { 'shop-slug': shopSlug } = use(params)
   const router = useRouter()
   const supabase = createClient()
-  const items = useCartStore(s => s.carts[shopSlug] || [])
+  const items = useCartStore(s => s.carts[shopSlug] || EMPTY_ITEMS)
   const { removeItem, updateQuantity, clearCart, getSubtotal } = useCartStore()
   
   const [shop, setShop] = useState<Shop | null>(null)

@@ -77,7 +77,7 @@ export function ShopHeader({ shop, isCurrentlyOpen }: { shop: Shop, isCurrentlyO
   if (isEmbed) return null
 
   return (
-    <header className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-outline-variant/10 shadow-sm">
+    <header className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-outline-variant/10 shadow-sm" suppressHydrationWarning>
       <div className="flex justify-between items-center px-4 sm:px-6 py-3.5 max-w-7xl mx-auto">
         <div className="flex items-center gap-6">
           <Link href={`/${shop.slug}`} className="flex items-center gap-3">
@@ -92,7 +92,7 @@ export function ShopHeader({ shop, isCurrentlyOpen }: { shop: Shop, isCurrentlyO
               </div>
             )}
             <div>
-              <h1 className="text-lg font-bold tracking-tight text-on-surface leading-tight">{shop.name}</h1>
+              <h1 className="text-lg font-bold tracking-tight text-on-surface leading-tight" suppressHydrationWarning>{shop.name}</h1>
               {!isOpen && (
                 <span className="text-[10px] font-bold text-error uppercase tracking-wider">Geschlossen</span>
               )}
