@@ -609,7 +609,15 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
                     type="number"
                     min="1"
                     value={newTable.capacity}
-                    onChange={e => setNewTable({ ...newTable, capacity: parseInt(e.target.value) })}
+                    onChange={e => {
+                      const val = e.target.value;
+                      if (val === '') {
+                        setNewTable({ ...newTable, capacity: 1 })
+                      } else {
+                        const parsed = parseInt(val);
+                        if (!isNaN(parsed)) setNewTable({ ...newTable, capacity: parsed });
+                      }
+                    }}
                     className="w-12 text-sm font-bold border-none p-0 focus:ring-0"
                   />
                 </div>
@@ -664,8 +672,16 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
               <input
                 type="number"
                 step="0.50"
-                value={deliveryFee}
-                onChange={e => setDeliveryFee(parseFloat(e.target.value))}
+                value={deliveryFee || 0}
+                onChange={e => {
+                  const val = e.target.value;
+                  if (val === '') {
+                    setDeliveryFee(0)
+                  } else {
+                    const parsed = parseFloat(val);
+                    if (!isNaN(parsed)) setDeliveryFee(parsed);
+                  }
+                }}
                 className="w-full px-4 py-4 bg-surface-container-low border-none rounded-2xl text-base font-bold focus:ring-2 focus:ring-primary/10 transition-all"
               />
             </div>
@@ -674,8 +690,16 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
               <input
                 type="number"
                 step="0.50"
-                value={minOrder}
-                onChange={e => setMinOrder(parseFloat(e.target.value))}
+                value={minOrder || 0}
+                onChange={e => {
+                  const val = e.target.value;
+                  if (val === '') {
+                    setMinOrder(0)
+                  } else {
+                    const parsed = parseFloat(val);
+                    if (!isNaN(parsed)) setMinOrder(parsed);
+                  }
+                }}
                 className="w-full px-4 py-4 bg-surface-container-low border-none rounded-2xl text-base font-bold focus:ring-2 focus:ring-primary/10 transition-all"
               />
             </div>

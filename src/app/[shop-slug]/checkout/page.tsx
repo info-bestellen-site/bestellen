@@ -117,6 +117,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
   const subtotal = getSubtotal(shopSlug)
   const deliveryFee = fulfillmentType === 'delivery' ? (shop?.delivery_fee || 0) : 0
   const total = subtotal + deliveryFee
+  const isMinOrderViolation = !isAdmin && fulfillmentType === 'delivery' && subtotal < (shop?.min_order_amount || 0)
   const waitTime = calculateWaitTime(activeOrders, items)
 
   const availableSlots = getAvailableReservationSlots(openingHours, tables, existingOrders, guestCount)
@@ -134,7 +135,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
     e.preventDefault()
     if (!shop || items.length === 0) return
 
-    if (subtotal < shop.min_order_amount) {
+    if (isMinOrderViolation) {
       alert(`Mindestbestellwert von ${formatCurrency(shop.min_order_amount)} nicht erreicht.`)
       return
     }
@@ -503,7 +504,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
               <span className="text-xl font-black text-primary">{formatCurrency(total)}</span>
             </div>
 
-            {subtotal < (shop?.min_order_amount || 0) && (
+            {isMinOrderViolation && (
               <div className="flex items-center gap-2 p-3 bg-surface-container-low text-error rounded-lg text-xs font-semibold mb-4">
                 <AlertCircle className="w-4 h-4" />
                 Mindestbestellwert von {formatCurrency(shop?.min_order_amount || 0)} nicht erreicht.
@@ -511,7 +512,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
             )}
 
             <button
-              disabled={orderLoading || subtotal < (shop?.min_order_amount || 0)}
+              disabled={orderLoading || isMinOrderViolation}
               className="w-full py-4 bg-primary text-on-primary rounded-full font-bold text-base flex items-center justify-center gap-3 shadow-lg shadow-primary/20 hover:opacity-90 disabled:opacity-50 disabled:shadow-none transition-all active:scale-[0.98]"
             >
               {orderLoading ? (
