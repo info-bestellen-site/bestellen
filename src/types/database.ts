@@ -140,6 +140,9 @@ export type Database = {
           is_internal: boolean | null
           notes: string | null
           order_number: number
+          payment_method: string
+          payment_status: string
+          paypal_order_id: string | null
           shop_id: string
           status: string
           subtotal: number
@@ -161,6 +164,9 @@ export type Database = {
           is_internal?: boolean | null
           notes?: string | null
           order_number?: number
+          payment_method?: string
+          payment_status?: string
+          paypal_order_id?: string | null
           shop_id: string
           status?: string
           subtotal: number
@@ -182,6 +188,9 @@ export type Database = {
           is_internal?: boolean | null
           notes?: string | null
           order_number?: number
+          payment_method?: string
+          payment_status?: string
+          paypal_order_id?: string | null
           shop_id?: string
           status?: string
           subtotal?: number
@@ -439,6 +448,9 @@ export type Database = {
           min_order_amount: number
           name: string
           owner_id: string
+          paypal_merchant_id: string | null
+          paypal_email: string | null
+          paypal_enabled: boolean
           phone: string | null
           prep_lead_time_minutes: number
           print_mode: string | null
@@ -468,6 +480,9 @@ export type Database = {
           min_order_amount?: number
           name: string
           owner_id: string
+          paypal_merchant_id?: string | null
+          paypal_email?: string | null
+          paypal_enabled?: boolean
           phone?: string | null
           prep_lead_time_minutes?: number
           print_mode?: string | null
@@ -497,6 +512,9 @@ export type Database = {
           min_order_amount?: number
           name?: string
           owner_id?: string
+          paypal_merchant_id?: string | null
+          paypal_email?: string | null
+          paypal_enabled?: boolean
           phone?: string | null
           prep_lead_time_minutes?: number
           print_mode?: string | null

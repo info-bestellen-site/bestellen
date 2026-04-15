@@ -209,6 +209,12 @@ export function OrderCard({ order, onStatusChange, activeOrdersCount = 0 }: Orde
             <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${statusColors[order.status]}`}>
               {statusLabels[order.status]}
             </span>
+            {order.payment_status === 'paid' && (
+              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-success text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-success/20 animate-pulse">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                Bezahlt
+              </span>
+            )}
           </div>
           <h3 className="text-xl sm:text-2xl font-black tracking-tight leading-none mb-1 break-words">{order.customer_name}</h3>
           <p className="text-xs sm:text-sm text-on-surface-variant font-medium">{order.customer_phone}</p>

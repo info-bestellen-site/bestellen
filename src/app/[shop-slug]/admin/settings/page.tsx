@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect, use, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Shop } from '@/types/database'
 import {
@@ -30,7 +31,12 @@ import {
   Soup,
   Beef,
   Wine,
-  ChevronDown
+  ChevronDown,
+  CreditCard,
+  AlertCircle,
+  Info,
+  RefreshCw,
+  LayoutDashboard
 } from 'lucide-react'
 import { OpeningHour, Table as ShopTable } from '@/types/database'
 import { DAYS_OF_WEEK, DAY_KEYS } from '@/lib/utils/open-hours'
@@ -57,10 +63,12 @@ const PRESET_ICONS = [
 export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug': string }> }) {
   const { 'shop-slug': shopSlug } = use(params)
   const supabase = createClient()
+  const router = useRouter()
   const [shop, setShop] = useState<Shop | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [showStatus, setShowStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null)
 
   // Form State
   const [name, setName] = useState('')
@@ -80,11 +88,40 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
   const [baseLanguage, setBaseLanguage] = useState<Language>('de')
   const [error, setError] = useState<string | null>(null)
 
+  // PayPal State
+  const [paypalEnabled, setPaypalEnabled] = useState(false)
+  const [paypalMerchantId, setPaypalMerchantId] = useState('')
+  const [paypalEmail, setPaypalEmail] = useState('')
+
   const { t } = useTranslation()
 
   const [isUploading, setIsUploading] = useState(false)
+  const [isConnectingPaypal, setIsConnectingPaypal] = useState(false)
   const [imageToCrop, setImageToCrop] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const searchParams = useSearchParams()
+
+  const hasHandledParams = useRef(false)
+
+  // Handle PayPal callback status
+  useEffect(() => {
+    if (hasHandledParams.current) return
+
+    const connected = searchParams.get('paypal_connected')
+    const error = searchParams.get('paypal_error')
+
+    if (connected === 'true') {
+      hasHandledParams.current = true
+      setShowStatus({ type: 'success', message: t('paypal_connected') || 'PayPal connected' })
+      const newUrl = window.location.pathname
+      router.replace(newUrl)
+    } else if (error) {
+      hasHandledParams.current = true
+      setShowStatus({ type: 'error', message: t('paypal_connection_failed') || 'PayPal connection failed' })
+      const newUrl = window.location.pathname
+      router.replace(newUrl)
+    }
+  }, [searchParams, router, t])
 
   // Opening Hours State
   const [openingHours, setOpeningHours] = useState<OpeningHour[]>([])
@@ -119,6 +156,9 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
         setLogoUrl(data.logo_url)
         setIconName(data.icon_name)
         setBaseLanguage(data.base_language as Language || 'de')
+        setPaypalEnabled(data.paypal_enabled ?? false)
+        setPaypalMerchantId(data.paypal_merchant_id || '')
+        setPaypalEmail(data.paypal_email || '')
       }
       setLoading(false)
     }
@@ -214,7 +254,10 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
         has_delivery: hasDelivery,
         logo_url: logoUrl,
         icon_name: iconName,
-        base_language: baseLanguage
+        base_language: baseLanguage,
+        paypal_enabled: paypalEnabled,
+        paypal_merchant_id: paypalMerchantId || null,
+        paypal_email: paypalEmail || null,
       })
       .eq('id', shop.id)
 
@@ -269,6 +312,50 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
     }
   }
 
+  const handleConnectPaypal = async () => {
+    setIsConnectingPaypal(true)
+    try {
+      const res = await fetch(`/api/paypal/partner-referral?shopId=${shop?.id}`)
+      const data = await res.json()
+
+      if (res.ok && data.onboardingUrl) {
+        // Redirection in the same tab is more reliable for the callback flow
+        window.location.href = data.onboardingUrl
+      } else {
+        throw new Error(data.error || 'Failed to get onboarding link')
+      }
+    } catch (error: any) {
+      console.error('PayPal connection error:', error)
+      alert(t('paypal_connection_failed') + (error.message ? ` (${error.message})` : ''))
+    } finally {
+      setIsConnectingPaypal(false)
+    }
+  }
+
+  const handleDisconnectPaypal = async () => {
+    if (!confirm(t('confirm_disconnect_paypal') || 'Are you sure you want to disconnect PayPal?')) return
+
+    try {
+      const { error } = await supabase
+        .from('shops')
+        .update({
+          paypal_merchant_id: null,
+          paypal_enabled: false
+        })
+        .eq('id', shop!.id)
+
+      if (error) throw error
+      
+      setShop({ ...shop!, paypal_merchant_id: null, paypal_enabled: false })
+      setPaypalMerchantId('')
+      setPaypalEnabled(false)
+      setShowStatus({ type: 'success', message: t('paypal_disconnected') || 'PayPal disconnected.' })
+    } catch (error: any) {
+      console.error('Error disconnecting PayPal:', error)
+      setShowStatus({ type: 'error', message: 'Failed to disconnect PayPal.' })
+    }
+  }
+
   if (loading) return (
     <div className="flex h-screen items-center justify-center">
       <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -283,6 +370,24 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
       </div>
 
       <form onSubmit={handleSave} className="space-y-8 pb-20">
+        {/* Feedback Notifications */}
+        {showStatus && (
+          <div className={`p-4 rounded-2xl border flex items-center gap-3 animate-[fadeIn_0.3s_ease] mb-6 ${
+            showStatus.type === 'success' 
+              ? 'bg-green-50 border-green-100 text-green-700' 
+              : 'bg-red-50 border-red-100 text-red-700'
+          }`}>
+            {showStatus.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+            <p className="text-sm font-semibold">{showStatus.message}</p>
+            <button 
+              onClick={() => setShowStatus(null)}
+              className="ml-auto text-xs font-bold uppercase tracking-widest opacity-50 hover:opacity-100"
+            >
+              Schließen
+            </button>
+          </div>
+        )}
+
         {/* Core Info */}
         <div className="bg-white rounded-[2rem] p-6 sm:p-8 border border-outline-variant/10 shadow-xl shadow-primary/5 space-y-6 sm:space-y-8">
           <div className="flex items-center gap-3 mb-2">
@@ -350,7 +455,6 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-10">
-            {/* Logo Upload */}
             <div className="space-y-4">
               <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant ml-1">{t('custom_logo')}</label>
               <div className="flex items-center gap-6">
@@ -389,7 +493,6 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
               </div>
             </div>
 
-            {/* Icon Picker */}
             <div className="space-y-4">
               <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant ml-1">{t('alternative_icon')}</label>
               <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
@@ -425,7 +528,6 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-
             <button
               type="button"
               onClick={() => setHasDelivery(!hasDelivery)}
@@ -456,7 +558,6 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
               <div className={`w-3 h-3 rounded-full ${hasPickup ? 'bg-primary' : 'bg-outline-variant/30'}`} />
             </button>
 
-
             <button
               type="button"
               onClick={() => setHasReservation(!hasReservation)}
@@ -471,7 +572,6 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
               </div>
               <div className={`w-3 h-3 rounded-full ${hasReservation ? 'bg-primary' : 'bg-outline-variant/30'}`} />
             </button>
-
           </div>
         </div>
 
@@ -483,7 +583,6 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
           </div>
 
           <div className="grid grid-cols-2 gap-6">
-
             <div className="col-span-2 md:col-span-1 md:border-l md:border-outline-variant/5 md:pl-8">
               <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-4 ml-1">{t('manual_status_override')}</label>
               <button
@@ -509,7 +608,6 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
                 {t('manual_switch_hint')}
               </p>
             </div>
-
           </div>
         </div>
 
@@ -686,7 +784,7 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
               />
             </div>
             <div className="col-span-2 md:col-span-1">
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2.5 ml-1">{t('min_order_label')}</label>
+              <label className="block text-[10px) font-bold uppercase tracking-widest text-on-surface-variant mb-2.5 ml-1">{t('min_order_label')}</label>
               <input
                 type="number"
                 step="0.50"
@@ -702,6 +800,110 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
                 }}
                 className="w-full px-4 py-4 bg-surface-container-low border-none rounded-2xl text-base font-bold focus:ring-2 focus:ring-primary/10 transition-all"
               />
+            </div>
+          </div>
+        </div>
+
+        {/* PayPal Section */}
+        <div className="bg-white rounded-[2rem] p-8 border border-outline-variant/10 shadow-sm relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.05] transition-opacity">
+            <CreditCard className="w-32 h-32 rotate-12" />
+          </div>
+          
+          <div className="relative">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                <CreditCard className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-black tracking-tight">{t('paypal_settings')}</h3>
+                <p className="text-xs text-on-surface-variant font-medium">{t('paypal_payments')}</p>
+              </div>
+            </div>
+
+            <div className="p-6 bg-surface-container-low rounded-3xl border border-outline-variant/5">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-8 h-8 rounded-full bg-primary/5 flex items-center justify-center text-primary shrink-0">
+                  <Info className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold mb-1">{t('paypal_setup_hint_title')}</h4>
+                  <p className="text-xs text-on-surface-variant font-medium leading-relaxed">
+                    {t('paypal_setup_hint_oauth')}
+                  </p>
+                </div>
+              </div>
+
+              {shop?.paypal_merchant_id ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-white rounded-2xl border border-primary/10">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-green-500" />
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/50">Status</p>
+                        <p className="text-sm font-black text-on-surface">{t('paypal_connected')}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/50">Merchant ID</p>
+                      <p className="text-xs font-mono font-medium">{shop.paypal_merchant_id.substring(0, 4)}...{shop.paypal_merchant_id.slice(-4)}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShop({ ...shop!, paypal_enabled: !shop?.paypal_enabled })}
+                      className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${
+                        shop?.paypal_enabled 
+                          ? 'bg-green-500 text-white shadow-lg shadow-green-200' 
+                          : 'bg-surface-container text-on-surface-variant'
+                      }`}
+                    >
+                      {shop?.paypal_enabled ? 'Aktiviert' : 'Deaktiviert'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDisconnectPaypal}
+                      className="flex items-center justify-center gap-2 py-3 px-6 rounded-xl text-xs font-bold uppercase tracking-widest text-error hover:bg-error/5 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      {t('disconnect')}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <button
+                    type="button"
+                    disabled={isConnectingPaypal}
+                    onClick={handleConnectPaypal}
+                    className="w-full flex items-center justify-center gap-3 py-5 px-8 bg-[#0070ba] text-white rounded-3xl font-black text-sm shadow-xl shadow-blue-100 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:scale-100"
+                  >
+                    {isConnectingPaypal ? (
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      <>
+                        <CreditCard className="w-5 h-5" />
+                        {t('connect_with_paypal')}
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const host = window.location.host;
+                      const protocol = window.location.protocol;
+                      window.location.href = `${protocol}//${host}/api/paypal/onboarding-callback?shopId=${shop?.id}`;
+                    }}
+                    className="w-full flex items-center justify-center gap-3 py-4 px-8 bg-white text-[#0070ba] border-2 border-[#0070ba]/20 rounded-3xl font-bold text-sm hover:bg-[#0070ba]/5 transition-all"
+                  >
+                    <RefreshCw className="w-5 h-5" />
+                    Verbindung manuell prüfen
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -17,11 +17,15 @@ import {
   Truck, 
   Utensils,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Banknote,
+  CreditCard
 } from 'lucide-react'
 import Link from 'next/link'
 import { Shop, FulfillmentType, OpeningHour, Table, Order } from '@/types/database'
 import { generateAvailableSlots, getAvailableReservationSlots, isShopOpen } from '@/lib/utils/open-hours'
+import { PayPalCheckout } from '@/components/checkout/PayPalCheckout'
+import { useTranslation } from '@/lib/i18n/useTranslation'
 
 export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug': string }> }) {
   const { 'shop-slug': shopSlug } = use(params)
@@ -29,6 +33,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
   const supabase = createClient()
   const items = useCartStore(s => s.carts[shopSlug] || EMPTY_ITEMS)
   const { removeItem, updateQuantity, clearCart, getSubtotal } = useCartStore()
+  const { t } = useTranslation()
   
   const [shop, setShop] = useState<Shop | null>(null)
   const [loading, setLoading] = useState(true)
@@ -42,6 +47,10 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
   const [customerPhone, setCustomerPhone] = useState('')
   const [deliveryAddress, setDeliveryAddress] = useState('')
   const [notes, setNotes] = useState('')
+
+  // Payment state
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'paypal'>('cash')
+  const [paypalSuccess, setPaypalSuccess] = useState(false)
 
   // Admin specific form state
   const [adminFulfillment, setAdminFulfillment] = useState<'terminal' | 'table'>('terminal')
@@ -140,17 +149,24 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
       return
     }
 
-    // Final check if shop is still open
-    const { data: latestShop } = await supabase.from('shops').select('is_open, manual_status_updated_at').eq('id', shop.id).single()
-    const { data: hours } = await supabase.from('opening_hours').select('*').eq('shop_id', shop.id)
-    if (!isShopOpen(hours || [], latestShop?.is_open ?? false, latestShop?.manual_status_updated_at)) {
-      alert('Der Shop hat gerade geschlossen. Ihre Bestellung konnte nicht aufgegeben werden.')
-      window.location.reload() // Reload to show closed status
+    if (orderLoading) return
+
+    // Special handling for PayPal: we now use the PayPalButtons directly
+    if (paymentMethod === 'paypal' && !isAdmin) {
       return
     }
 
     setOrderLoading(true)
     try {
+      // Final check if shop is still open
+      const { data: latestShop } = await supabase.from('shops').select('is_open, manual_status_updated_at').eq('id', shop.id).single()
+      const { data: hours } = await supabase.from('opening_hours').select('*').eq('shop_id', shop.id)
+      if (!isShopOpen(hours || [], latestShop?.is_open ?? false, latestShop?.manual_status_updated_at)) {
+        alert('Der Shop hat gerade geschlossen. Ihre Bestellung konnte nicht aufgegeben werden.')
+        window.location.reload()
+        return
+      }
+
       // 1. Create order
       const { data: order, error: orderError } = await supabase
         .from('orders')
@@ -171,7 +187,9 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
             ? new Date(new Date().setHours(parseInt(selectedSlot.split(':')[0]), 0, 0, 0)).toISOString()
             : new Date(Date.now() + waitTime * 60000).toISOString(),
           guest_count: (!isAdmin && fulfillmentType === 'dine_in') ? guestCount : null,
-          status: 'pending'
+          status: 'pending',
+          payment_method: isAdmin ? 'cash' : paymentMethod,
+          payment_status: (isAdmin || paymentMethod === 'cash') ? 'unpaid' : 'pending',
         })
         .select()
         .single()
@@ -198,15 +216,63 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
 
       if (itemsError) throw itemsError
 
-      // 3. Clear cart and redirect
+      // For cash or admin: clear cart and redirect immediately
       clearCart(shopSlug)
       router.push(`/${shop.slug}/confirmation/${order.id}`)
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error placing order:', err)
+      // Log more details for Supabase errors
+      if (err?.message) {
+        console.error('Error message:', err.message)
+        console.error('Error details:', err.details)
+        console.error('Error hint:', err.hint)
+        console.error('Error code:', err.code)
+      }
       alert('Bestellung konnte nicht aufgegeben werden. Bitte versuchen Sie es erneut.')
     } finally {
       setOrderLoading(false)
     }
+  }
+
+  const validateForPayPal = async (): Promise<boolean> => {
+    if (!customerName || !customerPhone) {
+      alert('Bitte geben Sie Ihren Namen und Ihre Telefonnummer ein.')
+      return false
+    }
+    if (fulfillmentType === 'delivery' && !deliveryAddress) {
+      alert('Bitte geben Sie eine Lieferadresse ein.')
+      return false
+    }
+
+    return true
+  }
+
+  const getOrderData = () => ({
+    shop_id: shop!.id,
+    customer_name: customerName,
+    customer_phone: customerPhone,
+    delivery_address: fulfillmentType === 'delivery' ? deliveryAddress : null,
+    fulfillment_type: fulfillmentType,
+    subtotal,
+    delivery_fee: deliveryFee,
+    total,
+    notes,
+    estimated_ready_at: (fulfillmentType === 'dine_in' && selectedSlot)
+      ? new Date(new Date().setHours(parseInt(selectedSlot.split(':')[0]), 0, 0, 0)).toISOString()
+      : new Date(Date.now() + waitTime * 60000).toISOString(),
+    guest_count: fulfillmentType === 'dine_in' ? guestCount : null,
+    items: items,
+  })
+
+  const handlePayPalSuccess = (paypalOrderId: string, supabaseOrderId: string) => {
+    setPaypalSuccess(true)
+    clearCart(shopSlug)
+    router.push(`/${shop!.slug}/confirmation/${supabaseOrderId}`)
+  }
+
+  const handlePayPalError = (error: string) => {
+    console.error('PayPal error:', error)
+    // Order was already created — customer can retry payment or pay on-site
   }
 
   if (loading) return (
@@ -488,6 +554,41 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
             </div>
           </div>
 
+          {/* Payment Method Selection */}
+          {!isAdmin && shop?.paypal_enabled && shop?.paypal_merchant_id && (
+            <div className="pt-4 border-t border-outline-variant/10">
+              <h3 className="text-sm font-bold uppercase tracking-widest text-on-surface-variant mb-4">{t('payment_method_title')}</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('cash')}
+                  className={`flex flex-col items-center gap-2.5 p-5 rounded-2xl border-2 transition-all ${
+                    paymentMethod === 'cash'
+                      ? 'border-primary bg-primary/5 text-primary'
+                      : 'border-outline-variant/10 bg-surface-container-low text-on-surface-variant/40 hover:border-primary/30 grayscale'
+                  }`}
+                >
+                  <Banknote className="w-6 h-6" />
+                  <span className="text-[10px] font-black uppercase tracking-widest">{t('cash_on_arrival')}</span>
+                  <span className="text-[9px] font-medium opacity-70">{t('pay_on_site')}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('paypal')}
+                  className={`flex flex-col items-center gap-2.5 p-5 rounded-2xl border-2 transition-all ${
+                    paymentMethod === 'paypal'
+                      ? 'border-primary bg-primary/5 text-primary'
+                      : 'border-outline-variant/10 bg-surface-container-low text-on-surface-variant/40 hover:border-primary/30 grayscale'
+                  }`}
+                >
+                  <CreditCard className="w-6 h-6" />
+                  <span className="text-[10px] font-black uppercase tracking-widest">PayPal</span>
+                  <span className="text-[9px] font-medium opacity-70">{t('pay_online')}</span>
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="pt-4 border-t border-outline-variant/10">
             <div className="flex justify-between items-center mb-1">
               <span className="text-sm text-on-surface-variant font-medium">Zwischensumme</span>
@@ -511,22 +612,43 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
               </div>
             )}
 
-            <button
-              disabled={orderLoading || isMinOrderViolation}
-              className="w-full py-4 bg-primary text-on-primary rounded-full font-bold text-base flex items-center justify-center gap-3 shadow-lg shadow-primary/20 hover:opacity-90 disabled:opacity-50 disabled:shadow-none transition-all active:scale-[0.98]"
-            >
-              {orderLoading ? (
-                <div className="w-5 h-5 border-2 border-on-primary/30 border-t-on-primary rounded-full animate-spin" />
-              ) : (
-                <>
-                  <CheckCircle2 className="w-5 h-5" />
-                  Jetzt bestellen
-                </>
-              )}
-            </button>
-            <p className="text-center text-[10px] font-bold text-on-surface-variant/50 uppercase tracking-widest mt-4">
-              Zahlung erfolgt vor ort im restaurant
-            </p>
+            {/* Improved PayPal flow: show buttons immediately */}
+            {!isAdmin && paymentMethod === 'paypal' && shop?.paypal_enabled ? (
+              <div className="space-y-4 animate-in fade-in duration-300">
+                <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10">
+                  <p className="text-[10px] text-on-surface-variant font-medium">
+                    {t('complete_paypal_payment')}
+                  </p>
+                </div>
+                <PayPalCheckout
+                  shopSlug={shopSlug}
+                  amount={total}
+                  orderData={getOrderData()}
+                  onBeforeCreate={validateForPayPal}
+                  onSuccess={handlePayPalSuccess}
+                  onError={handlePayPalError}
+                />
+              </div>
+            ) : (
+              <>
+                <button
+                  disabled={orderLoading || isMinOrderViolation}
+                  className="w-full py-4 bg-primary text-on-primary rounded-full font-bold text-base flex items-center justify-center gap-3 shadow-lg shadow-primary/20 hover:opacity-90 disabled:opacity-50 disabled:shadow-none transition-all active:scale-[0.98]"
+                >
+                  {orderLoading ? (
+                    <div className="w-5 h-5 border-2 border-on-primary/30 border-t-on-primary rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-5 h-5" />
+                      {t('reserve_button')}
+                    </>
+                  )}
+                </button>
+                <p className="text-center text-[10px] font-bold text-on-surface-variant/50 uppercase tracking-widest mt-4">
+                  {paymentMethod === 'paypal' ? t('continue_to_paypal') : t('payment_at_restaurant_notice')}
+                </p>
+              </>
+            )}
           </div>
         </form>
       </div>
