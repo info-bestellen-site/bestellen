@@ -6,7 +6,6 @@ import { Clock, CheckCircle2, Play, Check, XCircle, ShoppingBag, Truck, Utensils
 import { differenceInMinutes } from 'date-fns'
 import { de } from 'date-fns/locale'
 import { useEffect, useState, useMemo } from 'react'
-import { calculateWaitTime } from '@/lib/utils/calculate-wait-time'
 import { useTranslation } from '@/lib/i18n/useTranslation'
 
 interface OrderCardProps {
@@ -50,16 +49,7 @@ export function OrderCard({ order, onStatusChange, activeOrdersCount = 0 }: Orde
   const [customTime, setCustomTime] = useState(15)
   const [showSlider, setShowSlider] = useState(false)
 
-  // Use the wait time utility to calculate a "base" suggestion
-  const basePrepTime = useMemo(() => {
-    const itemsData = order.order_items.map(item => ({
-      product: {
-        preparation_time_minutes: (item as any).product?.preparation_time_minutes || 15
-      },
-      quantity: item.quantity
-    }))
-    return calculateWaitTime(activeOrdersCount, itemsData)
-  }, [order.order_items, activeOrdersCount])
+  const basePrepTime = 15
 
   // Initialize custom time when slider is shown
   useEffect(() => {
@@ -74,7 +64,7 @@ export function OrderCard({ order, onStatusChange, activeOrdersCount = 0 }: Orde
     return () => clearInterval(timer)
   }, [])
 
-  const isTargetTime = !!order.estimated_ready_at
+  const isTargetTime = !!order.estimated_ready_at && order.status !== 'pending'
   const targetTime = isTargetTime ? new Date(order.estimated_ready_at!) : null
 
   let countdownColor = 'text-on-surface-variant/60'
@@ -100,12 +90,21 @@ export function OrderCard({ order, onStatusChange, activeOrdersCount = 0 }: Orde
       countdownColor = 'text-error animate-pulse font-black scale-110'
       countdownText = `Überfällig (${Math.abs(diffMins)} Min)`
     }
+  } else {
+    diffMins = differenceInMinutes(now, new Date(order.created_at))
+    if (['completed', 'cancelled'].includes(order.status)) {
+      countdownColor = 'text-on-surface-variant/40'
+      countdownText = 'Abgeschlossen'
+    } else {
+      countdownColor = 'text-warning font-black'
+      countdownText = `Seit ${diffMins} Min`
+    }
   }
 
   const FulfillmentIcon = fulfillmentIcons[order.fulfillment_type] || ShoppingBag
 
   return (
-    <div className={`relative bg-white rounded-3xl border shadow-xl p-5 sm:p-8 flex flex-col h-full transition-all ${diffMins < 0 && !['completed', 'cancelled'].includes(order.status) ? 'border-error/30 shadow-error/10' : 'border-outline-variant/10 shadow-primary/5 hover:scale-[1.01] hover:shadow-2xl hover:shadow-primary/10'}`}>
+    <div className={`relative bg-white rounded-3xl border shadow-xl p-5 sm:p-8 flex flex-col h-full transition-all ${isTargetTime && diffMins < 0 && !['completed', 'cancelled'].includes(order.status) ? 'border-error/30 shadow-error/10' : 'border-outline-variant/10 shadow-primary/5 hover:scale-[1.01] hover:shadow-2xl hover:shadow-primary/10'}`}>
       {/* PERFECT OVERLAY POPUP */}
       {showTimePicker && (
         <div className="absolute inset-0 z-50 animate-in fade-in zoom-in duration-200">
@@ -220,28 +219,28 @@ export function OrderCard({ order, onStatusChange, activeOrdersCount = 0 }: Orde
           <p className="text-xs sm:text-sm text-on-surface-variant font-medium">{order.customer_phone}</p>
         </div>
 
-        {targetTime && (
-          <div className="text-right flex flex-col items-end shrink-0">
+        <div className="text-right flex flex-col items-end shrink-0">
+          {targetTime && (
             <div className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/40 mb-1">
               Zielzeit: {targetTime.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
             </div>
-            <div className="flex items-center gap-2 transition-colors">
-              <div className={`flex items-center gap-2 text-xl tracking-tight ${countdownColor}`}>
-                <Timer className="w-5 h-5" />
-                {countdownText}
-              </div>
-              {order.status === 'preparing' && (
-                <button
-                  onClick={() => setShowTimePicker(true)}
-                  className="p-1.5 rounded-full hover:bg-primary/10 text-primary transition-colors border border-primary/10"
-                  title="Zeit anpassen"
-                >
-                  <Clock className="w-3.5 h-3.5" />
-                </button>
-              )}
+          )}
+          <div className="flex items-center gap-2 transition-colors">
+            <div className={`flex items-center gap-2 text-xl tracking-tight ${countdownColor}`}>
+              <Timer className="w-5 h-5" />
+              {countdownText}
             </div>
+            {order.status === 'preparing' && (
+              <button
+                onClick={() => setShowTimePicker(true)}
+                className="p-1.5 rounded-full hover:bg-primary/10 text-primary transition-colors border border-primary/10"
+                title="Zeit anpassen"
+              >
+                <Clock className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
       {/* Items */}
