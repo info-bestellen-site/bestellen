@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { generatePartnerReferralUrl } from '@/lib/paypal/client'
-import { createClient } from '@/lib/supabase/server'
 
 /**
  * GET /api/paypal/partner-referral?shopId=xxx
