@@ -16,7 +16,7 @@ export const SUBSCRIPTION_TIERS: Record<SubscriptionTier, TierConfig> = {
     name: 'Starter',
     fokus: 'Testen',
     price: 0,
-    monthlyOrderLimit: 30,
+    monthlyOrderLimit: Infinity,
     features: ['menu', 'custom-branding', 'powered-by-branding', 'reservations'],
   },
   pro: {

@@ -12,7 +12,8 @@ import { LandingNav } from '@/components/layout/LandingNav'
 
 const FEATURES_MATRIX = [
   { label: 'Digitale Speisekarte', starter: true, pro: true, max: true },
-  { label: 'Bestell-System', starter: '20 Orders', pro: 'Unlimited', max: 'Unlimited' },
+  { label: 'Bestell-System', starter: 'Unlimited', pro: 'Unlimited', max: 'Unlimited' },
+  { label: 'Integration mit eigenem Paypal Account für KundenZahlungen', starter: true, pro: true, max: true },
   { label: 'Bestellverwaltung (Küchen-Monitor)', starter: true, pro: true, max: true },
   { label: 'Abholung, Lieferung & Vor-Ort', starter: true, pro: true, max: true },
   { label: 'Eigenes Branding', starter: true, pro: true, max: true },
@@ -248,7 +249,7 @@ export default function PricingPage() {
             Keine Risiken, keine langen Verträge.
           </h2>
           <p className="text-white text-lg mb-10 relative z-10 max-w-xl mx-auto">
-            Starte kostenlos mit bis zu 100 Bestellungen pro Monat. Wenn du wächst, wachsen wir mit dir.
+            Starte kostenlos mit unbegrenzten Bestellungen. Wenn du wächst, wachsen wir mit dir.
           </p>
           <Link
             href="/auth/signup"

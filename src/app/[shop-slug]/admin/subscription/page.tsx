@@ -109,16 +109,20 @@ export default function SubscriptionPage({ params }: SubscriptionPageProps) {
               <div className="space-y-4">
                 <div className="flex items-end justify-between">
                   <div className="text-3xl font-bold">
-                    {currentMonthOrderCount} <span className="text-sm font-normal text-muted-foreground">/ {config.monthlyOrderLimit}</span>
+                    {config.monthlyOrderLimit === Infinity 
+                      ? currentMonthOrderCount 
+                      : `${currentMonthOrderCount} / ${config.monthlyOrderLimit}`}
                   </div>
                 </div>
                 {/* Progress bar */}
-                <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
-                  <div 
-                    className={`h-full ${currentMonthOrderCount >= config.monthlyOrderLimit ? 'bg-destructive' : 'bg-primary'}`}
-                    style={{ width: `${Math.min(100, (currentMonthOrderCount / config.monthlyOrderLimit) * 100)}%` }}
-                  />
-                </div>
+                {config.monthlyOrderLimit !== Infinity && (
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
+                    <div 
+                      className={`h-full ${currentMonthOrderCount >= config.monthlyOrderLimit ? 'bg-destructive' : 'bg-primary'}`}
+                      style={{ width: `${Math.min(100, (currentMonthOrderCount / config.monthlyOrderLimit) * 100)}%` }}
+                    />
+                  </div>
+                )}
                 {currentMonthOrderCount >= config.monthlyOrderLimit && (
                   <p className="text-sm text-destructive flex items-center gap-2">
                     <Info className="h-4 w-4" />
