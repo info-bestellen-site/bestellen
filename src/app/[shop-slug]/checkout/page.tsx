@@ -640,7 +640,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
                   ) : (
                     <>
                       <CheckCircle2 className="w-5 h-5" />
-                      {t('reserve_button')}
+                      {fulfillmentType === 'dine_in' ? t('reserve_button') : t('order_now_button')}
                     </>
                   )}
                 </button>
