@@ -44,8 +44,9 @@ export async function createPayPalOrder(params: {
   merchantId: string
   shopName: string
   orderDescription?: string
+  shippingPreference?: 'GET_FROM_FILE' | 'NO_SHIPPING' | 'SET_PROVIDED_ADDRESS'
 }): Promise<{ id: string; status: string }> {
-  const { amount, currency = 'EUR', merchantId, shopName, orderDescription } = params
+  const { amount, currency = 'EUR', merchantId, shopName, orderDescription, shippingPreference = 'NO_SHIPPING' } = params
   const accessToken = await getAccessToken()
 
   const body = {
@@ -66,7 +67,7 @@ export async function createPayPalOrder(params: {
       paypal: {
         experience_context: {
           brand_name: shopName,
-          shipping_preference: 'NO_SHIPPING',
+          shipping_preference: shippingPreference,
           user_action: 'PAY_NOW',
         },
       },
@@ -122,6 +123,28 @@ export async function capturePayPalOrder(orderId: string): Promise<{
   if (!res.ok) {
     const text = await res.text()
     throw new Error(`PayPal capture failed: ${res.status} ${text}`)
+  }
+
+  return res.json()
+}
+
+/**
+ * Retrieves details for a PayPal order by ID.
+ */
+export async function getPayPalOrder(orderId: string): Promise<any> {
+  const accessToken = await getAccessToken()
+
+  const res = await fetch(`${PAYPAL_API_BASE}/v2/checkout/orders/${orderId}`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+  })
+
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(`PayPal get order failed: ${res.status} ${text}`)
   }
 
   return res.json()

@@ -42,16 +42,40 @@ export async function POST(req: NextRequest) {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // 3. Create the order in Supabase
+    // 3. Extract customer info from PayPal if missing
+    const payer = captureData.payer as any
+    const shipping = captureData.purchase_units?.[0]?.shipping as any
+    const address = shipping?.address as any
+
+    // Helper to check if a string is effectively empty (only whitespace, commas, or dots)
+    const isEmpty = (str: string | null | undefined) => !str || str.replace(/[,\s.]/g, '').length === 0
+
+    const customerName = !isEmpty(orderData.customer_name) 
+      ? orderData.customer_name 
+      : (payer?.name ? `${payer.name.given_name} ${payer.name.surname}` : 'PayPal Customer')
+    
+    let deliveryAddress = orderData.delivery_address
+    if (isEmpty(deliveryAddress) && address) {
+      const parts = [
+        address.address_line_1,
+        address.address_line_2,
+        `${address.postal_code} ${address.admin_area_2}`
+      ].filter(Boolean)
+      deliveryAddress = parts.join(', ')
+    }
+
+    // 4. Create the order in Supabase
     console.log(`[PayPal] Creating Supabase order for shop: ${orderData.shop_id}`)
     
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .insert({
         shop_id: orderData.shop_id,
-        customer_name: orderData.customer_name,
-        customer_phone: orderData.customer_phone,
-        delivery_address: orderData.delivery_address,
+        customer_name: customerName,
+        customer_phone: !isEmpty(orderData.customer_phone) 
+          ? orderData.customer_phone 
+          : (payer?.phone?.phone_number?.national_number || 'PayPal'),
+        delivery_address: deliveryAddress,
         fulfillment_type: orderData.fulfillment_type,
         subtotal: orderData.subtotal,
         delivery_fee: orderData.delivery_fee,

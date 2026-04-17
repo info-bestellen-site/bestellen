@@ -77,6 +77,12 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
   const [phone, setPhone] = useState('')
   const [deliveryFee, setDeliveryFee] = useState(0)
   const [minOrder, setMinOrder] = useState(0)
+  const [deliveryZipCodes, setDeliveryZipCodes] = useState<string[]>([])
+  const [zipSearchTerm, setZipSearchTerm] = useState('')
+  const [zipSuggestions, setZipSuggestions] = useState<any[]>([])
+  const [isSearchingZip, setIsSearchingZip] = useState(false)
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const suggestionRef = useRef<HTMLDivElement>(null)
   const [isOpen, setIsOpen] = useState(true)
   const [manualStatusUpdatedAt, setManualStatusUpdatedAt] = useState<string | null>(null)
   const [hasDelivery, setHasDelivery] = useState(true)
@@ -147,6 +153,7 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
         setPhone(data.phone || '')
         setDeliveryFee(data.delivery_fee)
         setMinOrder(data.min_order_amount)
+        setDeliveryZipCodes(data.delivery_zip_codes || [])
         setIsOpen(data.is_open)
         setHasDelivery(data.has_delivery)
         setHasPickup(data.has_pickup)
@@ -185,6 +192,61 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
     fetchHours()
     fetchTables()
   }, [supabase, shopSlug])
+
+  // Zip Code Search Logic
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (zipSearchTerm.length < 3) {
+        setZipSuggestions([])
+        return
+      }
+
+      setIsSearchingZip(true)
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(zipSearchTerm)}&format=json&addressdetails=1&countrycodes=de&limit=5`)
+        const data = await res.json()
+        setZipSuggestions(data)
+        setShowSuggestions(true)
+      } catch (err) {
+        console.error('ZIP search error:', err)
+      } finally {
+        setIsSearchingZip(false)
+      }
+    }, 800)
+
+    return () => clearTimeout(timer)
+  }, [zipSearchTerm])
+
+  // Handle click outside suggestions
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (suggestionRef.current && !suggestionRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const handleSelectArea = (item: any) => {
+    const zip = item.address.postcode
+    if (!zip) {
+      alert('Dieser Ort hat keine Postleitzahl.')
+      return
+    }
+
+    const name = item.address.suburb || item.address.district || item.address.city || item.address.town
+    const friendlyName = `${name}, ${item.address.city || item.address.state}`
+    const combined = `${zip}:${friendlyName}`
+
+    if (!deliveryZipCodes.some(z => z.split(':')[0] === zip)) {
+      setDeliveryZipCodes([...deliveryZipCodes, combined])
+    }
+    
+    setZipSearchTerm('')
+    setZipSuggestions([])
+    setShowSuggestions(false)
+  }
 
   const handleAddSlot = async () => {
     if (!shop) return
@@ -232,6 +294,21 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
     if (!error) setTables(tables.filter(t => t.id !== id))
   }
 
+  const handleAddZipCode = () => {
+    const zip = zipSearchTerm.trim()
+    if (!zip || deliveryZipCodes.some(z => z.split(':')[0] === zip)) return
+    
+    // Add as manual zip if it's just a number
+    if (/^\d{5}$/.test(zip)) {
+      setDeliveryZipCodes([...deliveryZipCodes, zip])
+      setZipSearchTerm('')
+    }
+  }
+
+  const handleDeleteZipCode = (zipString: string) => {
+    setDeliveryZipCodes(deliveryZipCodes.filter(z => z !== zipString))
+  }
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!shop) return
@@ -251,6 +328,7 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
         manual_status_updated_at: manualStatusUpdatedAt,
         min_order_amount: minOrder,
         delivery_fee: deliveryFee,
+        delivery_zip_codes: deliveryZipCodes,
         has_delivery: hasDelivery,
         logo_url: logoUrl,
         icon_name: iconName,
@@ -763,7 +841,6 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
             <Euro className="w-6 h-6 text-primary" />
             <h2 className="text-xl font-bold tracking-tight">{t('pricing_fees')}</h2>
           </div>
-
           <div className="grid grid-cols-2 gap-6">
             <div className="col-span-2 md:col-span-1">
               <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2.5 ml-1">{t('delivery_fee_label')}</label>
@@ -784,7 +861,7 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
               />
             </div>
             <div className="col-span-2 md:col-span-1">
-              <label className="block text-[10px) font-bold uppercase tracking-widest text-on-surface-variant mb-2.5 ml-1">{t('min_order_label')}</label>
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2.5 ml-1">{t('min_order_label')}</label>
               <input
                 type="number"
                 step="0.50"
@@ -803,6 +880,104 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
             </div>
           </div>
         </div>
+
+        {/* Delivery Zones */}
+        {hasDelivery && (
+          <div className="bg-white rounded-[2rem] p-8 border border-outline-variant/10 shadow-xl shadow-primary/5 space-y-8">
+            <div className="flex items-center gap-3 mb-2">
+              <MapPin className="w-6 h-6 text-primary" />
+              <h2 className="text-xl font-bold tracking-tight">{t('delivery_areas_title')}</h2>
+            </div>
+
+            <div className="space-y-6">
+              <div className="bg-surface-container-low/50 p-6 rounded-3xl border border-outline-variant/5 relative">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary mb-4">{t('add_postal_code')}</p>
+                <div className="flex gap-4">
+                  <div className="flex-1 relative">
+                    <input
+                      placeholder="Ort oder Stadtteil suchen (z.B. Benrath)"
+                      value={zipSearchTerm}
+                      onChange={e => setZipSearchTerm(e.target.value)}
+                      className="w-full px-4 py-3 bg-white rounded-xl text-sm font-bold border-none ring-1 ring-outline-variant/10 focus:ring-2 focus:ring-primary/20"
+                    />
+                    
+                    {isSearchingZip && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <Loader2 className="w-4 h-4 animate-spin text-primary/40" />
+                      </div>
+                    )}
+
+                    {showSuggestions && zipSuggestions.length > 0 && (
+                      <div 
+                        ref={suggestionRef}
+                        className="absolute left-0 right-0 top-full mt-2 bg-white rounded-2xl shadow-2xl border border-outline-variant/10 z-[100] max-h-60 overflow-y-auto overflow-x-hidden animate-in fade-in slide-in-from-top-2 duration-200"
+                      >
+                        {zipSuggestions.map((item, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => handleSelectArea(item)}
+                            className="w-full px-4 py-3 text-left hover:bg-primary/5 transition-colors border-b border-outline-variant/5 last:border-none group"
+                          >
+                            <div className="flex items-center gap-3">
+                              <MapPin className="w-4 h-4 text-primary/40 group-hover:text-primary transition-colors" />
+                              <div className="min-w-0">
+                                <p className="text-sm font-bold truncate">
+                                  {item.address.suburb || item.address.district || item.address.city || item.address.town}
+                                </p>
+                                <p className="text-[10px] text-on-surface-variant uppercase tracking-wider font-bold">
+                                  {item.address.city || item.address.state} ({item.address.postcode})
+                                </p>
+                              </div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAddZipCode}
+                    disabled={!/^\d{5}$/.test(zipSearchTerm)}
+                    className="px-6 bg-primary text-on-primary rounded-xl font-bold text-sm hover:scale-105 transition-transform disabled:opacity-50 disabled:scale-100"
+                  >
+                    {t('save')}
+                  </button>
+                </div>
+                <p className="mt-3 text-[10px] text-on-surface-variant italic">
+                  Tipp: Gib den Namen des Stadtteils ein oder direkt die 5-stellige PLZ.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                {deliveryZipCodes.length > 0 ? (
+                  deliveryZipCodes.map(zipString => {
+                    const [zip, name] = zipString.includes(':') ? zipString.split(':') : [zipString, null]
+                    return (
+                      <div key={zipString} className="flex items-center gap-3 pl-4 pr-3 py-2 bg-primary/5 text-primary rounded-2xl border border-primary/10 group hover:border-primary/30 transition-all">
+                        <div className="flex flex-col">
+                          {name && <span className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-0.5">{name}</span>}
+                          <span className="text-sm font-black leading-none">{zip}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteZipCode(zipString)}
+                          className="p-1.5 hover:bg-error/10 hover:text-error rounded-lg transition-all"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )
+                  })
+                ) : (
+                  <p className="text-sm text-on-surface-variant/60 font-medium italic p-4 bg-surface-container-low rounded-2xl w-full">
+                    Noch keine PLZ-Beschränkung aktiv (Lieferung überall möglich).
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* PayPal Section */}
         <div className="bg-white rounded-[2rem] p-8 border border-outline-variant/10 shadow-sm relative overflow-hidden group">

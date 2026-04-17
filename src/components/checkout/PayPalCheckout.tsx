@@ -25,6 +25,7 @@ interface PayPalCheckoutProps {
   onError: (error: string) => void
   onBeforeCreate?: () => Promise<boolean>
   disabled?: boolean
+  allowedZipCodes?: string[]
 }
 
 export function PayPalCheckout({
@@ -35,6 +36,7 @@ export function PayPalCheckout({
   onError,
   onBeforeCreate,
   disabled,
+  allowedZipCodes = [],
 }: PayPalCheckoutProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -51,7 +53,7 @@ export function PayPalCheckout({
   }
 
   return (
-    <div className="relative">
+    <div className="relative z-0">
       {loading && (
         <div className="absolute inset-0 flex items-center justify-center bg-white/80 rounded-2xl z-10">
           <Loader2 className="w-6 h-6 animate-spin text-primary" />
@@ -73,13 +75,15 @@ export function PayPalCheckout({
         }}
       >
         <PayPalButtons
+          fundingSource="paypal"
           disabled={disabled}
           style={{
             layout: 'vertical',
-            color: 'gold',
+            color: 'blue',
             shape: 'pill',
-            label: 'pay',
-            height: 48,
+            label: 'paypal',
+            height: 55,
+            tagline: false,
           }}
           onInit={() => setLoading(false)}
           onClick={async (data, actions) => {
@@ -91,6 +95,16 @@ export function PayPalCheckout({
             }
             return actions.resolve()
           }}
+          onShippingChange={async (data, actions) => {
+            if (orderData.fulfillment_type !== 'delivery') return actions.resolve()
+            
+            const zip = data.shipping_address.postal_code
+            if (allowedZipCodes.length > 0 && !allowedZipCodes.includes(zip)) {
+              return actions.reject()
+            }
+            
+            return actions.resolve()
+          }}
           createOrder={async () => {
             setError(null)
             try {
@@ -100,6 +114,7 @@ export function PayPalCheckout({
                 body: JSON.stringify({
                   shopSlug,
                   amount,
+                  requireShipping: orderData.fulfillment_type === 'delivery',
                 }),
               })
 
@@ -118,30 +133,7 @@ export function PayPalCheckout({
             }
           }}
           onApprove={async (data) => {
-            setError(null)
-            try {
-              console.log('[PayPal] Payment approved, completing order...')
-              const res = await fetch('/api/paypal/complete-order', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  paypalOrderId: data.orderID,
-                  orderData,
-                }),
-              })
-
-              const result = await res.json()
-
-              if (!res.ok) {
-                throw new Error(result.error || 'Payment capture and order creation failed')
-              }
-
-              onSuccess(data.orderID, result.orderId)
-            } catch (err: any) {
-              const message = err.message || 'Payment capture failed'
-              setError(message)
-              onError(message)
-            }
+            onSuccess(data.orderID, '')
           }}
           onError={(err) => {
             console.error('PayPal Buttons error:', err)

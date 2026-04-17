@@ -2,6 +2,7 @@
 
 import { Shop } from '@/types/database'
 import { useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import { 
   Store, 
   Coffee, 
@@ -85,7 +86,7 @@ export function ShopFooter({ shop }: { shop: Shop }) {
         <div className="flex flex-col items-center md:items-end w-full">
           <div className="pt-6 border-t border-outline-variant/10 md:border-0 md:pt-0">
             <p className="text-[10px] text-on-surface-variant/60 font-medium">
-              Powered by <span className="font-black text-on-surface-variant">Bestellen</span>
+              Powered by <Link href="/" className="font-black text-on-surface-variant hover:text-primary transition-colors">Bestellen</Link>
             </p>
           </div>
         </div>

@@ -26,6 +26,7 @@ import { Shop, FulfillmentType, OpeningHour, Table, Order } from '@/types/databa
 import { generateAvailableSlots, getAvailableReservationSlots, isShopOpen } from '@/lib/utils/open-hours'
 import { PayPalCheckout } from '@/components/checkout/PayPalCheckout'
 import { useTranslation } from '@/lib/i18n/useTranslation'
+import { Modal } from '@/components/ui/Modal'
 
 export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug': string }> }) {
   const { 'shop-slug': shopSlug } = use(params)
@@ -45,16 +46,27 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
   const [fulfillmentType, setFulfillmentType] = useState<FulfillmentType>('pickup')
   const [customerName, setCustomerName] = useState('')
   const [customerPhone, setCustomerPhone] = useState('')
-  const [deliveryAddress, setDeliveryAddress] = useState('')
+  const [deliveryStreet, setDeliveryStreet] = useState('')
+  const [deliveryZip, setDeliveryZip] = useState('')
+  const [deliveryCity, setDeliveryCity] = useState('')
   const [notes, setNotes] = useState('')
 
   // Payment state
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'paypal'>('cash')
   const [paypalSuccess, setPaypalSuccess] = useState(false)
+  const [isVerifyingAddress, setIsVerifyingAddress] = useState(false)
+  const [paypalAddressInfo, setPaypalAddressInfo] = useState<{ name: string, address: string, orderId: string } | null>(null)
+  const [forceShowAddressFields, setForceShowAddressFields] = useState(false)
 
   // Admin specific form state
   const [adminFulfillment, setAdminFulfillment] = useState<'terminal' | 'table'>('terminal')
   const [adminSelectedTable, setAdminSelectedTable] = useState<string>('')
+  
+  // Reset confirmation state when type or method changes
+  useEffect(() => {
+    setForceShowAddressFields(false)
+    setPaypalAddressInfo(null)
+  }, [fulfillmentType, paymentMethod])
   
   // Booking State
   const [openingHours, setOpeningHours] = useState<OpeningHour[]>([])
@@ -149,6 +161,18 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
       return
     }
 
+    if (fulfillmentType === 'delivery' && shop.delivery_zip_codes && shop.delivery_zip_codes.length > 0) {
+      const isZipAllowed = (shop.delivery_zip_codes || []).some(z => {
+        const zipPart = z.split(':')[0]
+        return zipPart === deliveryZip
+      })
+
+      if (!isZipAllowed) {
+        alert(t('delivery_not_available'))
+        return
+      }
+    }
+
     if (orderLoading) return
 
     // Special handling for PayPal: we now use the PayPalButtons directly
@@ -174,7 +198,9 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
           shop_id: shop.id,
           customer_name: isAdmin ? 'Admin' : customerName,
           customer_phone: isAdmin ? (shop.phone || 'Admin') : customerPhone,
-          delivery_address: (!isAdmin && fulfillmentType === 'delivery') ? deliveryAddress : null,
+          delivery_address: (!isAdmin && fulfillmentType === 'delivery' && (deliveryStreet || deliveryZip || deliveryCity)) 
+            ? `${deliveryStreet}, ${deliveryZip} ${deliveryCity}` 
+            : null,
           table_number: (isAdmin && adminFulfillment === 'table') ? adminSelectedTable : null,
           fulfillment_type: isAdmin 
             ? (adminFulfillment === 'table' ? 'dine_in' : 'pickup')
@@ -235,15 +261,14 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
   }
 
   const validateForPayPal = async (): Promise<boolean> => {
-    if (!customerName || !customerPhone) {
-      alert('Bitte geben Sie Ihren Namen und Ihre Telefonnummer ein.')
+    if (!customerPhone) {
+      alert('Bitte geben Sie Ihre Telefonnummer für Rückfragen an.')
       return false
     }
-    if (fulfillmentType === 'delivery' && !deliveryAddress) {
-      alert('Bitte geben Sie eine Lieferadresse ein.')
-      return false
-    }
-
+    
+    // Name and address are now optional for PayPal Express as we get them from PayPal.
+    // However, if the user already filled them, we use them.
+    
     return true
   }
 
@@ -251,7 +276,9 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
     shop_id: shop!.id,
     customer_name: customerName,
     customer_phone: customerPhone,
-    delivery_address: fulfillmentType === 'delivery' ? deliveryAddress : null,
+    delivery_address: (fulfillmentType === 'delivery' && (deliveryStreet || deliveryZip || deliveryCity)) 
+      ? `${deliveryStreet}, ${deliveryZip} ${deliveryCity}` 
+      : null,
     fulfillment_type: fulfillmentType,
     subtotal,
     delivery_fee: deliveryFee,
@@ -264,15 +291,66 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
     items: items,
   })
 
-  const handlePayPalSuccess = (paypalOrderId: string, supabaseOrderId: string) => {
-    setPaypalSuccess(true)
-    clearCart(shopSlug)
-    router.push(`/${shop!.slug}/confirmation/${supabaseOrderId}`)
+  const handlePayPalSuccess = async (paypalOrderId: string) => {
+    // If the user has explicitly chosen to show/edit address fields, 
+    // we use their manual input and bypass the PayPal address confirmation.
+    if (forceShowAddressFields) {
+      await completeOrder(paypalOrderId)
+      return
+    }
+
+    // 1. Fetch address from PayPal first
+    setIsVerifyingAddress(true)
+    try {
+      const res = await fetch(`/api/paypal/get-order-details?orderId=${paypalOrderId}`)
+      const info = await res.json()
+      
+      if (res.ok && info.address) {
+        setPaypalAddressInfo({
+          name: info.customerName,
+          address: info.address,
+          orderId: paypalOrderId
+        })
+      } else {
+        // Fallback: just complete the order if no address returned or error
+        await completeOrder(paypalOrderId)
+      }
+    } catch (err) {
+      console.error('Error fetching PayPal address:', err)
+      await completeOrder(paypalOrderId)
+    } finally {
+      setIsVerifyingAddress(false)
+    }
+  }
+
+  const completeOrder = async (paypalOrderId: string) => {
+    setOrderLoading(true)
+    try {
+      const res = await fetch('/api/paypal/complete-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          paypalOrderId,
+          orderData: getOrderData(),
+        }),
+      })
+
+      const result = await res.json()
+      if (!res.ok) throw new Error(result.error)
+
+      setPaypalSuccess(true)
+      clearCart(shopSlug)
+      router.push(`/${shop!.slug}/confirmation/${result.orderId}`)
+    } catch (err: any) {
+      console.error('PayPal completion error:', err)
+      alert(err.message || 'Payment capture failed')
+    } finally {
+      setOrderLoading(false)
+    }
   }
 
   const handlePayPalError = (error: string) => {
     console.error('PayPal error:', error)
-    // Order was already created — customer can retry payment or pay on-site
   }
 
   if (loading) return (
@@ -499,46 +577,95 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
           </h3>
           
           <div className="space-y-4">
-            {!isAdmin && (
+            {(!isAdmin && (fulfillmentType !== 'delivery' || paymentMethod !== 'paypal' || forceShowAddressFields)) && (
               <>
-                <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5 ml-1">Vollständiger Name</label>
-                  <input 
-                    required
-                    type="text" 
-                    value={customerName}
-                    onChange={e => setCustomerName(e.target.value)}
-                    placeholder="z.B. Max Mustermann"
-                    className="w-full px-4 py-3 bg-surface-container-low border-none rounded-xl text-sm focus:ring-2 focus:ring-primary/10"
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5 ml-1">Vollständiger Name</label>
+                    <input 
+                      required
+                      type="text" 
+                      value={customerName}
+                      onChange={e => setCustomerName(e.target.value)}
+                      placeholder="z.B. Max Mustermann"
+                      className="w-full px-4 py-3 bg-surface-container-low border-none rounded-xl text-sm focus:ring-2 focus:ring-primary/10"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5 ml-1">Telefonnummer</label>
+                    <input 
+                      required
+                      type="tel" 
+                      value={customerPhone}
+                      onChange={e => setCustomerPhone(e.target.value)}
+                      placeholder="Für Rückfragen bei der Bestellung"
+                      className="w-full px-4 py-3 bg-surface-container-low border-none rounded-xl text-sm focus:ring-2 focus:ring-primary/10"
+                    />
+                  </div>
                 </div>
-                
-                <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5 ml-1">Telefonnummer</label>
+
+                {fulfillmentType === 'delivery' && (
+                  <div className="animate-[fadeIn_0.3s_ease] space-y-4">
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5 ml-1">{t('street_and_number')}</label>
+                      <input 
+                        required
+                        type="text" 
+                        value={deliveryStreet}
+                        onChange={e => setDeliveryStreet(e.target.value)}
+                        placeholder="Musterstraße 123"
+                        className="w-full px-4 py-3 bg-surface-container-low border-none rounded-xl text-sm focus:ring-2 focus:ring-primary/10"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5 ml-1">{t('postal_code')}</label>
+                        <input 
+                          required
+                          type="text" 
+                          value={deliveryZip}
+                          onChange={e => setDeliveryZip(e.target.value)}
+                          placeholder="12345"
+                          className="w-full px-4 py-3 bg-surface-container-low border-none rounded-xl text-sm focus:ring-2 focus:ring-primary/10"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5 ml-1">{t('city')}</label>
+                        <input 
+                          required
+                          type="text" 
+                          value={deliveryCity}
+                          onChange={e => setDeliveryCity(e.target.value)}
+                          placeholder="Berlin"
+                          className="w-full px-4 py-3 bg-surface-container-low border-none rounded-xl text-sm focus:ring-2 focus:ring-primary/10"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
+            {(!isAdmin && fulfillmentType === 'delivery' && paymentMethod === 'paypal' && !forceShowAddressFields) && (
+              <div className="p-4 bg-primary/5 rounded-2xl border border-primary/20 space-y-2 animate-[fadeIn_0.3s_ease]">
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-primary">PayPal Express</p>
+                </div>
+                <p className="text-sm font-medium text-on-surface">Deine Lieferadresse wird automatisch von PayPal übernommen.</p>
+                <div className="pt-2">
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5 ml-1">Telefonnummer (erforderlich)</label>
                   <input 
                     required
                     type="tel" 
                     value={customerPhone}
                     onChange={e => setCustomerPhone(e.target.value)}
-                    placeholder="Für Rückfragen bei der Bestellung"
-                    className="w-full px-4 py-3 bg-surface-container-low border-none rounded-xl text-sm focus:ring-2 focus:ring-primary/10"
+                    placeholder="Für Rückfragen"
+                    className="w-full px-4 py-3 bg-white border border-primary/10 rounded-xl text-sm focus:ring-2 focus:ring-primary/10"
                   />
                 </div>
-
-                {fulfillmentType === 'delivery' && (
-                  <div className="animate-[fadeIn_0.3s_ease]">
-                    <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5 ml-1">Lieferadresse</label>
-                    <textarea 
-                      required
-                      rows={3}
-                      value={deliveryAddress}
-                      onChange={e => setDeliveryAddress(e.target.value)}
-                      placeholder="Strasse, Hausnummer, PLZ, Ort"
-                      className="w-full px-4 py-3 bg-surface-container-low border-none rounded-xl text-sm focus:ring-2 focus:ring-primary/10 resize-none"
-                    />
-                  </div>
-                )}
-              </>
+              </div>
             )}
 
 
@@ -619,6 +746,9 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
                   <p className="text-[10px] text-on-surface-variant font-medium">
                     {t('complete_paypal_payment')}
                   </p>
+                  <p className="text-[9px] text-primary/60 font-bold mt-1 uppercase tracking-wider">
+                    ⚡ Express: Name & Adresse werden von PayPal übernommen
+                  </p>
                 </div>
                 <PayPalCheckout
                   shopSlug={shopSlug}
@@ -627,6 +757,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
                   onBeforeCreate={validateForPayPal}
                   onSuccess={handlePayPalSuccess}
                   onError={handlePayPalError}
+                  allowedZipCodes={(shop?.delivery_zip_codes || []).map(z => z.split(':')[0])}
                 />
               </div>
             ) : (
@@ -653,6 +784,55 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
         </form>
       </div>
       
+      {/* Address Confirmation Modal */}
+      <Modal
+        isOpen={!!paypalAddressInfo}
+        onClose={() => setPaypalAddressInfo(null)}
+        title="Lieferadresse bestätigen"
+      >
+        <div className="space-y-6">
+          <div className="p-6 bg-surface-container-low rounded-3xl border border-outline-variant/10">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-on-surface-variant mb-4">Adresse von PayPal</p>
+            <div className="space-y-1">
+              <p className="font-bold text-lg">{paypalAddressInfo?.name}</p>
+              <p className="text-on-surface-variant font-medium">{paypalAddressInfo?.address}</p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 gap-3">
+            <button
+              onClick={() => {
+                const id = paypalAddressInfo?.orderId
+                if (id) completeOrder(id)
+                setPaypalAddressInfo(null)
+              }}
+              className="w-full py-4 bg-primary text-on-primary rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-[1.02] transition-all"
+            >
+              Diese Adresse verwenden
+            </button>
+            <button
+              onClick={() => {
+                setForceShowAddressFields(true)
+                setPaypalAddressInfo(null)
+              }}
+              className="w-full py-4 bg-white text-on-surface-variant border-2 border-outline-variant/10 rounded-2xl font-bold text-sm hover:bg-surface-container-low transition-all"
+            >
+              Adresse ändern
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Global verification loading state */}
+      {isVerifyingAddress && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-white/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white p-8 rounded-[2rem] shadow-2xl flex flex-col items-center gap-4">
+            <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+            <p className="text-sm font-bold text-on-surface">Lade Adresse von PayPal...</p>
+          </div>
+        </div>
+      )}
+
       <style jsx>{`
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(-5px); }

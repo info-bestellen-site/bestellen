@@ -4,13 +4,14 @@ import { createClient } from '@supabase/supabase-js'
 
 /**
  * POST /api/paypal/create-order
- * Body: { shopSlug: string, amount: number, currency?: string }
+ * Body: { shopSlug: string, amount: number, currency?: string, requireShipping?: boolean }
  *
  * Creates a PayPal order targeting the shop's merchant account.
  */
 export async function POST(req: NextRequest) {
   try {
-    const { shopSlug, amount, currency } = await req.json()
+    const body = await req.json()
+    const { shopSlug, amount, currency, requireShipping } = body
 
     if (!shopSlug || typeof amount !== 'number' || amount <= 0) {
       return NextResponse.json(
@@ -53,6 +54,7 @@ export async function POST(req: NextRequest) {
       currency: currency || 'EUR',
       merchantId: shop.paypal_merchant_id,
       shopName: shop.name,
+      shippingPreference: requireShipping ? 'GET_FROM_FILE' : 'NO_SHIPPING',
     })
 
     return NextResponse.json({ id: order.id, status: order.status })
