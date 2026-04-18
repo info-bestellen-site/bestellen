@@ -387,3 +387,4 @@ export type UpsellRuleWithProduct = UpsellRule & {
 
 export type SubscriptionTier = 'starter' | 'pro' | 'max'
 export type FulfillmentType = 'pickup' | 'delivery' | 'dine_in'
+export type OrderStatus = 'pending' | 'preparing' | 'ready' | 'completed' | 'cancelled'
