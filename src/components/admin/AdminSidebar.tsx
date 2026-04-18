@@ -44,14 +44,21 @@ export function AdminSidebar({
 
   useEffect(() => {
     async function fetchShopInfo() {
-      const { data } = await supabase
+      const { data: shopData } = await supabase
         .from('shops')
         .select('subscription_tier, has_delivery, has_reservation, has_dine_in, has_pickup')
         .eq('slug', shopSlug)
         .single()
 
-      if (data) {
-        setTier(data.subscription_tier as SubscriptionTier)
+      if (shopData) {
+        const data = shopData as { 
+          subscription_tier: SubscriptionTier, 
+          has_delivery: boolean, 
+          has_reservation: boolean, 
+          has_dine_in: boolean, 
+          has_pickup: boolean 
+        }
+        setTier(data.subscription_tier)
         setFlags({
           has_delivery: data.has_delivery ?? true,
           has_reservation: data.has_reservation ?? true,

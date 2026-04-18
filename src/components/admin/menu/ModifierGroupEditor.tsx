@@ -40,14 +40,14 @@ export function ModifierGroupEditor({ product, shopId, onClose }: ModifierGroupE
 
   async function fetchGroups() {
     setLoading(true)
-    const { data } = await supabase
+    const { data: groupData } = await supabase
       .from('modifier_groups')
       .select('*, modifier_options(*)')
       .eq('product_id', product.id)
       .order('sort_order')
 
-    if (data) {
-      const parsed = (data as any[]).map(g => ({
+    if (groupData) {
+      const parsed = (groupData as any[]).map(g => ({
         ...g,
         modifier_options: (g.modifier_options || []).sort((a: ModifierOption, b: ModifierOption) => a.sort_order - b.sort_order)
       }))

@@ -35,7 +35,7 @@ function ConfirmationPage({ params }: { params: Promise<{ 'shop-slug': string; '
       .maybeSingle()
     
     if (data) {
-      setOrder(data as OrderWithDetails)
+      setOrder(data as unknown as OrderWithDetails)
     }
     setLoading(false)
   }, [orderId, supabase])

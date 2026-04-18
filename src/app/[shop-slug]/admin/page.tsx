@@ -66,7 +66,8 @@ function KitchenDashboard({ params }: { params: Promise<{ 'shop-slug': string }>
         .neq('status', 'cancelled')
         .order('estimated_ready_at', { ascending: true })
 
-      const validOrders = (initialOrders as OrderWithItems[] || []).filter(o => o.total > 0)
+      const ordersData = initialOrders as OrderWithItems[] || []
+      const validOrders = ordersData.filter(o => o.total > 0)
       setOrders(validOrders)
       setLoading(false)
 
@@ -93,14 +94,15 @@ function KitchenDashboard({ params }: { params: Promise<{ 'shop-slug': string }>
           },
           async (payload) => {
             if (payload.eventType === 'INSERT') {
-              const { data: newOrder } = await supabase
+              const { data: newOrderData } = await supabase
                 .from('orders')
                 .select('*, order_items(*)')
                 .eq('id', payload.new.id)
                 .single()
 
+              const newOrder = newOrderData as OrderWithItems | null
               if (newOrder && newOrder.total > 0) {
-                setOrders(prev => [...prev, newOrder as OrderWithItems])
+                setOrders(prev => [...prev, newOrder])
                 if (soundEnabledRef.current) playNewOrderSound()
               }
             } else if (payload.eventType === 'UPDATE') {

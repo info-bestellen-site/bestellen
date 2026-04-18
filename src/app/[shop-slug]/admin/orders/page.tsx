@@ -52,14 +52,14 @@ function OrderHistoryPage({ params }: { params: Promise<{ 'shop-slug': string }>
       if (!shop) return
       setShopId(shop.id)
 
-      const { data: historyOrders } = await supabase
+      const { data: historyOrdersData } = await supabase
         .from('orders')
         .select('*, order_items(*)')
         .eq('shop_id', shop.id)
-        .in('status', ['completed', 'cancelled']) // Only finalized orders in history usually, or all? Let's show all
+        .in('status', ['completed', 'cancelled', 'preparing', 'ready', 'pending'])
         .order('created_at', { ascending: false })
       
-      setOrders(historyOrders as OrderWithItems[] || [])
+      setOrders(historyOrdersData as OrderWithItems[] || [])
       setLoading(false)
     }
     

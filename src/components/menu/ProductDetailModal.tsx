@@ -48,7 +48,8 @@ export function ProductDetailModal({ product, shopSlug, onClose }: ProductDetail
         .eq('product_id', product.id)
         .order('sort_order')
 
-      const parsed: ModifierGroupWithOptions[] = (groupData || []).map((g: any) => ({
+      const groupsRaw = groupData as any[] || []
+      const parsed: ModifierGroupWithOptions[] = groupsRaw.map((g: any) => ({
         ...g,
         modifier_options: (g.modifier_options || []).sort((a: any, b: any) => a.sort_order - b.sort_order)
       }))
