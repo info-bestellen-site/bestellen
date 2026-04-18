@@ -45,6 +45,7 @@ import { Modal } from '@/components/ui/Modal'
 import { ImageCropper } from '@/components/ui/ImageCropper'
 import { useTranslation } from '@/lib/i18n/useTranslation'
 import { LANGUAGES, Language } from '@/lib/i18n/translations'
+import { normalizeSlug } from '@/lib/utils/slug'
 
 const PRESET_ICONS = [
   { name: 'Store', icon: Store },
@@ -61,7 +62,8 @@ const PRESET_ICONS = [
 ]
 
 export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug': string }> }) {
-  const { 'shop-slug': shopSlug } = use(params)
+  const { 'shop-slug': slug } = use(params)
+  const shopSlug = decodeURIComponent(slug)
   const supabase = createClient()
   const router = useRouter()
   const [shop, setShop] = useState<Shop | null>(null)
@@ -492,7 +494,7 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
                   required
                   type="text"
                   value={slug}
-                  onChange={e => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, '-'))}
+                  onChange={e => setSlug(normalizeSlug(e.target.value))}
                   className="w-full pl-11 pr-4 py-4 bg-surface-container-low border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-primary/10 transition-all"
                 />
               </div>
@@ -763,123 +765,127 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
         </div>
 
         {/* Tables Section */}
-        <div className="bg-white rounded-[2rem] p-8 border border-outline-variant/10 shadow-xl shadow-primary/5 space-y-8">
-          <div className="flex items-center gap-3 mb-2">
-            <LayoutGrid className="w-6 h-6 text-primary" />
-            <h2 className="text-xl font-bold tracking-tight">{t('table_management')}</h2>
-          </div>
-
-          <div className="space-y-6">
-            <div className="bg-surface-container-low/50 p-6 rounded-3xl border border-outline-variant/5">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary mb-4">{t('add_table')}</p>
-              <div className="flex gap-4">
-                <input
-                  placeholder={t('table_name_nr')}
-                  value={newTable.number}
-                  onChange={e => setNewTable({ ...newTable, number: e.target.value })}
-                  className="flex-1 px-4 py-3 bg-white rounded-xl text-sm font-bold border-none ring-1 ring-outline-variant/10"
-                />
-                <div className="flex items-center gap-3 px-4 py-3 bg-white rounded-xl ring-1 ring-outline-variant/10">
-                  <Users className="w-4 h-4 text-on-surface-variant/40" />
-                  <input
-                    type="number"
-                    min="1"
-                    value={newTable.capacity}
-                    onChange={e => {
-                      const val = e.target.value;
-                      if (val === '') {
-                        setNewTable({ ...newTable, capacity: 1 })
-                      } else {
-                        const parsed = parseInt(val);
-                        if (!isNaN(parsed)) setNewTable({ ...newTable, capacity: parsed });
-                      }
-                    }}
-                    className="w-12 text-sm font-bold border-none p-0 focus:ring-0"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={handleAddTable}
-                  className="px-6 bg-primary text-on-primary rounded-xl font-bold text-sm hover:scale-105 transition-transform"
-                >
-                  Hinzufügen
-                </button>
-              </div>
+        {hasReservation && (
+          <div className="bg-white rounded-[2rem] p-8 border border-outline-variant/10 shadow-xl shadow-primary/5 space-y-8">
+            <div className="flex items-center gap-3 mb-2">
+              <LayoutGrid className="w-6 h-6 text-primary" />
+              <h2 className="text-xl font-bold tracking-tight">{t('table_management')}</h2>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              {tables.map(table => (
-                <div key={table.id} className="p-5 bg-white rounded-[1.5rem] border border-outline-variant/10 shadow-sm hover:shadow-md transition-all relative group">
+            <div className="space-y-6">
+              <div className="bg-surface-container-low/50 p-6 rounded-3xl border border-outline-variant/5">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary mb-4">{t('add_table')}</p>
+                <div className="flex gap-4">
+                  <input
+                    placeholder={t('table_name_nr')}
+                    value={newTable.number}
+                    onChange={e => setNewTable({ ...newTable, number: e.target.value })}
+                    className="flex-1 px-4 py-3 bg-white rounded-xl text-sm font-bold border-none ring-1 ring-outline-variant/10"
+                  />
+                  <div className="flex items-center gap-3 px-4 py-3 bg-white rounded-xl ring-1 ring-outline-variant/10">
+                    <Users className="w-4 h-4 text-on-surface-variant/40" />
+                    <input
+                      type="number"
+                      min="1"
+                      value={newTable.capacity}
+                      onChange={e => {
+                        const val = e.target.value;
+                        if (val === '') {
+                          setNewTable({ ...newTable, capacity: 1 })
+                        } else {
+                          const parsed = parseInt(val);
+                          if (!isNaN(parsed)) setNewTable({ ...newTable, capacity: parsed });
+                        }
+                      }}
+                      className="w-12 text-sm font-bold border-none p-0 focus:ring-0"
+                    />
+                  </div>
                   <button
                     type="button"
-                    onClick={() => handleDeleteTable(table.id)}
-                    className="absolute top-4 right-4 text-on-surface-variant/20 hover:text-error transition-colors"
+                    onClick={handleAddTable}
+                    className="px-6 bg-primary text-on-primary rounded-xl font-bold text-sm hover:scale-105 transition-transform"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    Hinzufügen
                   </button>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/40 mb-1">{t('table')}</p>
-                  <p className="text-xl font-black mb-4">{table.name}</p>
-                  <div className="flex items-center gap-1.5 pt-4 border-t border-outline-variant/5">
-                    <Users className="w-3.5 h-3.5 text-primary" />
-                    <span className="text-xs font-bold">{table.capacity} {t('places')}</span>
-                    <div className="ml-auto flex gap-0.5">
-                      {Array.from({ length: Math.min(table.capacity, 4) }).map((_, i) => (
-                        <div key={i} className="w-1.5 h-1.5 rounded-full bg-primary/20" />
-                      ))}
-                      {table.capacity > 4 && <span className="text-[8px] font-black text-primary/40">+</span>}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {tables.map(table => (
+                  <div key={table.id} className="p-5 bg-white rounded-[1.5rem] border border-outline-variant/10 shadow-sm hover:shadow-md transition-all relative group">
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteTable(table.id)}
+                      className="absolute top-4 right-4 text-on-surface-variant/20 hover:text-error transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/40 mb-1">{t('table')}</p>
+                    <p className="text-xl font-black mb-4">{table.name}</p>
+                    <div className="flex items-center gap-1.5 pt-4 border-t border-outline-variant/5">
+                      <Users className="w-3.5 h-3.5 text-primary" />
+                      <span className="text-xs font-bold">{table.capacity} {t('places')}</span>
+                      <div className="ml-auto flex gap-0.5">
+                        {Array.from({ length: Math.min(table.capacity, 4) }).map((_, i) => (
+                          <div key={i} className="w-1.5 h-1.5 rounded-full bg-primary/20" />
+                        ))}
+                        {table.capacity > 4 && <span className="text-[8px] font-black text-primary/40">+</span>}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Pricing */}
-        <div className="bg-white rounded-[2rem] p-8 border border-outline-variant/10 shadow-xl shadow-primary/5 space-y-8">
-          <div className="flex items-center gap-3 mb-2">
-            <Euro className="w-6 h-6 text-primary" />
-            <h2 className="text-xl font-bold tracking-tight">{t('pricing_fees')}</h2>
-          </div>
-          <div className="grid grid-cols-2 gap-6">
-            <div className="col-span-2 md:col-span-1">
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2.5 ml-1">{t('delivery_fee_label')}</label>
-              <input
-                type="number"
-                step="0.50"
-                value={deliveryFee || 0}
-                onChange={e => {
-                  const val = e.target.value;
-                  if (val === '') {
-                    setDeliveryFee(0)
-                  } else {
-                    const parsed = parseFloat(val);
-                    if (!isNaN(parsed)) setDeliveryFee(parsed);
-                  }
-                }}
-                className="w-full px-4 py-4 bg-surface-container-low border-none rounded-2xl text-base font-bold focus:ring-2 focus:ring-primary/10 transition-all"
-              />
+        {hasDelivery && (
+          <div className="bg-white rounded-[2rem] p-8 border border-outline-variant/10 shadow-xl shadow-primary/5 space-y-8">
+            <div className="flex items-center gap-3 mb-2">
+              <Euro className="w-6 h-6 text-primary" />
+              <h2 className="text-xl font-bold tracking-tight">{t('pricing_fees')}</h2>
             </div>
-            <div className="col-span-2 md:col-span-1">
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2.5 ml-1">{t('min_order_label')}</label>
-              <input
-                type="number"
-                step="0.50"
-                value={minOrder || 0}
-                onChange={e => {
-                  const val = e.target.value;
-                  if (val === '') {
-                    setMinOrder(0)
-                  } else {
-                    const parsed = parseFloat(val);
-                    if (!isNaN(parsed)) setMinOrder(parsed);
-                  }
-                }}
-                className="w-full px-4 py-4 bg-surface-container-low border-none rounded-2xl text-base font-bold focus:ring-2 focus:ring-primary/10 transition-all"
-              />
+            <div className="grid grid-cols-2 gap-6">
+              <div className="col-span-2 md:col-span-1">
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2.5 ml-1">{t('delivery_fee_label')}</label>
+                <input
+                  type="number"
+                  step="0.50"
+                  value={deliveryFee || 0}
+                  onChange={e => {
+                    const val = e.target.value;
+                    if (val === '') {
+                      setDeliveryFee(0)
+                    } else {
+                      const parsed = parseFloat(val);
+                      if (!isNaN(parsed)) setDeliveryFee(parsed);
+                    }
+                  }}
+                  className="w-full px-4 py-4 bg-surface-container-low border-none rounded-2xl text-base font-bold focus:ring-2 focus:ring-primary/10 transition-all"
+                />
+              </div>
+              <div className="col-span-2 md:col-span-1">
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2.5 ml-1">{t('min_order_label')}</label>
+                <input
+                  type="number"
+                  step="0.50"
+                  value={minOrder || 0}
+                  onChange={e => {
+                    const val = e.target.value;
+                    if (val === '') {
+                      setMinOrder(0)
+                    } else {
+                      const parsed = parseFloat(val);
+                      if (!isNaN(parsed)) setMinOrder(parsed);
+                    }
+                  }}
+                  className="w-full px-4 py-4 bg-surface-container-low border-none rounded-2xl text-base font-bold focus:ring-2 focus:ring-primary/10 transition-all"
+                />
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Delivery Zones */}
         {hasDelivery && (

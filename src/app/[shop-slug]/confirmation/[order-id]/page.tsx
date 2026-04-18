@@ -12,7 +12,8 @@ import { useTranslation } from '@/lib/i18n/useTranslation'
 type OrderWithDetails = Order & { shops: Shop; order_items: OrderItem[] }
 
 export default function ConfirmationPage({ params }: { params: Promise<{ 'shop-slug': string; 'order-id': string }> }) {
-  const { 'shop-slug': slug, 'order-id': orderId } = use(params)
+  const { 'shop-slug': rawSlug, 'order-id': orderId } = use(params)
+  const slug = decodeURIComponent(rawSlug)
   
   const supabase = createClient()
   const { t } = useTranslation()

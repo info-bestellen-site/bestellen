@@ -9,24 +9,25 @@ interface Props {
 
 export default async function AnalyticsPage({ params }: Props) {
   const { 'shop-slug': slug } = await params
+  const decodedSlug = decodeURIComponent(slug)
   const supabase = await createServerSupabaseClient()
 
   const { data: shop } = await supabase
     .from('shops')
     .select('subscription_tier, name')
-    .eq('slug', slug)
+    .eq('slug', decodedSlug)
     .single()
 
   const tier = (shop?.subscription_tier ?? 'starter') as SubscriptionTier
   const hasAccess = tier === 'max'
 
   if (!hasAccess) {
-    return <AnalyticsUpgradeWall shopSlug={slug} currentTier={tier} />
+    return <AnalyticsUpgradeWall shopSlug={decodedSlug} currentTier={tier} />
   }
 
   // Lazy-load the real analytics client component (only when max tier)
   const { AnalyticsClient } = await import('./_client')
-  return <AnalyticsClient shopSlug={slug} />
+  return <AnalyticsClient shopSlug={decodedSlug} />
 }
 
 function AnalyticsUpgradeWall({ shopSlug, currentTier }: { shopSlug: string; currentTier: SubscriptionTier }) {

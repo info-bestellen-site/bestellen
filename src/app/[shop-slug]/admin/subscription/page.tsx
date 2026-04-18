@@ -14,7 +14,8 @@ interface SubscriptionPageProps {
 }
 
 export default function SubscriptionPage({ params }: SubscriptionPageProps) {
-  const { 'shop-slug': slug } = use(params);
+  const { 'shop-slug': rawSlug } = use(params);
+  const slug = decodeURIComponent(rawSlug);
   const router = useRouter();
   const supabase = createClient();
   const { t, language } = useTranslation();

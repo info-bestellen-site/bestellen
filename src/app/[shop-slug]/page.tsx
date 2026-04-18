@@ -9,13 +9,14 @@ interface ShopPageProps {
 
 export default async function ShopPage({ params }: ShopPageProps) {
   const { 'shop-slug': slug } = await params
+  const decodedSlug = decodeURIComponent(slug)
   const supabase = await createServerSupabaseClient()
 
   // Fetch shop, categories and products
   const { data: shop } = await supabase
     .from('shops')
     .select('*')
-    .eq('slug', slug)
+    .eq('slug', decodedSlug)
     .single()
 
   if (!shop) notFound()

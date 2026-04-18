@@ -10,6 +10,7 @@ interface AdminLayoutProps {
 
 export default async function AdminLayout({ children, params }: AdminLayoutProps) {
   const { 'shop-slug': slug } = await params
+  const decodedSlug = decodeURIComponent(slug)
   const supabase = await createServerSupabaseClient()
 
   // Strict check: only owner can access admin
@@ -19,7 +20,7 @@ export default async function AdminLayout({ children, params }: AdminLayoutProps
   const { data: shop } = await supabase
     .from('shops')
     .select('id, owner_id')
-    .eq('slug', slug)
+    .eq('slug', decodedSlug)
     .single()
 
   if (!shop || shop.owner_id !== user.id) {
@@ -27,7 +28,7 @@ export default async function AdminLayout({ children, params }: AdminLayoutProps
   }
 
   return (
-    <ResponsiveAdminLayout shopSlug={slug}>
+    <ResponsiveAdminLayout shopSlug={decodedSlug}>
       {children}
     </ResponsiveAdminLayout>
   )

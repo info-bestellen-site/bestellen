@@ -46,7 +46,8 @@ import { ModifierGroupEditor } from '@/components/admin/menu/ModifierGroupEditor
 import { UpsellEditor } from '@/components/admin/menu/UpsellEditor'
 
 export default function MenuManagementPage({ params }: { params: Promise<{ 'shop-slug': string }> }) {
-  const { 'shop-slug': shopSlug } = use(params)
+  const { 'shop-slug': slug } = use(params)
+  const shopSlug = decodeURIComponent(slug)
   const supabase = createClient()
   const [loading, setLoading] = useState(true)
   const [shopId, setShopId] = useState<string | null>(null)

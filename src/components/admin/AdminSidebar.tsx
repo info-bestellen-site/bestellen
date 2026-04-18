@@ -35,30 +35,53 @@ export function AdminSidebar({
   const { t } = useTranslation()
   const [tier, setTier] = useState<SubscriptionTier>('starter')
 
+  const [flags, setFlags] = useState({
+    has_delivery: true,
+    has_reservation: true,
+    has_dine_in: true,
+    has_pickup: true
+  })
+
   useEffect(() => {
-    async function fetchTier() {
+    async function fetchShopInfo() {
       const { data } = await supabase
         .from('shops')
-        .select('subscription_tier')
+        .select('subscription_tier, has_delivery, has_reservation, has_dine_in, has_pickup')
         .eq('slug', shopSlug)
         .single()
 
-      if (data?.subscription_tier) {
+      if (data) {
         setTier(data.subscription_tier as SubscriptionTier)
+        setFlags({
+          has_delivery: data.has_delivery ?? true,
+          has_reservation: data.has_reservation ?? true,
+          has_dine_in: data.has_dine_in ?? true,
+          has_pickup: data.has_pickup ?? true
+        })
       }
     }
-    fetchTier()
+    fetchShopInfo()
   }, [shopSlug, supabase])
 
   const navItems = [
     { label: t('monitor'), icon: ChefHat, href: `/${shopSlug}/admin` },
-    { label: t('reservations'), icon: CalendarDays, href: `/${shopSlug}/admin/reservations`, feature: 'reservations' },
+    { 
+      label: t('reservations'), 
+      icon: CalendarDays, 
+      href: `/${shopSlug}/admin/reservations`, 
+      feature: 'reservations',
+      enabled: flags.has_reservation
+    },
     { label: t('orders'), icon: LayoutDashboard, href: `/${shopSlug}/admin/orders` },
     { label: t('menu'), icon: UtensilsCrossed, href: `/${shopSlug}/admin/menu` },
     { label: t('analytics'), icon: TrendingUp, href: `/${shopSlug}/admin/analytics`, feature: 'analytics', badge: 'AI-Max' },
     { label: t('settings'), icon: Settings, href: `/${shopSlug}/admin/settings` },
     { label: t('subscription'), icon: CreditCard, href: `/${shopSlug}/admin/subscription` },
-  ].filter(item => !item.feature || hasFeature(tier, item.feature))
+  ].filter(item => {
+    const tierCheck = !item.feature || hasFeature(tier, item.feature)
+    const toggleCheck = item.enabled === undefined || item.enabled === true
+    return tierCheck && toggleCheck
+  })
 
   const handleLogout = async () => {
     await supabase.auth.signOut()

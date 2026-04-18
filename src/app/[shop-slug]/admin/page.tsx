@@ -12,7 +12,8 @@ type OrderWithItems = Order & { order_items: OrderItem[] }
 type TabFilter = 'all' | 'unprocessed' | 'preparing' | 'ready' | 'completed'
 
 export default function KitchenDashboard({ params }: { params: Promise<{ 'shop-slug': string }> }) {
-  const { 'shop-slug': shopSlug } = use(params)
+  const { 'shop-slug': slug } = use(params)
+  const shopSlug = decodeURIComponent(slug)
   const supabase = createClient()
   const [orders, setOrders] = useState<OrderWithItems[]>([])
   const [loading, setLoading] = useState(true)

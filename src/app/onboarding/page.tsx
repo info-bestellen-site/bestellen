@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { ChefHat, Store, Link as LinkIcon, Loader2, CheckCircle2 } from 'lucide-react'
+import { normalizeSlug } from '@/lib/utils/slug'
 
 export default function OnboardingPage() {
   const router = useRouter()
@@ -42,11 +43,7 @@ export default function OnboardingPage() {
   // Clear slug and generate from name
   useEffect(() => {
     if (shopName) {
-      const generated = shopName
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '')
-      setSlug(generated)
+      setSlug(normalizeSlug(shopName))
     }
   }, [shopName])
 
@@ -131,7 +128,7 @@ export default function OnboardingPage() {
                   required
                   type="text"
                   value={slug}
-                  onChange={e => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, '-'))}
+                  onChange={e => setSlug(normalizeSlug(e.target.value))}
                   placeholder="sushi-gallery"
                   className={`w-full pl-12 pr-12 py-4 bg-surface-container-low border-none rounded-2xl text-base font-bold transition-all ${slugAvailable === true ? 'ring-2 ring-success/20' :
                       slugAvailable === false ? 'ring-2 ring-error/20' : ''

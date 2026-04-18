@@ -15,7 +15,8 @@ interface ReservationPageProps {
 }
 
 export default function ReservationsPage({ params }: ReservationPageProps) {
-  const { 'shop-slug': shopSlug } = use(params)
+  const { 'shop-slug': slug } = use(params)
+  const shopSlug = decodeURIComponent(slug)
   const supabase = createClient()
   const router = useRouter()
   

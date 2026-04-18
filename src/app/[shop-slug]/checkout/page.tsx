@@ -29,7 +29,8 @@ import { useTranslation } from '@/lib/i18n/useTranslation'
 import { Modal } from '@/components/ui/Modal'
 
 export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug': string }> }) {
-  const { 'shop-slug': shopSlug } = use(params)
+  const { 'shop-slug': slug } = use(params)
+  const shopSlug = decodeURIComponent(slug)
   const router = useRouter()
   const supabase = createClient()
   const items = useCartStore(s => s.carts[shopSlug] || EMPTY_ITEMS)

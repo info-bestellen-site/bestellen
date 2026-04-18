@@ -11,7 +11,8 @@ import { useTranslation } from '@/lib/i18n/useTranslation'
 type OrderWithItems = Order & { order_items: OrderItem[] }
 
 export default function AnalysisPage({ params }: { params: Promise<{ 'shop-slug': string }> }) {
-  const { 'shop-slug': shopSlug } = use(params)
+  const { 'shop-slug': slug } = use(params)
+  const shopSlug = decodeURIComponent(slug)
   const supabase = createClient()
   const { t } = useTranslation()
   
