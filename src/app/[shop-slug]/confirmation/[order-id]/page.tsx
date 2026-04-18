@@ -11,7 +11,7 @@ import { useTranslation } from '@/lib/i18n/useTranslation'
 
 type OrderWithDetails = Order & { shops: Shop; order_items: OrderItem[] }
 
-export default function ConfirmationPage({ params }: { params: Promise<{ 'shop-slug': string; 'order-id': string }> }) {
+function ConfirmationPage({ params }: { params: Promise<{ 'shop-slug': string; 'order-id': string }> }) {
   const { 'shop-slug': rawSlug, 'order-id': orderId } = use(params)
   const slug = decodeURIComponent(rawSlug)
   
@@ -248,3 +248,5 @@ export default function ConfirmationPage({ params }: { params: Promise<{ 'shop-s
     </div>
   )
 }
+
+export default ConfirmationPage;

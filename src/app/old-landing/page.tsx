@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { ChefHat, ArrowRight, Smartphone, Clock, Zap } from 'lucide-react'
 
-export default function HomePage() {
+function HomePage() {
   return (
     <div className="min-h-screen bg-surface">
       {/* Hero */}
@@ -73,3 +73,5 @@ export default function HomePage() {
     </div>
   )
 }
+
+export default HomePage;

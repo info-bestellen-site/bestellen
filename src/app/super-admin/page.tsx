@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { ShieldCheck, ArrowRight, Loader2, AlertCircle, Mail, Lock } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
-export default function SuperAdminLoginPage() {
+function SuperAdminLoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -129,3 +129,5 @@ export default function SuperAdminLoginPage() {
     </div>
   )
 }
+
+export default SuperAdminLoginPage;

@@ -1,7 +1,7 @@
 import { createAdminSupabaseClient } from '@/lib/supabase/admin'
 import { MagicImporter } from '@/components/admin/super-admin/MagicImporter'
 
-export default async function MagicImporterPage() {
+async function MagicImporterPage() {
   const supabase = createAdminSupabaseClient()
   
   // Fetch available shops for target selection
@@ -12,3 +12,5 @@ export default async function MagicImporterPage() {
 
   return <MagicImporter shops={shops || []} />
 }
+
+export default MagicImporterPage;

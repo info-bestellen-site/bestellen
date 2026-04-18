@@ -61,9 +61,9 @@ const PRESET_ICONS = [
   { name: 'Wine', icon: Wine },
 ]
 
-export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug': string }> }) {
-  const { 'shop-slug': slug } = use(params)
-  const shopSlug = decodeURIComponent(slug)
+function SettingsPage({ params }: { params: Promise<{ 'shop-slug': string }> }) {
+  const { 'shop-slug': rawSlug } = use(params)
+  const shopSlug = decodeURIComponent(rawSlug)
   const supabase = createClient()
   const router = useRouter()
   const [shop, setShop] = useState<Shop | null>(null)
@@ -1149,3 +1149,5 @@ export default function SettingsPage({ params }: { params: Promise<{ 'shop-slug'
     </div>
   )
 }
+
+export default SettingsPage;

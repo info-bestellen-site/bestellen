@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ChefHat, Mail, Lock, Loader2, CheckCircle2 } from 'lucide-react'
 
-export default function SignupPage() {
+function SignupPage() {
   const router = useRouter()
   const supabase = createClient()
   
@@ -130,3 +130,5 @@ export default function SignupPage() {
     </div>
   )
 }
+
+export default SignupPage;

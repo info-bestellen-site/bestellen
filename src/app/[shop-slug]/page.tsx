@@ -7,7 +7,7 @@ interface ShopPageProps {
   params: Promise<{ 'shop-slug': string }>
 }
 
-export default async function ShopPage({ params }: ShopPageProps) {
+async function ShopPage({ params }: ShopPageProps) {
   const { 'shop-slug': slug } = await params
   const decodedSlug = decodeURIComponent(slug)
   const supabase = await createServerSupabaseClient()
@@ -70,3 +70,5 @@ export default async function ShopPage({ params }: ShopPageProps) {
     />
   )
 }
+
+export default ShopPage;

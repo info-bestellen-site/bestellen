@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: ShopLayoutProps) {
   }
 }
 
-export default async function ShopLayout({ children, params }: ShopLayoutProps) {
+async function ShopLayout({ children, params }: ShopLayoutProps) {
   const { 'shop-slug': slug } = await params
   const decodedSlug = decodeURIComponent(slug)
   const supabase = await createServerSupabaseClient()
@@ -46,3 +46,5 @@ export default async function ShopLayout({ children, params }: ShopLayoutProps) 
     </div>
   )
 }
+
+export default ShopLayout;

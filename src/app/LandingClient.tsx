@@ -29,7 +29,7 @@ const FEATURES = [
   }
 ]
 
-export default function FancyLandingPage() {
+function FancyLandingPage() {
   return (
     <div className="relative bg-[#060606] min-h-screen text-white selection:bg-primary/30 antialiased overflow-hidden font-sans">
 
@@ -145,3 +145,5 @@ export default function FancyLandingPage() {
     </div>
   )
 }
+
+export default FancyLandingPage;

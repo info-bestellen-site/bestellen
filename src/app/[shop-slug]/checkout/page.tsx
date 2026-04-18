@@ -28,7 +28,7 @@ import { PayPalCheckout } from '@/components/checkout/PayPalCheckout'
 import { useTranslation } from '@/lib/i18n/useTranslation'
 import { Modal } from '@/components/ui/Modal'
 
-export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug': string }> }) {
+function CheckoutPage({ params }: { params: Promise<{ 'shop-slug': string }> }) {
   const { 'shop-slug': slug } = use(params)
   const shopSlug = decodeURIComponent(slug)
   const router = useRouter()
@@ -843,3 +843,5 @@ export default function CheckoutPage({ params }: { params: Promise<{ 'shop-slug'
     </div>
   )
 }
+
+export default CheckoutPage;

@@ -44,7 +44,7 @@ function FeatureValue({ value }: { value: boolean | string }) {
   return <span className="text-xs font-bold text-white bg-white/10 px-2 py-1 rounded-full">{value}</span>
 }
 
-export default function PricingPage() {
+function PricingPage() {
   const tiers = Object.entries(SUBSCRIPTION_TIERS) as [keyof typeof SUBSCRIPTION_TIERS, typeof SUBSCRIPTION_TIERS[keyof typeof SUBSCRIPTION_TIERS]][]
 
   return (
@@ -270,3 +270,5 @@ export default function PricingPage() {
     </div>
   )
 }
+
+export default PricingPage;

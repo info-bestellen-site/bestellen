@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ChefHat, Mail, Lock, Loader2, ArrowRight } from 'lucide-react'
 
-export default function LoginPage() {
+function LoginPage() {
   const router = useRouter()
   const supabase = createClient()
   
@@ -117,3 +117,5 @@ export default function LoginPage() {
     </div>
   )
 }
+
+export default LoginPage;

@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { ChefHat, Store, Link as LinkIcon, Loader2, CheckCircle2 } from 'lucide-react'
 import { normalizeSlug } from '@/lib/utils/slug'
 
-export default function OnboardingPage() {
+function OnboardingPage() {
   const router = useRouter()
   const supabase = createClient()
 
@@ -157,3 +157,5 @@ export default function OnboardingPage() {
     </div>
   )
 }
+
+export default OnboardingPage;

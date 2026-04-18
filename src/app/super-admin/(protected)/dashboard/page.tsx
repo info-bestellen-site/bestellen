@@ -14,7 +14,7 @@ import Link from 'next/link'
 import { ShopTable } from '@/components/admin/super-admin/ShopTable'
 import { DashboardHeader } from '@/components/admin/super-admin/DashboardHeader'
 
-export default async function SuperAdminDashboard() {
+async function SuperAdminDashboard() {
   const supabase = createAdminSupabaseClient()
   
   // Fetch all shops with some basic info
@@ -56,3 +56,5 @@ export default async function SuperAdminDashboard() {
     </div>
   )
 }
+
+export default SuperAdminDashboard;

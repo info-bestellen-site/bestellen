@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   description: 'Bestelle dein Lieblingsessen online und hole es ab oder lass es liefern. Einfach, schnell, ohne Wartezeit am Telefon.',
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="de" className={inter.variable} suppressHydrationWarning>
       <body suppressHydrationWarning>
@@ -20,3 +20,5 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   )
 }
+
+export default RootLayout;

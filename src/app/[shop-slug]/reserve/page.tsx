@@ -11,7 +11,7 @@ interface ReservePageProps {
   params: Promise<{ 'shop-slug': string }>
 }
 
-export default function ReservePage({ params }: ReservePageProps) {
+function ReservePage({ params }: ReservePageProps) {
   const { 'shop-slug': slug } = use(params)
   const shopSlug = decodeURIComponent(slug)
   const supabase = createClient()
@@ -254,3 +254,5 @@ export default function ReservePage({ params }: ReservePageProps) {
     </div>
   )
 }
+
+export default ReservePage;

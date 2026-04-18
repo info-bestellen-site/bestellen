@@ -8,7 +8,7 @@ interface AdminLayoutProps {
   params: Promise<{ 'shop-slug': string }>
 }
 
-export default async function AdminLayout({ children, params }: AdminLayoutProps) {
+async function AdminLayout({ children, params }: AdminLayoutProps) {
   const { 'shop-slug': slug } = await params
   const decodedSlug = decodeURIComponent(slug)
   const supabase = await createServerSupabaseClient()
@@ -33,3 +33,5 @@ export default async function AdminLayout({ children, params }: AdminLayoutProps
     </ResponsiveAdminLayout>
   )
 }
+
+export default AdminLayout;

@@ -13,7 +13,7 @@ interface SubscriptionPageProps {
   params: Promise<{ 'shop-slug': string }>;
 }
 
-export default function SubscriptionPage({ params }: SubscriptionPageProps) {
+function SubscriptionPage({ params }: SubscriptionPageProps) {
   const { 'shop-slug': rawSlug } = use(params);
   const slug = decodeURIComponent(rawSlug);
   const router = useRouter();
@@ -199,3 +199,5 @@ export default function SubscriptionPage({ params }: SubscriptionPageProps) {
     </div>
   );
 }
+
+export default SubscriptionPage;

@@ -11,7 +11,7 @@ import {
   Database
 } from 'lucide-react'
 
-export default async function SuperAdminLayout({
+async function SuperAdminLayout({
   children
 }: {
   children: React.ReactNode
@@ -86,3 +86,5 @@ export default async function SuperAdminLayout({
     </div>
   )
 }
+
+export default SuperAdminLayout;

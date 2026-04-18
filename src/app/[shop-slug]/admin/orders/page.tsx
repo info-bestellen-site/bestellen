@@ -25,7 +25,7 @@ const DATE_LOCALES: Record<Language, any> = {
 
 type OrderWithItems = Order & { order_items: OrderItem[] }
 
-export default function OrderHistoryPage({ params }: { params: Promise<{ 'shop-slug': string }> }) {
+function OrderHistoryPage({ params }: { params: Promise<{ 'shop-slug': string }> }) {
   const { 'shop-slug': slug } = use(params)
   const shopSlug = decodeURIComponent(slug)
   const supabase = createClient()
@@ -264,3 +264,5 @@ export default function OrderHistoryPage({ params }: { params: Promise<{ 'shop-s
     </div>
   )
 }
+
+export default OrderHistoryPage;

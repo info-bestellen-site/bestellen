@@ -11,7 +11,7 @@ import { useTranslation } from '@/lib/i18n/useTranslation'
 type OrderWithItems = Order & { order_items: OrderItem[] }
 type TabFilter = 'all' | 'unprocessed' | 'preparing' | 'ready' | 'completed'
 
-export default function KitchenDashboard({ params }: { params: Promise<{ 'shop-slug': string }> }) {
+function KitchenDashboard({ params }: { params: Promise<{ 'shop-slug': string }> }) {
   const { 'shop-slug': slug } = use(params)
   const shopSlug = decodeURIComponent(slug)
   const supabase = createClient()
@@ -247,3 +247,5 @@ export default function KitchenDashboard({ params }: { params: Promise<{ 'shop-s
     </div>
   )
 }
+
+export default KitchenDashboard;

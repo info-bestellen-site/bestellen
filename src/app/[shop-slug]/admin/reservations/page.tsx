@@ -14,7 +14,7 @@ interface ReservationPageProps {
   params: Promise<{ 'shop-slug': string }>
 }
 
-export default function ReservationsPage({ params }: ReservationPageProps) {
+function ReservationsPage({ params }: ReservationPageProps) {
   const { 'shop-slug': slug } = use(params)
   const shopSlug = decodeURIComponent(slug)
   const supabase = createClient()
@@ -391,3 +391,5 @@ export default function ReservationsPage({ params }: ReservationPageProps) {
     </div>
   )
 }
+
+export default ReservationsPage;

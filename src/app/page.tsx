@@ -6,6 +6,8 @@ export const metadata: Metadata = {
   description: 'Bestelle dein Lieblingsessen online und hole es ab oder lass es liefern. Digitalisiere dein Restaurant in weniger als 5 Minuten. Modernes Video-Sourcing und intuitives Design.',
 }
 
-export default function RootPage() {
+function RootPage() {
   return <LandingClient />
 }
+
+export default RootPage;
