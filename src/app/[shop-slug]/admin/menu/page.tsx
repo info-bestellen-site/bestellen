@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use, useRef, Fragment } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Category, Product } from '@/types/database'
+import { Category, Product, Shop } from '@/types/database'
 import {
   UtensilsCrossed,
   Plus,

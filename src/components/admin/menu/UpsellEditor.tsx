@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Product, UpsellRuleWithProduct } from '@/types/database'
+import { Product, UpsellRule, UpsellRuleWithProduct } from '@/types/database'
 import {
   TrendingUp, Plus, Trash2, Loader2, ImageIcon, X, ChevronDown, Search
 } from 'lucide-react'
