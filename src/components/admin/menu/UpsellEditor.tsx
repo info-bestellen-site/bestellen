@@ -53,7 +53,7 @@ export function UpsellEditor({ shopId, products }: UpsellEditorProps) {
           ? products.find(p => p.id === rule.trigger_product_id) ?? null
           : null,
       }))
-      setRules(enriched as any)
+      setRules(enriched as (UpsellRuleWithProduct & { trigger_product?: Product | null })[])
     }
     setLoading(false)
   }
@@ -77,8 +77,9 @@ export function UpsellEditor({ shopId, products }: UpsellEditorProps) {
       .single()
 
     if (data) {
+      const rule = data as UpsellRule
       const enriched = {
-        ...data,
+        ...rule,
         upsell_product: products.find(p => p.id === data.upsell_product_id) as Product,
         trigger_product: data.trigger_product_id
           ? products.find(p => p.id === data.trigger_product_id) ?? null

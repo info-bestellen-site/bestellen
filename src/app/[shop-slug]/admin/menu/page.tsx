@@ -96,7 +96,7 @@ function MenuManagementPage({ params }: { params: Promise<{ 'shop-slug': string 
         .single()
 
       if (shopData) {
-        const shop = shopData as { id: string }
+        const shop = shopData as Shop
         setShopId(shop.id)
 
         const { data: cats } = await supabase
@@ -133,7 +133,8 @@ function MenuManagementPage({ params }: { params: Promise<{ 'shop-slug': string 
         .single()
 
       if (data) {
-        setCategories(categories.map(c => c.id === data.id ? data : c))
+        const cat = data as Category
+        setCategories(categories.map(c => c.id === cat.id ? cat : c))
         setIsCategoryModalOpen(false)
         setEditingCategory(null)
         setNewCategoryName('')
@@ -150,7 +151,8 @@ function MenuManagementPage({ params }: { params: Promise<{ 'shop-slug': string 
         .single()
 
       if (data) {
-        setCategories([...categories, data])
+        const cat = data as Category
+        setCategories([...categories, cat])
         setIsCategoryModalOpen(false)
         setNewCategoryName('')
       }
@@ -218,7 +220,8 @@ function MenuManagementPage({ params }: { params: Promise<{ 'shop-slug': string 
         .single()
 
       if (data) {
-        setProducts(products.map(p => p.id === data.id ? data : p))
+        const prod = data as Product
+        setProducts(products.map(p => p.id === prod.id ? prod : p))
         setIsProductModalOpen(false)
         setEditingProduct(null)
       }
@@ -233,7 +236,8 @@ function MenuManagementPage({ params }: { params: Promise<{ 'shop-slug': string 
         .single()
 
       if (data) {
-        setProducts([...products, data])
+        const prod = data as Product
+        setProducts([...products, prod])
         setIsProductModalOpen(false)
       }
     }

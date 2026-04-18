@@ -47,7 +47,8 @@ export function ModifierGroupEditor({ product, shopId, onClose }: ModifierGroupE
       .order('sort_order')
 
     if (groupData) {
-      const parsed = (groupData as any[]).map(g => ({
+      const groupsRaw = groupData as any[]
+      const parsed: ModifierGroupWithOptions[] = groupsRaw.map(g => ({
         ...g,
         modifier_options: (g.modifier_options || []).sort((a: ModifierOption, b: ModifierOption) => a.sort_order - b.sort_order)
       }))
@@ -76,7 +77,8 @@ export function ModifierGroupEditor({ product, shopId, onClose }: ModifierGroupE
       .single()
 
     if (data) {
-      setGroups(prev => [...prev, { ...data, modifier_options: [] }])
+      const group = data as any
+      setGroups(prev => [...prev, { ...group, modifier_options: [] }])
       setNewGroupForm({ name: '', is_required: false, min_selections: 0, max_selections: 1 })
       setShowNewGroup(false)
       setExpandedGroupId(data.id)
@@ -135,9 +137,10 @@ export function ModifierGroupEditor({ product, shopId, onClose }: ModifierGroupE
       .single()
 
     if (data) {
+      const option = data as ModifierOption
       setGroups(prev => prev.map(g =>
         g.id === groupId
-          ? { ...g, modifier_options: [...g.modifier_options, data] }
+          ? { ...g, modifier_options: [...g.modifier_options, option] }
           : g
       ))
       setNewOptionForms(prev => ({ ...prev, [groupId]: { name: '', price_delta: '' } }))
