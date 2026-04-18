@@ -12,12 +12,13 @@ async function AnalyticsPage({ params }: Props) {
   const decodedSlug = decodeURIComponent(slug)
   const supabase = await createServerSupabaseClient()
 
-  const { data: shop } = await supabase
+  const { data: shopData } = await supabase
     .from('shops')
     .select('subscription_tier, name')
     .eq('slug', decodedSlug)
     .single()
 
+  const shop = shopData as { subscription_tier: SubscriptionTier } | null
   const tier = (shop?.subscription_tier ?? 'starter') as SubscriptionTier
   const hasAccess = tier === 'max'
 
