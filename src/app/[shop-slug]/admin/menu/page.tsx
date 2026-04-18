@@ -89,13 +89,14 @@ function MenuManagementPage({ params }: { params: Promise<{ 'shop-slug': string 
 
   useEffect(() => {
     async function fetchData() {
-      const { data: shop } = await supabase
+      const { data: shopData } = await supabase
         .from('shops')
         .select('id')
         .eq('slug', shopSlug)
         .single()
 
-      if (shop) {
+      if (shopData) {
+        const shop = shopData as { id: string }
         setShopId(shop.id)
 
         const { data: cats } = await supabase

@@ -42,12 +42,13 @@ function OrderHistoryPage({ params }: { params: Promise<{ 'shop-slug': string }>
 
   useEffect(() => {
     async function loadHistory() {
-      const { data: shop } = await supabase
+      const { data: shopData } = await supabase
         .from('shops')
         .select('id')
         .eq('slug', shopSlug)
         .single()
       
+      const shop = shopData as { id: string } | null
       if (!shop) return
       setShopId(shop.id)
 

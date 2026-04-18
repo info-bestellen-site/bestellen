@@ -25,12 +25,13 @@ export function AnalyticsClient({ shopSlug }: { shopSlug: string }) {
 
   useEffect(() => {
     async function loadAnalysis() {
-      const { data: shop } = await supabase
+      const { data: shopData } = await supabase
         .from('shops')
         .select('id')
         .eq('slug', shopSlug)
         .single()
 
+      const shop = shopData as { id: string } | null
       if (!shop) return
 
       const { data: historyOrders } = await supabase
