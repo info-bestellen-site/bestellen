@@ -7,7 +7,7 @@ interface Props {
   params: Promise<{ 'shop-slug': string }>
 }
 
-export default async function AnalyticsPage({ params }: Props) {
+async function AnalyticsPage({ params }: Props) {
   const { 'shop-slug': slug } = await params
   const decodedSlug = decodeURIComponent(slug)
   const supabase = await createServerSupabaseClient()
@@ -29,6 +29,8 @@ export default async function AnalyticsPage({ params }: Props) {
   const { AnalyticsClient } = await import('./_client')
   return <AnalyticsClient shopSlug={decodedSlug} />
 }
+
+export default AnalyticsPage;
 
 function AnalyticsUpgradeWall({ shopSlug, currentTier }: { shopSlug: string; currentTier: SubscriptionTier }) {
   const maxTier = SUBSCRIPTION_TIERS.max
