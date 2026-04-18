@@ -45,14 +45,15 @@ export function AnalyticsClient({ shopSlug }: { shopSlug: string }) {
         return
       }
 
-      setAllOrders(historyOrders as OrderWithItems[])
+      const orders = historyOrders as OrderWithItems[]
+      setAllOrders(orders)
 
       let revenue = 0
       const productStats: Record<string, {name: string, quantity: number, revenue: number}> = {}
 
-      historyOrders.forEach(o => {
+      orders.forEach(o => {
         revenue += o.total
-        o.order_items.forEach((item: any) => {
+        o.order_items.forEach((item: OrderItem) => {
           if (!productStats[item.product_id]) {
             productStats[item.product_id] = { name: item.product_name, quantity: 0, revenue: 0 }
           }
@@ -67,8 +68,8 @@ export function AnalyticsClient({ shopSlug }: { shopSlug: string }) {
 
       setMetrics({
         totalRevenue: revenue,
-        totalOrders: historyOrders.length,
-        averageOrderValue: historyOrders.length > 0 ? revenue / historyOrders.length : 0
+        totalOrders: orders.length,
+        averageOrderValue: orders.length > 0 ? revenue / orders.length : 0
       })
       setTopProducts(sortedProducts)
       setLoading(false)
