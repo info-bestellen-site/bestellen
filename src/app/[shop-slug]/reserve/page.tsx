@@ -86,7 +86,7 @@ function ReservePage({ params }: ReservePageProps) {
       notes: 'Online Tischreservierung (Ohne Speisen)'
     }
 
-    const { error } = await supabase.from('orders').insert(orderPayload)
+    const { error } = await (supabase.from('orders') as any).insert(orderPayload)
     if (!error) {
       setSuccess(true)
     } else {

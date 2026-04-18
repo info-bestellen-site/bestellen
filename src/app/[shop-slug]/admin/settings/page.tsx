@@ -252,8 +252,8 @@ function SettingsPage({ params }: { params: Promise<{ 'shop-slug': string }> }) 
 
   const handleAddSlot = async () => {
     if (!shop) return
-    const { data, error } = await supabase
-      .from('opening_hours')
+    const { data, error } = await (supabase
+      .from('opening_hours') as any)
       .insert({
         shop_id: shop.id,
         day_of_week: newSlot.day,
@@ -268,14 +268,14 @@ function SettingsPage({ params }: { params: Promise<{ 'shop-slug': string }> }) 
   }
 
   const handleDeleteSlot = async (id: string) => {
-    const { error } = await supabase.from('opening_hours').delete().eq('id', id)
+    const { error } = await (supabase.from('opening_hours') as any).delete().eq('id', id)
     if (!error) setOpeningHours(openingHours.filter(h => h.id !== id))
   }
 
   const handleAddTable = async () => {
     if (!shop || !newTable.number) return
-    const { data, error } = await supabase
-      .from('tables')
+    const { data, error } = await (supabase
+      .from('tables') as any)
       .insert({
         shop_id: shop.id,
         name: newTable.number,
@@ -292,7 +292,7 @@ function SettingsPage({ params }: { params: Promise<{ 'shop-slug': string }> }) 
   }
 
   const handleDeleteTable = async (id: string) => {
-    const { error } = await supabase.from('tables').delete().eq('id', id)
+    const { error } = await (supabase.from('tables') as any).delete().eq('id', id)
     if (!error) setTables(tables.filter(t => t.id !== id))
   }
 
@@ -317,8 +317,8 @@ function SettingsPage({ params }: { params: Promise<{ 'shop-slug': string }> }) 
     setSaving(true)
     setSuccess(false)
 
-    const { error } = await supabase
-      .from('shops')
+    const { error } = await (supabase
+      .from('shops') as any)
       .update({
         name,
         slug,
@@ -416,8 +416,8 @@ function SettingsPage({ params }: { params: Promise<{ 'shop-slug': string }> }) 
     if (!confirm(t('confirm_disconnect_paypal') || 'Are you sure you want to disconnect PayPal?')) return
 
     try {
-      const { error } = await supabase
-        .from('shops')
+      const { error } = await (supabase
+        .from('shops') as any)
         .update({
           paypal_merchant_id: null,
           paypal_enabled: false

@@ -74,8 +74,8 @@ export async function GET(req: NextRequest) {
 
     console.log(`[PayPal] Updating shop ${shopId} with Merchant ID: ${finalMerchantId}`)
     
-    const { error: updateError, data: shopData } = await supabase
-      .from('shops')
+    const { error: updateError, data: shopData } = await (supabase
+      .from('shops') as any)
       .update({
         paypal_merchant_id: finalMerchantId,
         paypal_enabled: true,

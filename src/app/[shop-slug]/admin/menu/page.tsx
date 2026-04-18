@@ -125,8 +125,7 @@ function MenuManagementPage({ params }: { params: Promise<{ 'shop-slug': string 
     setIsSaving(true)
 
     if (editingCategory) {
-      const { data } = await supabase
-        .from('categories')
+      const { data } = await (supabase.from('categories') as any)
         .update({ name: newCategoryName.trim() })
         .eq('id', editingCategory.id)
         .select()
@@ -140,8 +139,7 @@ function MenuManagementPage({ params }: { params: Promise<{ 'shop-slug': string 
         setNewCategoryName('')
       }
     } else {
-      const { data } = await supabase
-        .from('categories')
+      const { data } = await (supabase.from('categories') as any)
         .insert({
           shop_id: shopId,
           name: newCategoryName.trim(),
@@ -168,7 +166,7 @@ function MenuManagementPage({ params }: { params: Promise<{ 'shop-slug': string 
 
   const handleDeleteCategory = async (id: string) => {
     if (!confirm(t('delete_category_confirm'))) return
-    await supabase.from('categories').delete().eq('id', id)
+    await (supabase.from('categories') as any).delete().eq('id', id)
     setCategories(categories.filter(c => c.id !== id))
     setProducts(products.filter(p => p.category_id !== id))
   }
@@ -212,8 +210,7 @@ function MenuManagementPage({ params }: { params: Promise<{ 'shop-slug': string 
     }
 
     if (editingProduct) {
-      const { data } = await supabase
-        .from('products')
+      const { data } = await (supabase.from('products') as any)
         .update(productData)
         .eq('id', editingProduct.id)
         .select()
@@ -226,8 +223,7 @@ function MenuManagementPage({ params }: { params: Promise<{ 'shop-slug': string 
         setEditingProduct(null)
       }
     } else {
-      const { data } = await supabase
-        .from('products')
+      const { data } = await (supabase.from('products') as any)
         .insert({
           ...productData,
           sort_order: products.filter(p => p.category_id === selectedCategoryId).length
@@ -279,8 +275,8 @@ function MenuManagementPage({ params }: { params: Promise<{ 'shop-slug': string 
 
       if (selectedProductForImage) {
         // Direct update for existing product
-        const { error: updateError } = await supabase
-          .from('products')
+        const { error: updateError } = await (supabase
+          .from('products') as any)
           .update({ image_url: publicUrl })
           .eq('id', selectedProductForImage.id)
 
@@ -302,14 +298,14 @@ function MenuManagementPage({ params }: { params: Promise<{ 'shop-slug': string 
 
   const handleDeleteProduct = async (id: string) => {
     if (!confirm(t('delete_product_confirm'))) return
-    await supabase.from('products').delete().eq('id', id)
+    await (supabase.from('products') as any).delete().eq('id', id)
     setProducts(products.filter(p => p.id !== id))
   }
 
   const toggleVisibility = async (product: Product) => {
     const newVal = !product.is_hidden_from_menu
-    const { error } = await supabase
-      .from('products')
+    const { error } = await (supabase
+      .from('products') as any)
       .update({ is_hidden_from_menu: newVal })
       .eq('id', product.id)
 
@@ -320,8 +316,8 @@ function MenuManagementPage({ params }: { params: Promise<{ 'shop-slug': string 
 
   const toggleAvailability = async (product: Product) => {
     const newVal = !product.is_available
-    const { error } = await supabase
-      .from('products')
+    const { error } = await (supabase
+      .from('products') as any)
       .update({ is_available: newVal })
       .eq('id', product.id)
 
@@ -403,8 +399,8 @@ function MenuManagementPage({ params }: { params: Promise<{ 'shop-slug': string 
 
       // Persist to DB
       for (let i = 0; i < newCategories.length; i++) {
-        await supabase
-          .from('categories')
+        await (supabase
+          .from('categories') as any)
           .update({ sort_order: i })
           .eq('id', newCategories[i].id)
       }
@@ -429,8 +425,8 @@ function MenuManagementPage({ params }: { params: Promise<{ 'shop-slug': string 
       for (const catId in categoryGroups) {
         const group = categoryGroups[catId]
         for (let i = 0; i < group.length; i++) {
-          await supabase
-            .from('products')
+          await (supabase
+            .from('products') as any)
             .update({
               category_id: catId,
               sort_order: i

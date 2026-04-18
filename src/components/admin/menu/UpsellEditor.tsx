@@ -63,8 +63,8 @@ export function UpsellEditor({ shopId, products }: UpsellEditorProps) {
     if (!form.upsell_product_id) return
     setSaving(true)
 
-    const { data } = await supabase
-      .from('upsell_rules')
+    const { data } = await (supabase
+      .from('upsell_rules') as any)
       .insert({
         shop_id: shopId,
         trigger_product_id: form.trigger_product_id || null,
@@ -93,14 +93,14 @@ export function UpsellEditor({ shopId, products }: UpsellEditorProps) {
   }
 
   async function handleDeleteRule(id: string) {
-    if (!confirm('Upselling-Regel wirklich löschen?')) return
-    await supabase.from('upsell_rules').delete().eq('id', id)
+    if (!confirm('Upsell-Regel wirklich löschen?')) return
+    await (supabase.from('upsell_rules') as any).delete().eq('id', id)
     setRules(prev => prev.filter(r => r.id !== id))
   }
 
-  async function handleToggleActive(rule: any) {
+  async function handleToggleActive(rule: UpsellRuleWithProduct) {
     const newActive = !rule.is_active
-    await supabase.from('upsell_rules').update({ is_active: newActive }).eq('id', rule.id)
+    await (supabase.from('upsell_rules') as any).update({ is_active: newActive }).eq('id', rule.id)
     setRules(prev => prev.map(r => r.id === rule.id ? { ...r, is_active: newActive } : r))
   }
 

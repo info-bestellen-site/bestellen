@@ -60,7 +60,7 @@ export const MenuEngine = {
 
     // 1. Categories
     for (const cat of template.categories) {
-      const { data, error } = await supabase.from('categories').insert({
+      const { data, error } = await (supabase.from('categories') as any).insert({
         name: cat.name,
         shop_id: shopId,
         sort_order: cat.sort_order
@@ -77,7 +77,7 @@ export const MenuEngine = {
       const newCategoryId = categoryMap.get(prod.category_id)
       if (!newCategoryId) continue
 
-      const { data, error } = await supabase.from('products').insert({
+      const { data, error } = await (supabase.from('products') as any).insert({
         name: prod.name,
         description: prod.description,
         price: prod.price,
@@ -102,7 +102,7 @@ export const MenuEngine = {
       const newProductId = productMap.get(group.product_id)
       if (!newProductId) continue
 
-      const { data, error } = await supabase.from('modifier_groups').insert({
+      const { data, error } = await (supabase.from('modifier_groups') as any).insert({
         name: group.name,
         description: group.description,
         product_id: newProductId,
@@ -124,7 +124,7 @@ export const MenuEngine = {
       const newGroupId = groupMap.get(opt.group_id)
       if (!newGroupId) continue
 
-      const { error } = await supabase.from('modifier_options').insert({
+      const { error } = await (supabase.from('modifier_options') as any).insert({
         group_id: newGroupId,
         name: opt.name,
         price_delta: opt.price_delta,
@@ -142,7 +142,7 @@ export const MenuEngine = {
       
       if (!newUpsellId) continue // Upsell product is required
 
-      const { error } = await supabase.from('upsell_rules').insert({
+      const { error } = await (supabase.from('upsell_rules') as any).insert({
         shop_id: shopId,
         trigger_product_id: newTriggerId || null,
         upsell_product_id: newUpsellId,

@@ -193,8 +193,8 @@ function CheckoutPage({ params }: { params: Promise<{ 'shop-slug': string }> }) 
       }
 
       // 1. Create order
-      const { data: order, error: orderError } = await supabase
-        .from('orders')
+      const { data: order, error: orderError } = await (supabase
+        .from('orders') as any)
         .insert({
           shop_id: shop.id,
           customer_name: isAdmin ? 'Admin' : customerName,
@@ -237,8 +237,8 @@ function CheckoutPage({ params }: { params: Promise<{ 'shop-slug': string }> }) 
         }
       })
 
-      const { error: itemsError } = await supabase
-        .from('order_items')
+      const { error: itemsError } = await (supabase
+        .from('order_items') as any)
         .insert(orderItems)
 
       if (itemsError) throw itemsError

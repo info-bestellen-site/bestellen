@@ -40,8 +40,8 @@ export async function POST(req: NextRequest) {
       var supabase = createClient(supabaseUrl, supabaseServiceKey)
     }
 
-    const { error: updateError } = await supabase
-      .from('orders')
+    const { error: updateError } = await (supabase
+      .from('orders') as any)
       .update({
         payment_status: 'paid',
         paypal_order_id: paypalOrderId,
