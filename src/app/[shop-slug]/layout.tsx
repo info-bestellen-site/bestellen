@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: ShopLayoutProps) {
   const { 'shop-slug': slug } = await params
   const decodedSlug = decodeURIComponent(slug)
   const supabase = await createServerSupabaseClient()
-  const { data: shop } = await supabase.from('shops').select('name').eq('slug', decodedSlug).single()
+  const { data: shop } = await (supabase.from('shops') as any).select('name').eq('slug', decodedSlug).single()
   return {
     title: shop ? `${shop.name} — Jetzt bestellen` : 'Shop nicht gefunden',
     description: shop ? `Bestelle online bei ${shop.name}` : undefined,
@@ -26,11 +26,11 @@ async function ShopLayout({ children, params }: ShopLayoutProps) {
   const { 'shop-slug': slug } = await params
   const decodedSlug = decodeURIComponent(slug)
   const supabase = await createServerSupabaseClient()
-  const { data: shop } = await supabase.from('shops').select('*').eq('slug', decodedSlug).single()
+  const { data: shop } = await (supabase.from('shops') as any).select('*').eq('slug', decodedSlug).single()
   if (!shop) notFound()
 
   // Fetch opening hours
-  const { data: hours } = await supabase.from('opening_hours').select('*').eq('shop_id', shop.id)
+  const { data: hours } = await (supabase.from('opening_hours') as any).select('*').eq('shop_id', shop.id)
   let isCurrentlyOpen = isShopOpen(hours || [], shop.is_open, shop.manual_status_updated_at)
   // FORCE OPEN for Demo Shop
   if (decodedSlug === 'sakura-sushi') {

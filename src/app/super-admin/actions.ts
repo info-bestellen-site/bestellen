@@ -24,8 +24,8 @@ export async function importMagicMenuAction(shopId: string, categories: any[]) {
 
   for (const cat of categories) {
     // 1. Create Category
-    const { data: category, error: catError } = await supabase
-      .from('categories')
+    const { data: category, error: catError } = await (supabase
+      .from('categories') as any)
       .insert({
         shop_id: shopId,
         name: cat.name,
@@ -39,8 +39,8 @@ export async function importMagicMenuAction(shopId: string, categories: any[]) {
 
     // 2. Create Products
     for (const [idx, prod] of cat.products.entries()) {
-      const { error: prodError } = await supabase
-        .from('products')
+      const { error: prodError } = await (supabase
+        .from('products') as any)
         .insert({
           shop_id: shopId,
           category_id: category.id,
@@ -90,8 +90,8 @@ export async function createShopAction(formData: {
     }
 
     // 2. Create the shop
-    const { data: shop, error: shopError } = await supabase
-      .from('shops')
+    const { data: shop, error: shopError } = await (supabase
+      .from('shops') as any)
       .insert({
         name: formData.name,
         slug: normalizeSlug(formData.slug),

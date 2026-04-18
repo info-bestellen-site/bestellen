@@ -49,8 +49,8 @@ function KitchenDashboard({ params }: { params: Promise<{ 'shop-slug': string }>
     async function init() {
       if (isSubscribing) return
       isSubscribing = true
-      const { data: shop } = await supabase
-        .from('shops')
+      const { data: shop } = await (supabase
+        .from('shops') as any)
         .select('id')
         .eq('slug', shopSlug)
         .single()
@@ -58,8 +58,8 @@ function KitchenDashboard({ params }: { params: Promise<{ 'shop-slug': string }>
       if (!shop) return
 
       const todayStr = new Date().toISOString().split('T')[0]
-      const { data: initialOrders } = await supabase
-        .from('orders')
+      const { data: initialOrders } = await (supabase
+        .from('orders') as any)
         .select('*, order_items(*)')
         .eq('shop_id', shop.id)
         .gte('created_at', todayStr + 'T00:00:00Z')
@@ -94,8 +94,8 @@ function KitchenDashboard({ params }: { params: Promise<{ 'shop-slug': string }>
           },
           async (payload) => {
             if (payload.eventType === 'INSERT') {
-              const { data: newOrderData } = await supabase
-                .from('orders')
+              const { data: newOrderData } = await (supabase
+                .from('orders') as any)
                 .select('*, order_items(*)')
                 .eq('id', payload.new.id)
                 .single()
@@ -131,8 +131,8 @@ function KitchenDashboard({ params }: { params: Promise<{ 'shop-slug': string }>
       updateData.estimated_ready_at = new Date(Date.now() + customMinutes * 60000).toISOString()
     }
 
-    const { error } = await supabase
-      .from('orders')
+    const { error } = await (supabase
+      .from('orders') as any)
       .update(updateData)
       .eq('id', orderId)
 
@@ -159,10 +159,12 @@ function KitchenDashboard({ params }: { params: Promise<{ 'shop-slug': string }>
     return false
   }).sort((a, b) => {
     if (activeTab === 'completed') {
-      return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     }
-    // Newest first (highest timestamp to lowest)
-    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    // Expected earliest deadline first for active
+    const timeA = a.estimated_ready_at ? new Date(a.estimated_ready_at).getTime() : new Date(a.created_at).getTime()
+    const timeB = b.estimated_ready_at ? new Date(b.estimated_ready_at).getTime() : new Date(b.created_at).getTime()
+    return timeA - timeB
   })
 
   // Tab counts

@@ -12,8 +12,8 @@ async function AnalyticsPage({ params }: Props) {
   const decodedSlug = decodeURIComponent(slug)
   const supabase = await createServerSupabaseClient()
 
-  const { data: shopData } = await supabase
-    .from('shops')
+  const { data: shopData } = await (supabase
+    .from('shops') as any)
     .select('subscription_tier, name')
     .eq('slug', decodedSlug)
     .single()

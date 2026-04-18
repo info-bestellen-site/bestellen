@@ -25,9 +25,15 @@ export interface Database {
           delivery_fee: number
           min_order_amount: number
           phone: string | null
+          address: string | null
           delivery_zip_codes: string[] | null
           paypal_enabled: boolean
           paypal_merchant_id: string | null
+          has_reservation: boolean
+          logo_url: string | null
+          icon_name: string | null
+          base_language: string | null
+          paypal_email: string | null
         }
         Insert: {
           id?: string
@@ -44,9 +50,15 @@ export interface Database {
           delivery_fee?: number
           min_order_amount?: number
           phone?: string | null
+          address?: string | null
           delivery_zip_codes?: string[] | null
           paypal_enabled?: boolean
           paypal_merchant_id?: string | null
+          has_reservation?: boolean
+          logo_url?: string | null
+          icon_name?: string | null
+          base_language?: string | null
+          paypal_email?: string | null
         }
         Update: {
           id?: string
@@ -63,9 +75,15 @@ export interface Database {
           delivery_fee?: number
           min_order_amount?: number
           phone?: string | null
+          address?: string | null
           delivery_zip_codes?: string[] | null
           paypal_enabled?: boolean
           paypal_merchant_id?: string | null
+          has_reservation?: boolean
+          logo_url?: string | null
+          icon_name?: string | null
+          base_language?: string | null
+          paypal_email?: string | null
         }
       }
       categories: {
@@ -104,6 +122,8 @@ export interface Database {
           sort_order: number
           is_available: boolean
           is_hidden_from_menu: boolean
+          preparation_time_minutes: number | null
+          allergens: string[] | null
         }
         Insert: {
           id?: string
@@ -117,6 +137,8 @@ export interface Database {
           sort_order?: number
           is_available?: boolean
           is_hidden_from_menu?: boolean
+          preparation_time_minutes?: number | null
+          allergens?: string[] | null
         }
         Update: {
           id?: string
@@ -130,6 +152,8 @@ export interface Database {
           sort_order?: number
           is_available?: boolean
           is_hidden_from_menu?: boolean
+          preparation_time_minutes?: number | null
+          allergens?: string[] | null
         }
       }
       orders: {
@@ -153,6 +177,7 @@ export interface Database {
           subtotal: number | null
           delivery_fee: number | null
           table_number: string | null
+          table_id: string | null
         }
         Insert: {
           id?: string
@@ -174,6 +199,7 @@ export interface Database {
           subtotal?: number | null
           delivery_fee?: number | null
           table_number?: string | null
+          table_id?: string | null
         }
         Update: {
           id?: string
@@ -195,6 +221,7 @@ export interface Database {
           subtotal?: number | null
           delivery_fee?: number | null
           table_number?: string | null
+          table_id?: string | null
         }
       }
       order_items: {
@@ -276,6 +303,7 @@ export interface Database {
           min_selections: number
           max_selections: number
           sort_order: number
+          description: string | null
         }
         Insert: {
           id?: string
@@ -286,6 +314,7 @@ export interface Database {
           min_selections?: number
           max_selections?: number
           sort_order?: number
+          description?: string | null
         }
         Update: {
           id?: string
@@ -296,6 +325,7 @@ export interface Database {
           min_selections?: number
           max_selections?: number
           sort_order?: number
+          description?: string | null
         }
       }
       modifier_options: {
@@ -383,6 +413,14 @@ export type ModifierGroupWithOptions = ModifierGroup & {
 
 export type UpsellRuleWithProduct = UpsellRule & {
   upsell_product: Product
+}
+
+export type SelectedModifier = {
+  groupId: string
+  groupName: string
+  optionId: string
+  optionName: string
+  priceDelta: number
 }
 
 export type SubscriptionTier = 'starter' | 'pro' | 'max'

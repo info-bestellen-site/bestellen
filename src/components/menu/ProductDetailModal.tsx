@@ -84,7 +84,7 @@ export function ProductDetailModal({ product, shopSlug, onClose }: ProductDetail
 
         const enriched = upsellData.map((rule: any) => ({
           ...rule,
-          upsell_product: upsellProducts?.find((p: Product) => p.id === rule.upsell_product_id) as Product
+          upsell_product: upsellProducts?.find((p: Product) => p.id === rule.upsell_product_id) as any
         })).filter((r: any) => r.upsell_product && r.upsell_product.id !== product.id)
 
         setUpsellRules(enriched as any)

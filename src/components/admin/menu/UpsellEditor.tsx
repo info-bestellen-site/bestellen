@@ -46,7 +46,7 @@ export function UpsellEditor({ shopId, products }: UpsellEditorProps) {
       .order('sort_order')
 
     if (data) {
-      const enriched = data.map(rule => ({
+      const enriched = (data as any[]).map(rule => ({
         ...rule,
         upsell_product: products.find(p => p.id === rule.upsell_product_id) as Product,
         trigger_product: rule.trigger_product_id

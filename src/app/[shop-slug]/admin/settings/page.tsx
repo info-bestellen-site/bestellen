@@ -141,8 +141,8 @@ function SettingsPage({ params }: { params: Promise<{ 'shop-slug': string }> }) 
 
   useEffect(() => {
     async function fetchShop() {
-      const { data } = await supabase
-        .from('shops')
+      const { data } = await (supabase
+        .from('shops') as any)
         .select('*')
         .eq('slug', shopSlug)
         .single()
@@ -173,19 +173,19 @@ function SettingsPage({ params }: { params: Promise<{ 'shop-slug': string }> }) 
     }
 
     async function fetchHours() {
-      const { data } = await supabase
-        .from('opening_hours')
+      const { data } = await (supabase
+        .from('opening_hours') as any)
         .select('*')
-        .eq('shop_id', (await supabase.from('shops').select('id').eq('slug', shopSlug).single()).data?.id || '')
+        .eq('shop_id', (await (supabase.from('shops') as any).select('id').eq('slug', shopSlug).single()).data?.id || '')
         .order('start_time')
       if (data) setOpeningHours(data)
     }
 
     async function fetchTables() {
-      const { data } = await supabase
-        .from('tables')
+      const { data } = await (supabase
+        .from('tables') as any)
         .select('*')
-        .eq('shop_id', (await supabase.from('shops').select('id').eq('slug', shopSlug).single()).data?.id || '')
+        .eq('shop_id', (await (supabase.from('shops') as any).select('id').eq('slug', shopSlug).single()).data?.id || '')
         .order('name')
       if (data) setTables(data)
     }

@@ -33,14 +33,14 @@ function ReservePage({ params }: ReservePageProps) {
 
   useEffect(() => {
     async function init() {
-      const { data: shopData } = await supabase.from('shops').select('*').eq('slug', shopSlug).single()
+      const { data: shopData } = await (supabase.from('shops') as any).select('*').eq('slug', shopSlug).single()
       if (!shopData) return
       setShop(shopData)
 
       const [hoursRes, tablesRes, ordersRes] = await Promise.all([
-        supabase.from('opening_hours').select('*').eq('shop_id', shopData.id),
-        supabase.from('tables').select('*').eq('shop_id', shopData.id),
-        supabase.from('orders').select('*').eq('shop_id', shopData.id).eq('fulfillment_type', 'dine_in')
+        (supabase.from('opening_hours') as any).select('*').eq('shop_id', shopData.id),
+        (supabase.from('tables') as any).select('*').eq('shop_id', shopData.id),
+        (supabase.from('orders') as any).select('*').eq('shop_id', shopData.id).eq('fulfillment_type', 'dine_in')
       ])
 
       if (hoursRes.data) setHours(hoursRes.data)

@@ -27,8 +27,8 @@ function OnboardingPage() {
       setUserId(user.id)
 
       // Also check if user ALREADY has a shop
-      const { data: shop } = await supabase
-        .from('shops')
+      const { data: shop } = await (supabase
+        .from('shops') as any)
         .select('slug')
         .eq('owner_id', user.id)
         .single()
@@ -56,8 +56,8 @@ function OnboardingPage() {
 
     const timer = setTimeout(async () => {
       setChecking(true)
-      const { data } = await supabase
-        .from('shops')
+      const { data } = await (supabase
+        .from('shops') as any)
         .select('slug')
         .eq('slug', slug)
         .single()
@@ -74,8 +74,8 @@ function OnboardingPage() {
     if (!userId || !slugAvailable) return
 
     setLoading(true)
-    const { error } = await supabase
-      .from('shops')
+    const { error } = await (supabase
+      .from('shops') as any)
       .insert({
         name: shopName,
         slug: slug,

@@ -196,12 +196,12 @@ function ConfirmationPage({ params }: { params: Promise<{ 'shop-slug': string; '
             <div className="mt-8 pt-8 border-t border-outline-variant/5 space-y-2">
               <div className="flex justify-between items-center text-sm">
                 <span className="text-on-surface-variant font-medium">Zwischensumme</span>
-                <span className="font-semibold">{formatCurrency(order.subtotal)}</span>
+                <span className="font-semibold">{formatCurrency(order.subtotal || 0)}</span>
               </div>
-              {order.delivery_fee > 0 && (
+              {(order.delivery_fee || 0) > 0 && (
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-on-surface-variant font-medium">Liefergebühr</span>
-                  <span className="font-semibold">{formatCurrency(order.delivery_fee)}</span>
+                  <span className="font-semibold">{formatCurrency(order.delivery_fee || 0)}</span>
                 </div>
               )}
               <div className="flex justify-between items-center pt-2">

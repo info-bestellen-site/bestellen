@@ -19,17 +19,17 @@ export const MenuEngine = {
    * Fetches all menu-related data for a shop and returns it as a JSON object.
    */
   async exportMenu(supabase: SupabaseClient<Database>, shopId: string): Promise<MenuTemplate> {
-    const { data: categories } = await supabase.from('categories').select('*').eq('shop_id', shopId)
-    const { data: products } = await supabase.from('products').select('*').eq('shop_id', shopId)
-    const { data: modifierGroups } = await supabase.from('modifier_groups').select('*').eq('shop_id', shopId)
+    const { data: categories } = await (supabase.from('categories') as any).select('*').eq('shop_id', shopId)
+    const { data: products } = await (supabase.from('products') as any).select('*').eq('shop_id', shopId)
+    const { data: modifierGroups } = await (supabase.from('modifier_groups') as any).select('*').eq('shop_id', shopId)
     
     // For options, we fetch all options belonging to the groups of this shop
-    const groupIds = (modifierGroups || []).map(g => g.id)
+    const groupIds = (modifierGroups || []).map((g: any) => g.id)
     const { data: modifierOptions } = groupIds.length > 0 
-      ? await supabase.from('modifier_options').select('*').in('group_id', groupIds)
+      ? await (supabase.from('modifier_options') as any).select('*').in('group_id', groupIds)
       : { data: [] }
 
-    const { data: upsellRules } = await supabase.from('upsell_rules').select('*').eq('shop_id', shopId)
+    const { data: upsellRules } = await (supabase.from('upsell_rules') as any).select('*').eq('shop_id', shopId)
 
     return {
       categories: categories || [],

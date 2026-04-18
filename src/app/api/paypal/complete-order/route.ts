@@ -43,8 +43,8 @@ export async function POST(req: NextRequest) {
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     // 3. Extract customer info from PayPal if missing
-    const payer = captureData.payer as any
-    const shipping = captureData.purchase_units?.[0]?.shipping as any
+    const payer = (captureData as any).payer as any
+    const shipping = (captureData as any).purchase_units?.[0]?.shipping as any
     const address = shipping?.address as any
 
     // Helper to check if a string is effectively empty (only whitespace, commas, or dots)

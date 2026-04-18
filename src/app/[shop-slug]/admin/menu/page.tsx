@@ -89,8 +89,8 @@ function MenuManagementPage({ params }: { params: Promise<{ 'shop-slug': string 
 
   useEffect(() => {
     async function fetchData() {
-      const { data: shopData } = await supabase
-        .from('shops')
+      const { data: shopData } = await (supabase
+        .from('shops') as any)
         .select('id')
         .eq('slug', shopSlug)
         .single()
@@ -99,14 +99,14 @@ function MenuManagementPage({ params }: { params: Promise<{ 'shop-slug': string 
         const shop = shopData as Shop
         setShopId(shop.id)
 
-        const { data: cats } = await supabase
-          .from('categories')
+        const { data: cats } = await (supabase
+          .from('categories') as any)
           .select('*')
           .eq('shop_id', shop.id)
           .order('sort_order')
 
-        const { data: prods } = await supabase
-          .from('products')
+        const { data: prods } = await (supabase
+          .from('products') as any)
           .select('*')
           .eq('shop_id', shop.id)
           .order('sort_order')

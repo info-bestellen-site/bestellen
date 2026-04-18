@@ -78,8 +78,8 @@ function CheckoutPage({ params }: { params: Promise<{ 'shop-slug': string }> }) 
 
   useEffect(() => {
     async function init() {
-      const { data: shopData } = await supabase
-        .from('shops')
+      const { data: shopData } = await (supabase
+        .from('shops') as any)
         .select('*')
         .eq('slug', shopSlug)
         .single()
@@ -99,29 +99,29 @@ function CheckoutPage({ params }: { params: Promise<{ 'shop-slug': string }> }) 
         setFulfillmentType(defaultType)
         
         // Fetch active orders for wait time calculation
-        const { count } = await supabase
-          .from('orders')
+        const { count } = await (supabase
+          .from('orders') as any)
           .select('*', { count: 'exact', head: true })
           .eq('shop_id', shopData.id)
           .in('status', ['pending', 'preparing'])
         setActiveOrders(count || 0)
         
         // Fetch opening hours
-        const { data: hoursData } = await supabase
-          .from('opening_hours')
+        const { data: hoursData } = await (supabase
+          .from('opening_hours') as any)
           .select('*')
           .eq('shop_id', shopData.id)
           
         // Fetch table layouts
-        const { data: tablesData } = await supabase
-          .from('tables')
+        const { data: tablesData } = await (supabase
+          .from('tables') as any)
           .select('*')
           .eq('shop_id', shopData.id)
           
         // Fetch existing dine-in bookings for the current day
         const todayStr = new Date().toISOString().split('T')[0]
-        const { data: ordersData } = await supabase
-          .from('orders')
+        const { data: ordersData } = await (supabase
+          .from('orders') as any)
           .select('*')
           .eq('shop_id', shopData.id)
           .eq('fulfillment_type', 'dine_in')
@@ -184,8 +184,8 @@ function CheckoutPage({ params }: { params: Promise<{ 'shop-slug': string }> }) 
     setOrderLoading(true)
     try {
       // Final check if shop is still open
-      const { data: latestShop } = await supabase.from('shops').select('is_open, manual_status_updated_at').eq('id', shop.id).single()
-      const { data: hours } = await supabase.from('opening_hours').select('*').eq('shop_id', shop.id)
+      const { data: latestShop } = await (supabase.from('shops') as any).select('is_open, manual_status_updated_at').eq('id', shop.id).single()
+      const { data: hours } = await (supabase.from('opening_hours') as any).select('*').eq('shop_id', shop.id)
       if (!isShopOpen(hours || [], latestShop?.is_open ?? false, latestShop?.manual_status_updated_at)) {
         alert('Der Shop hat gerade geschlossen. Ihre Bestellung konnte nicht aufgegeben werden.')
         window.location.reload()

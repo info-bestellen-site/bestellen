@@ -17,8 +17,8 @@ async function AdminLayout({ children, params }: AdminLayoutProps) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth/login')
 
-  const { data: shopData } = await supabase
-    .from('shops')
+  const { data: shopData } = await (supabase
+    .from('shops') as any)
     .select('id, owner_id')
     .eq('slug', decodedSlug)
     .single()

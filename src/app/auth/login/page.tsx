@@ -34,8 +34,8 @@ function LoginPage() {
     // Check if user has a shop
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
-      const { data: shop } = await supabase
-        .from('shops')
+      const { data: shop } = await (supabase
+        .from('shops') as any)
         .select('slug')
         .eq('owner_id', user.id)
         .single()

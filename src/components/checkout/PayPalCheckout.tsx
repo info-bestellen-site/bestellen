@@ -97,6 +97,7 @@ export function PayPalCheckout({
           }}
           onShippingChange={async (data, actions) => {
             if (orderData.fulfillment_type !== 'delivery') return actions.resolve()
+            if (!data.shipping_address) return actions.resolve()
             
             const zip = data.shipping_address.postal_code
             if (allowedZipCodes.length > 0 && !allowedZipCodes.includes(zip)) {
