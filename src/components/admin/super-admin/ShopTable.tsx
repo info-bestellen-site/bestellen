@@ -124,7 +124,7 @@ export function ShopTable({ initialShops }: { initialShops: Shop[] }) {
                 <td className="px-8 py-6 text-right">
                   <div className="flex items-center justify-end gap-2">
                     <Link 
-                      href={`/${shop.slug}/admin`}
+                      href={`/${shop.slug}`}
                       target="_blank"
                       className="p-3 bg-slate-100 text-slate-500 rounded-xl hover:text-slate-900 hover:bg-slate-200 transition-all border border-transparent"
                     >

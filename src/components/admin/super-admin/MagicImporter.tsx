@@ -15,9 +15,12 @@ import {
   ImageIcon,
   ArrowRight,
   Database,
-  Grid
+  Grid,
+  Sparkles
 } from 'lucide-react'
-import { importMagicMenuAction } from '@/app/super-admin/actions'
+import { importMagicMenuAction, searchLibraryBulkAction } from '@/app/super-admin/actions'
+import { ImageUploadButton } from './ImageUploadButton'
+import { LibraryPickerModal } from './LibraryPickerModal'
 
 interface Category {
   id: string
@@ -46,6 +49,9 @@ export function MagicImporter({ shops }: { shops: ShopInfo[] }) {
   const [extractedData, setExtractedData] = useState<{ categories: Category[] } | null>(null)
   const [targetShopId, setTargetShopId] = useState('')
   const [restaurantStyle, setRestaurantStyle] = useState('modern')
+  const [libraryMatches, setLibraryMatches] = useState<Record<string, any[]>>({})
+  const [searchingLibrary, setSearchingLibrary] = useState(false)
+  const [activePickerProd, setActivePickerProd] = useState<{ catIdx: number, prodIdx: number } | null>(null)
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0]
@@ -69,12 +75,55 @@ export function MagicImporter({ shops }: { shops: ShopInfo[] }) {
       const data = await res.json()
       setExtractedData(data)
       setStep(2)
+      
+      // Trigger library search for all extracted products
+      handleLibrarySearch(data.categories)
     } catch (err: any) {
       setError(err.message)
     } finally {
       setLoading(false)
     }
   }
+
+  const handleLibrarySearch = async (categories: Category[]) => {
+    setSearchingLibrary(true)
+    
+    // Extract all product names for bulk search
+    const productNames = categories.flatMap(cat => cat.products.map(p => p.name))
+    
+    try {
+      const matches = await searchLibraryBulkAction(productNames)
+      setLibraryMatches(matches)
+    } catch (err) {
+      console.error('Library search error:', err)
+    } finally {
+      setSearchingLibrary(false)
+    }
+  }
+
+  const handleApplyAllLibraryMatches = () => {
+    if (!extractedData) return
+    const newData = { ...extractedData }
+    let count = 0
+
+    newData.categories.forEach(cat => {
+      cat.products.forEach(prod => {
+        const matches = libraryMatches[prod.name]
+        if (matches && matches.length > 0 && !prod.image_url) {
+          prod.image_url = matches[0].image_url
+          count++
+        }
+      })
+    })
+
+    if (count > 0) {
+      setExtractedData(newData)
+      setSuccessMessage(`${count} Bilder aus der Bibliothek automatisch zugewiesen!`)
+      setTimeout(() => setSuccessMessage(null), 5000)
+    }
+  }
+
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
   const handleUpdateProduct = (catIndex: number, prodIndex: number, field: string, value: any) => {
     if (!extractedData) return
@@ -201,6 +250,7 @@ export function MagicImporter({ shops }: { shops: ShopInfo[] }) {
                   {error}
                 </div>
               )}
+
             </div>
           </div>
           
@@ -222,21 +272,78 @@ export function MagicImporter({ shops }: { shops: ShopInfo[] }) {
       {/* Step 2: Review */}
       {step === 2 && extractedData && (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-success/10 text-success rounded-xl">
-                <Check className="w-5 h-5" />
-              </div>
-              <h2 className="text-xl font-bold italic uppercase tracking-tight">Ergebnisse prüfen & korrigieren</h2>
+          <div className="flex items-center justify-between mb-12">
+            <div className="space-y-2">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Schritt 2/3</p>
+              <h2 className="text-4xl font-black uppercase tracking-tight italic">Review & Edit</h2>
             </div>
-            <button 
-              onClick={() => setStep(3)}
-              className="flex items-center gap-3 px-8 py-4 bg-primary text-on-primary rounded-2xl font-black text-sm uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/20"
-            >
-              Weiter zu Deploy
-              <ArrowRight className="w-5 h-5" />
-            </button>
-          </div>
+                <div className="flex items-center gap-6">
+                  <div className="flex flex-col items-end gap-1">
+                    <p className="text-[8px] font-black uppercase tracking-widest text-slate-400">Ziel-Shop</p>
+                    <select 
+                      className="bg-white border border-slate-200 rounded-xl px-4 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-primary/30 transition-all shadow-sm"
+                      value={targetShopId}
+                      onChange={(e) => setTargetShopId(e.target.value)}
+                    >
+                      <option value="">Wählen...</option>
+                      {shops.map(shop => (
+                        <option key={shop.id} value={shop.id}>{shop.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex gap-4">
+                    <button 
+                      onClick={() => setStep(1)}
+                      className="px-6 py-3 border border-slate-200 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-slate-50 transition-all"
+                    >
+                      Zurück
+                    </button>
+                    <button 
+                      onClick={() => setStep(3)}
+                      disabled={!targetShopId}
+                      className="flex items-center gap-3 px-8 py-4 bg-primary text-on-primary rounded-2xl font-black text-sm uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/20 disabled:opacity-50"
+                    >
+                      Weiter zu Deploy
+                      <ArrowRight className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+          {/* Magic Match Bar */}
+          {Object.keys(libraryMatches).length > 0 && (
+            <div className="mb-12 p-1 bg-slate-900 rounded-[2.5rem] shadow-2xl shadow-primary/20 overflow-hidden animate-in fade-in slide-in-from-top-4 duration-700">
+              <div className="px-8 py-6 flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="flex items-center gap-6">
+                  <div className="w-16 h-16 bg-primary/20 rounded-3xl flex items-center justify-center">
+                    <Sparkles className="w-8 h-8 text-primary animate-pulse" />
+                  </div>
+                  <div>
+                    <h3 className="text-white font-black uppercase tracking-tight italic text-xl">
+                      {Object.keys(libraryMatches).length} Übereinstimmungen gefunden!
+                    </h3>
+                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">
+                      Wir haben fertige Bilder in deiner Bibliothek entdeckt.
+                    </p>
+                  </div>
+                </div>
+                <button 
+                  onClick={handleApplyAllLibraryMatches}
+                  className="w-full md:w-auto px-10 py-5 bg-primary text-on-primary rounded-[1.5rem] font-black text-xs uppercase tracking-[0.1em] hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3"
+                >
+                  <Check className="w-5 h-5" />
+                  Alle Bilder anwenden
+                </button>
+              </div>
+            </div>
+          )}
+
+          {successMessage && (
+            <div className="mb-8 p-4 bg-success/10 border border-success/20 rounded-2xl flex items-center gap-3 text-success animate-in zoom-in-95 duration-300">
+              <Check className="w-5 h-5" />
+              <p className="text-xs font-black uppercase tracking-widest">{successMessage}</p>
+            </div>
+          )}
 
           <div className="space-y-12">
             {extractedData.categories.map((cat, catIdx) => (
@@ -264,8 +371,17 @@ export function MagicImporter({ shops }: { shops: ShopInfo[] }) {
                   {cat.products.map((prod, prodIdx) => (
                     <div key={prodIdx} className="p-8 grid grid-cols-1 md:grid-cols-4 gap-8 group hover:bg-slate-50/50 transition-colors">
                       <div className="md:col-span-2 space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Name & Beschreibung</label>
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Produkt & Beschreibung</label>
+                          {libraryMatches[prod.name] && !prod.image_url && (
+                            <span className="flex items-center gap-1.5 px-3 py-1 bg-primary/10 text-primary rounded-lg text-[9px] font-black uppercase tracking-widest animate-pulse">
+                              <Sparkles className="w-3 h-3" />
+                              Match gefunden
+                            </span>
+                          )}
+                        </div>
                         <input 
+                          required
                           className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-bold text-slate-900 focus:outline-none focus:border-primary/30 transition-all mb-2"
                           value={prod.name}
                           onChange={(e) => handleUpdateProduct(catIdx, prodIdx, 'name', e.target.value)}
@@ -286,6 +402,21 @@ export function MagicImporter({ shops }: { shops: ShopInfo[] }) {
                           onChange={(e) => handleUpdateProduct(catIdx, prodIdx, 'price', parseFloat(e.target.value))}
                         />
                       </div>
+                      <div className="space-y-4">
+                        <ImageUploadButton 
+                          label="Eigenes Bild"
+                          currentImageUrl={prod.image_url}
+                          onUploadComplete={(url) => handleUpdateProduct(catIdx, prodIdx, 'image_url', url)}
+                          folder="importer"
+                        />
+                        <button 
+                          onClick={() => setActivePickerProd({ catIdx, prodIdx })}
+                          className="w-full flex items-center justify-center gap-2 py-3 bg-slate-50 border border-slate-100 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:bg-white hover:border-primary/20 hover:text-primary transition-all"
+                        >
+                          <Database className="w-4 h-4" />
+                          Aus Bibliothek wählen
+                        </button>
+                      </div>
                       <div className="flex flex-col justify-between items-end pb-1">
                         <button 
                           onClick={() => handleRemoveProduct(catIdx, prodIdx)}
@@ -296,9 +427,65 @@ export function MagicImporter({ shops }: { shops: ShopInfo[] }) {
                         <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500">
                           <ImageIcon className="w-4 h-4 text-primary" />
                           Bild generieren?
-                          <input type="checkbox" className="w-4 h-4 rounded-md border-slate-200 bg-slate-50 text-primary focus:ring-0" defaultChecked />
+                          <input 
+                            type="checkbox" 
+                            className="w-4 h-4 rounded-md border-slate-200 bg-slate-50 text-primary focus:ring-0" 
+                            checked={!prod.image_url} 
+                            onChange={() => {}} // Controlled by image_url presence
+                          />
                         </div>
                       </div>
+
+                      {/* Library Suggestions */}
+                      {libraryMatches[prod.name] && !prod.image_url && (
+                        <div className="md:col-span-4 mt-4 p-6 bg-primary/[0.03] border border-primary/10 rounded-3xl animate-in fade-in slide-in-from-top-2 duration-500">
+                          <div className="flex items-center gap-2 mb-4">
+                            <Sparkles className="w-4 h-4 text-primary" />
+                            <p className="text-[10px] font-black uppercase tracking-widest text-primary italic">In Bibliothek gefunden</p>
+                          </div>
+                          <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+                            {libraryMatches[prod.name].map((match: any) => (
+                              <button 
+                                key={match.id}
+                                onClick={() => handleUpdateProduct(catIdx, prodIdx, 'image_url', match.image_url)}
+                                className="flex-shrink-0 group relative w-32 h-32 rounded-2xl overflow-hidden border-2 border-transparent hover:border-primary transition-all shadow-sm"
+                              >
+                                <div className="w-full h-full relative">
+                                  {match.image_url ? (
+                                    <img src={match.image_url} className="w-full h-full object-cover" alt={match.name} />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center bg-slate-50">
+                                      <ImageIcon className="w-4 h-4 text-slate-200" />
+                                    </div>
+                                  )}
+                                  <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                    <Check className="w-8 h-8 text-on-primary" />
+                                  </div>
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Preview of chosen image */}
+                      {prod.image_url && (
+                        <div className="md:col-span-4 mt-4 flex items-center gap-6 p-4 bg-success/5 border border-success/10 rounded-3xl">
+                          <div className="w-20 h-20 rounded-xl overflow-hidden shadow-md">
+                            <img src={prod.image_url} className="w-full h-full object-cover" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-success italic">Bild ausgewählt</p>
+                            <p className="text-xs font-medium text-slate-500">Dieses Bild wird importiert. Es wird keine KI-Generierung durchgeführt.</p>
+                          </div>
+                          <button 
+                            onClick={() => handleUpdateProduct(catIdx, prodIdx, 'image_url', undefined)}
+                            className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-error transition-colors"
+                          >
+                            Entfernen
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -398,6 +585,16 @@ export function MagicImporter({ shops }: { shops: ShopInfo[] }) {
           </button>
         </div>
       )}
+      {/* Library Picker Modal */}
+      <LibraryPickerModal 
+        isOpen={!!activePickerProd}
+        onClose={() => setActivePickerProd(null)}
+        onSelect={(url) => {
+          if (activePickerProd) {
+            handleUpdateProduct(activePickerProd.catIdx, activePickerProd.prodIdx, 'image_url', url)
+          }
+        }}
+      />
     </div>
   )
 }

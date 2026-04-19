@@ -78,8 +78,8 @@ export function ShopHeader({ shop, isCurrentlyOpen }: { shop: Shop, isCurrentlyO
 
   return (
     <header className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-outline-variant/10 shadow-sm" suppressHydrationWarning>
-      <div className="flex justify-between items-center px-4 sm:px-6 py-3.5 max-w-7xl mx-auto">
-        <div className="flex items-center gap-6">
+      <div className="flex justify-between items-center px-4 sm:px-6 py-3.5 max-w-7xl mx-auto" suppressHydrationWarning>
+        <div className="flex items-center gap-6" suppressHydrationWarning>
           <Link href={`/${shop.slug}`} className="flex items-center gap-3">
             {shop.logo_url ? (
               <img src={shop.logo_url} alt={shop.name} className="w-9 h-9 rounded-full object-cover border border-outline-variant/15" />

@@ -1,6 +1,7 @@
 'use server'
 
 import { createAdminSupabaseClient } from '@/lib/supabase/admin'
+import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { MenuEngine, MenuTemplate } from '@/lib/admin/menu-engine'
 import { normalizeSlug } from '@/lib/utils/slug'
 
@@ -109,3 +110,159 @@ export async function createShopAction(formData: {
   }
 }
 
+
+export async function getGlobalLibraryShopAction() {
+  const supabase = createAdminSupabaseClient()
+  
+  // Try to find the global library shop
+  const { data: existingShop } = await (supabase
+    .from('shops') as any)
+    .select('id, name')
+    .eq('slug', 'global-library')
+    .single()
+
+  if (existingShop) return existingShop
+
+  // Create it if it doesn't exist
+  // Use the current super-admin ID as owner
+  const serverSupabase = await createServerSupabaseClient()
+  const { data: { user } } = await serverSupabase.auth.getUser()
+  
+  let adminId = user?.id
+
+  // Fallback: If no current user (unlikely in this context), try to find any super-admin
+  if (!adminId) {
+    const { data: { users } } = await supabase.auth.admin.listUsers()
+    const admin = users.find(u => u.app_metadata?.role === 'super_admin')
+    if (!admin) throw new Error('Kein Super-Admin gefunden (Session missing and no admin in list)')
+    adminId = admin.id
+  }
+
+  const { data: newShop, error } = await (supabase
+    .from('shops') as any)
+    .insert({
+      name: 'Bestellen Global Library',
+      slug: 'global-library',
+      owner_id: adminId,
+      is_open: true
+    })
+    .select('id, name')
+    .single()
+
+  if (error) throw error
+  return newShop
+}
+
+export async function getGlobalTemplatesAction() {
+  const supabase = createAdminSupabaseClient()
+  const shop = await getGlobalLibraryShopAction()
+  
+  const { data: products, error } = await (supabase
+    .from('products') as any)
+    .select('*, categories(name)')
+    .eq('shop_id', shop.id)
+    .order('name')
+
+  if (error) throw error
+  return products
+}
+
+export async function searchLibraryBulkAction(productNames: string[]) {
+  const supabase = createAdminSupabaseClient()
+  const shop = await getGlobalLibraryShopAction()
+  
+  if (!productNames || productNames.length === 0) return {}
+
+  // We search for all products in one go by using a combined ILIKE or a more efficient approach
+  // Since pg doesn't have a direct 'ilike any array' that works well with wildcards easily,
+  // we can use the 'any' operator with a prepared array of patterns
+  const patterns = productNames.map(name => `%${name}%`)
+  
+  const { data: products, error } = await (supabase
+    .from('products') as any)
+    .select('*, categories(name)')
+    .eq('shop_id', shop.id)
+    .or(`name.ilike.any.{${patterns.join(',')}}`)
+    .limit(100)
+
+  if (error) {
+    console.error('Bulk search error:', error)
+    return {}
+  }
+
+  // Group by matching name (fuzzy)
+  const matches: Record<string, any[]> = {}
+  for (const name of productNames) {
+    const found = products.filter((p: any) => 
+      p.name.toLowerCase().includes(name.toLowerCase()) || 
+      name.toLowerCase().includes(p.name.toLowerCase())
+    )
+    if (found.length > 0) matches[name] = found
+  }
+
+  return matches
+}
+
+export async function addTemplateAction(data: {
+  name: string
+  description: string
+  price: number
+  image_url: string
+  category_name: string
+}) {
+  const supabase = createAdminSupabaseClient()
+  const shop = await getGlobalLibraryShopAction()
+
+  // 1. Ensure category exists in library
+  let { data: category } = await (supabase
+    .from('categories') as any)
+    .select('id')
+    .eq('shop_id', shop.id)
+    .eq('name', data.category_name)
+    .single()
+
+  if (!category) {
+    const { data: newCat, error: catError } = await (supabase
+      .from('categories') as any)
+      .insert({
+        shop_id: shop.id,
+        name: data.category_name,
+        sort_order: 0
+      })
+      .select('id')
+      .single()
+    
+    if (catError) throw catError
+    category = newCat
+  }
+
+  // 2. Insert product
+  const { data: product, error: prodError } = await (supabase
+    .from('products') as any)
+    .insert({
+      shop_id: shop.id,
+      category_id: category.id,
+      name: data.name,
+      description: data.description,
+      price: data.price || 0,
+      image_url: data.image_url,
+      sort_order: 0,
+      is_available: true
+    })
+    .select()
+    .single()
+
+  if (prodError) throw prodError
+  return { success: true, product }
+}
+
+export async function deleteTemplateAction(id: string) {
+  const supabase = createAdminSupabaseClient()
+  const { error } = await (supabase
+    .from('products') as any)
+    .delete()
+    .eq('id', id)
+  
+  if (error) throw error
+  return { success: true }
+}
