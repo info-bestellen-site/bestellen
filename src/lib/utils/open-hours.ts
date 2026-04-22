@@ -2,8 +2,9 @@ import { OpeningHour, Table, Order } from '@/types/database'
 
 export function isShopOpen(hours: OpeningHour[], manualOpen: boolean, lastUpdate?: string | null): boolean {
   const now = new Date()
+  let isManualOverride = !manualOpen
 
-  // If we have a last manual update, check if it was on a previous day
+  // 1. Check for day-change reset
   if (lastUpdate) {
     const updateDate = new Date(lastUpdate)
     const isDifferentDay = 
@@ -12,30 +13,46 @@ export function isShopOpen(hours: OpeningHour[], manualOpen: boolean, lastUpdate
       updateDate.getFullYear() !== now.getFullYear()
     
     if (isDifferentDay) {
-      // Midnight reset: Treat manual closing from a previous day as manualOpen: true (following schedule)
-      manualOpen = true
+      // Manual status from a previous day expires
+      isManualOverride = false
     }
   }
 
-  // If forced closed manually TODAY, it is always closed
-  if (!manualOpen) return false
-
-  if (hours.length === 0) return true
-
+  // 2. Identify today's schedule
   const originalIndex = now.getDay()
-  const dayOfWeek = (originalIndex + 6) % 7 // Transform 0=Sun back to 6=Sun, 1=Mon to 0=Mon
-  const currentTime = now.getHours() * 100 + now.getMinutes()
-
+  const dayOfWeek = (originalIndex + 6) % 7 // Transform 0=Sun to 6=Sun, 1=Mon to 0=Mon
+  const currentTimeInt = now.getHours() * 100 + now.getMinutes()
   const todayHours = hours.filter(h => Number(h.day_of_week) === dayOfWeek)
 
-  // If no hours are defined for TODAY, it is closed by default according to schedule
-  if (todayHours.length === 0) return false
-
-  return todayHours.some(slot => {
+  // 3. Find if we are currently in an opening slot
+  const currentSlot = todayHours.find(slot => {
     const start = parseInt(slot.start_time.replace(/:/g, '').substring(0, 4))
     const end = parseInt(slot.end_time.replace(/:/g, '').substring(0, 4))
-    return currentTime >= start && currentTime < end
+    return currentTimeInt >= start && currentTimeInt < end
   })
+
+  // 4. Handle Manual Closure expiration logic (Slot-based)
+  // If the shop is forced closed manually, check if that closure was for a previous slot
+  if (isManualOverride && lastUpdate && currentSlot) {
+    const updateDate = new Date(lastUpdate)
+    const slotStartParts = currentSlot.start_time.split(':')
+    const slotStartDate = new Date(now)
+    slotStartDate.setHours(parseInt(slotStartParts[0]), parseInt(slotStartParts[1]), 0, 0)
+
+    // If the manual "Close" happened BEFORE the current slot started, it was for a previous period
+    // The shop should now follow the schedule again (which is currently "Open" as we are in a currentSlot)
+    if (updateDate < slotStartDate) {
+      isManualOverride = false
+    }
+  }
+
+  // 5. Final decision
+  if (isManualOverride) return false // Manually closed and override is still active
+  
+  // Follow schedule
+  if (hours.length === 0) return true
+  if (todayHours.length === 0) return false
+  return !!currentSlot
 }
 
 export function generateAvailableSlots(hours: OpeningHour[], targetDate: Date = new Date()): string[] {

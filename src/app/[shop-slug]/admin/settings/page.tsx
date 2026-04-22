@@ -326,8 +326,6 @@ function SettingsPage({ params }: { params: Promise<{ 'shop-slug': string }> }) 
         phone,
         has_pickup: hasPickup,
         has_reservation: hasReservation,
-        is_open: isOpen,
-        manual_status_updated_at: manualStatusUpdatedAt,
         min_order_amount: minOrder,
         delivery_fee: deliveryFee,
         delivery_zip_codes: deliveryZipCodes,
@@ -655,41 +653,6 @@ function SettingsPage({ params }: { params: Promise<{ 'shop-slug': string }> }) 
           </div>
         </div>
 
-        {/* Operating Parameters */}
-        <div className="bg-white rounded-[2rem] p-8 border border-outline-variant/10 shadow-xl shadow-primary/5 space-y-8">
-          <div className="flex items-center gap-3 mb-2">
-            <Clock className="w-6 h-6 text-primary" />
-            <h2 className="text-xl font-bold tracking-tight">{t('operating_times_title')}</h2>
-          </div>
-
-          <div className="grid grid-cols-2 gap-6">
-            <div className="col-span-2 md:col-span-1 md:border-l md:border-outline-variant/5 md:pl-8">
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-4 ml-1">{t('manual_status_override')}</label>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsOpen(!isOpen)
-                  setManualStatusUpdatedAt(new Date().toISOString())
-                }}
-                className={`w-full flex items-center justify-between px-6 py-4 rounded-3xl transition-all ${isOpen
-                  ? 'bg-success/5 text-success ring-2 ring-inset ring-success/20'
-                  : 'bg-error/5 text-error ring-2 ring-inset ring-error/20'
-                  }`}
-              >
-                <div className="flex flex-col items-start text-left">
-                  <span className="text-sm font-black uppercase tracking-widest leading-none mb-1">
-                    {isOpen ? t('open') : t('closed')}
-                  </span>
-                  <span className="text-[10px] font-bold opacity-60">{t('manual_switch')}</span>
-                </div>
-                <div className={`w-3 h-3 rounded-full ${isOpen ? 'bg-success animate-pulse' : 'bg-error'}`} />
-              </button>
-              <p className="mt-4 text-[10px] text-on-surface-variant/50 font-medium italic">
-                {t('manual_switch_hint')}
-              </p>
-            </div>
-          </div>
-        </div>
 
         {/* Opening Hours Section */}
         <div className="bg-white rounded-[2rem] p-8 border border-outline-variant/10 shadow-xl shadow-primary/5 space-y-8">

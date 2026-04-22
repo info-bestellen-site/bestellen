@@ -145,7 +145,7 @@ export function AdminSidebar({
           </nav>
         </div>
 
-        <div className="mt-auto p-8 border-t border-outline-variant/5 space-y-4">
+        <div className="mt-auto p-8 border-t border-outline-variant/5 space-y-4" suppressHydrationWarning>
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl text-sm font-bold text-error border border-transparent hover:border-error/10 hover:bg-error/5 transition-all"

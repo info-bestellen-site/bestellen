@@ -16,16 +16,20 @@ import {
   Fish,
   Soup,
   Beef,
-  Wine
+  Wine,
+  Loader2,
+  RefreshCw
 } from 'lucide-react'
 import { useCartStore } from '@/lib/store/cart-store'
 import { Shop } from '@/types/database'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useAdminStore } from '@/lib/store/admin-store'
 import { LanguageSwitcher } from '@/components/admin/LanguageSwitcher'
 import { useTranslation } from '@/lib/i18n/useTranslation'
+import { isShopOpen } from '@/lib/utils/open-hours'
+import { OpeningHour } from '@/types/database'
 
 const ICON_MAP: Record<string, any> = {
   Store,
@@ -41,20 +45,65 @@ const ICON_MAP: Record<string, any> = {
   Wine
 }
 
-export function ShopHeader({ shop, isCurrentlyOpen }: { shop: Shop, isCurrentlyOpen?: boolean }) {
+export function ShopHeader({ 
+  shop, 
+  isCurrentlyOpen, 
+  hours = [] 
+}: { 
+  shop: Shop, 
+  isCurrentlyOpen?: boolean,
+  hours?: OpeningHour[]
+}) {
   const router = useRouter()
   const supabase = createClient()
   const searchParams = useSearchParams()
   const pathname = usePathname()
   const isEmbed = searchParams.get('embed') === 'true'
   const { t } = useTranslation()
-
-  // Use the prop if provided, otherwise fallback to shop.is_open (for backward compatibility if needed)
-  const isOpen = isCurrentlyOpen !== undefined ? isCurrentlyOpen : shop.is_open
-
+  const { editMode, toggleEditMode } = useAdminStore()
+  
   const [itemCount, setItemCount] = useState(0)
   const [isOwner, setIsOwner] = useState(false)
-  const { editMode, toggleEditMode } = useAdminStore()
+  const [isToggling, setIsToggling] = useState(false)
+  const [isOpenInternal, setIsOpenInternal] = useState(isCurrentlyOpen !== undefined ? isCurrentlyOpen : shop.is_open)
+
+  // 1. Sync state with props
+  useEffect(() => {
+    setIsOpenInternal(isCurrentlyOpen !== undefined ? isCurrentlyOpen : shop.is_open)
+  }, [isCurrentlyOpen, shop.is_open])
+
+  // 2. Scheduler: Re-calculate status every minute to catch end-of-hours transition
+  useEffect(() => {
+    if (!hours?.length) return
+
+    const interval = setInterval(() => {
+      const currentCalculatedStatus = isShopOpen(hours, shop.is_open, shop.manual_status_updated_at)
+      setIsOpenInternal(currentCalculatedStatus)
+    }, 60000)
+
+    return () => clearInterval(interval)
+  }, [hours, shop.is_open, shop.manual_status_updated_at])
+
+  // 3. Realtime: Listen for manual status changes from other devices
+  useEffect(() => {
+    const channel = supabase
+      .channel(`shop-status-${shop.id}`)
+      .on('postgres_changes', { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'shops',
+        filter: `id=eq.${shop.id}`
+      }, (payload) => {
+        const updatedShop = payload.new as Shop
+        const newStatus = isShopOpen(hours || [], updatedShop.is_open, updatedShop.manual_status_updated_at)
+        setIsOpenInternal(newStatus)
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [supabase, shop.id, hours])
 
   const getItemCount = useCartStore(s => s.getItemCount)
 
@@ -73,6 +122,32 @@ export function ShopHeader({ shop, isCurrentlyOpen }: { shop: Shop, isCurrentlyO
     const unsub = useCartStore.subscribe((state) => setItemCount(state.getItemCount(shop.slug)))
     return unsub
   }, [getItemCount, shop.slug])
+
+  const handleToggleStatus = async () => {
+    if (isToggling) return
+    setIsToggling(true)
+
+    const newStatus = !isOpenInternal
+    
+    try {
+      const { error } = await supabase
+        .from('shops')
+        .update({ 
+          is_open: newStatus,
+          manual_status_updated_at: new Date().toISOString()
+        } as any)
+        .eq('id', shop.id)
+
+      if (error) throw error
+      
+      setIsOpenInternal(newStatus)
+      router.refresh()
+    } catch (err) {
+      console.error('Error toggling status:', err)
+    } finally {
+      setIsToggling(false)
+    }
+  }
 
   if (isEmbed) return null
 
@@ -93,7 +168,7 @@ export function ShopHeader({ shop, isCurrentlyOpen }: { shop: Shop, isCurrentlyO
             )}
             <div>
               <h1 className="text-lg font-bold tracking-tight text-on-surface leading-tight" suppressHydrationWarning>{shop.name}</h1>
-              {!isOpen && (
+              {!isOpenInternal && (
                 <span className="text-[10px] font-bold text-error uppercase tracking-wider">Geschlossen</span>
               )}
             </div>
@@ -143,15 +218,25 @@ export function ShopHeader({ shop, isCurrentlyOpen }: { shop: Shop, isCurrentlyO
         <div className="flex items-center gap-3 sm:gap-4">
           {isOwner && (
             <>
-              <div className={`flex items-center gap-2 px-3 py-2 rounded-full border border-outline-variant/10 shadow-sm transition-all ${isOpen
-                ? 'bg-success/5 text-success'
-                : 'bg-error/5 text-error'
-                }`}>
-                <div className={`w-2 h-2 rounded-full ${isOpen ? 'bg-success animate-pulse' : 'bg-error'}`} />
-                <span className="text-[10px] font-black uppercase tracking-[0.15em]">
-                  {isOpen ? t('open') : t('closed')}
+              <button
+                onClick={handleToggleStatus}
+                disabled={isToggling}
+                title={isOpenInternal ? 'Shop schließen' : 'Shop öffnen'}
+                className={`flex items-center gap-2 px-3 py-2 rounded-full border border-outline-variant/10 shadow-sm transition-all relative overflow-hidden group ${isOpenInternal
+                  ? 'bg-success/5 text-success hover:bg-success/10'
+                  : 'bg-error/5 text-error hover:bg-error/10'
+                } ${isToggling ? 'opacity-70 cursor-wait' : 'cursor-pointer hover:scale-105 active:scale-95'}`}
+              >
+                {isToggling ? (
+                  <Loader2 className="w-2 h-2 animate-spin" />
+                ) : (
+                  <div className={`w-2 h-2 rounded-full transition-all ${isOpenInternal ? 'bg-success animate-pulse' : 'bg-error'} group-hover:scale-125`} />
+                )}
+                <span className="text-[10px] font-black uppercase tracking-[0.15em] flex items-center gap-1">
+                  {isOpenInternal ? t('open') : t('closed')}
+                  <RefreshCw className={`w-2.5 h-2.5 ml-1 transition-transform group-hover:rotate-180 ${isToggling ? 'animate-spin' : ''}`} />
                 </span>
-              </div>
+              </button>
               <LanguageSwitcher />
             </>
           )}

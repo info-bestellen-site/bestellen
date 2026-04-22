@@ -15,7 +15,7 @@ export function ResponsiveAdminLayout({ children, shopSlug }: ResponsiveAdminLay
   const { t } = useTranslation()
 
   return (
-    <div className="flex bg-surface-container-lowest min-h-screen relative">
+    <div className="flex bg-surface-container-lowest min-h-screen relative" suppressHydrationWarning>
       {/* Sidebar - Desktop Sticky, Mobile Drawered */}
       <AdminSidebar
         shopSlug={shopSlug}
@@ -23,12 +23,12 @@ export function ResponsiveAdminLayout({ children, shopSlug }: ResponsiveAdminLay
         onClose={() => setIsSidebarOpen(false)}
       />
 
-      <div className="flex-1 flex flex-col min-w-0 lg:pl-72">
+      <div className="flex-1 flex flex-col min-w-0 lg:pl-72" suppressHydrationWarning>
 
 
         {/* Mobile Header */}
         <header className="lg:hidden flex items-center justify-between px-6 py-4 bg-white border-b border-outline-variant/10 sticky top-0 z-30">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3" suppressHydrationWarning>
             <button
               onClick={() => setIsSidebarOpen(true)}
               className="p-2 -ml-2 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-colors"

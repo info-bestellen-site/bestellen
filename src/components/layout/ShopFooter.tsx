@@ -39,7 +39,7 @@ export function ShopFooter({ shop }: { shop: Shop }) {
     <footer className="w-full mt-12 bg-surface-container-low border-t border-outline-variant/10" suppressHydrationWarning>
       <div className="grid grid-cols-1 md:grid-cols-3 items-center md:items-start px-6 sm:px-10 py-10 max-w-7xl mx-auto gap-10 md:gap-4" suppressHydrationWarning>
         {/* Left: Brand */}
-        <div className="flex flex-col items-center md:items-start gap-4">
+        <div className="flex flex-col items-center md:items-start gap-4" suppressHydrationWarning>
           <div className="flex items-center gap-3">
             {shop.logo_url ? (
               <img src={shop.logo_url} alt={shop.name} className="w-8 h-8 rounded-full object-cover border border-outline-variant/15" />
@@ -62,7 +62,7 @@ export function ShopFooter({ shop }: { shop: Shop }) {
         </div>
 
         {/* Center: Address & Contact (Imprint style) */}
-        <div className="flex flex-col items-center gap-6 text-center">
+        <div className="flex flex-col items-center gap-6 text-center" suppressHydrationWarning>
           {shop.address && (
             <div className="flex flex-col gap-1 items-center">
               <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/40">Adresse</span>
@@ -83,7 +83,7 @@ export function ShopFooter({ shop }: { shop: Shop }) {
         </div>
 
         {/* Right: Brand Branding */}
-        <div className="flex flex-col items-center md:items-end w-full">
+        <div className="flex flex-col items-center md:items-end w-full" suppressHydrationWarning>
           <div className="pt-6 border-t border-outline-variant/10 md:border-0 md:pt-0">
             <p className="text-[10px] text-on-surface-variant/60 font-medium">
               Powered by <Link href="/" className="font-black text-on-surface-variant hover:text-primary transition-colors">Bestellen</Link>

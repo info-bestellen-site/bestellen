@@ -39,7 +39,7 @@ async function ShopLayout({ children, params }: ShopLayoutProps) {
 
   return (
     <div className="min-h-screen bg-surface">
-      <ShopHeader shop={shop} isCurrentlyOpen={isCurrentlyOpen} />
+      <ShopHeader shop={shop} isCurrentlyOpen={isCurrentlyOpen} hours={hours || []} />
       <ShopMain>{children}</ShopMain>
       <ShopFooter shop={shop} />
       <MobileNav shopSlug={decodedSlug} shop={shop} />
