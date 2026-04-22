@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { 
   Plus, 
   Search, 
@@ -14,8 +14,10 @@ import {
   List,
   Sparkles,
   CheckCircle2,
-  ChevronDown
+  ChevronDown,
+  AlertCircle
 } from 'lucide-react'
+import { useCallback } from 'react'
 import { getGlobalTemplatesAction, addTemplateAction, deleteTemplateAction } from '@/app/super-admin/actions'
 import { ImageUploadButton } from './ImageUploadButton'
 
@@ -23,10 +25,11 @@ interface Template {
   id: string
   name: string
   description: string
-  price: number
   image_url: string
-  categories?: { name: string }
 }
+
+// ULTIMATE PERSISTENCE: Outside the component life-cycle
+let globalPersistenceUrl = ''
 
 export function GlobalTemplateManager() {
   const [templates, setTemplates] = useState<Template[]>([])
@@ -34,14 +37,17 @@ export function GlobalTemplateManager() {
   const [search, setSearch] = useState('')
   const [showAddModal, setShowAddModal] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   
   const [newTemplate, setNewTemplate] = useState({
     name: '',
     description: '',
-    price: 0,
     image_url: '',
-    category_name: 'Döner'
   })
+
+  // BACKUP STORAGE for React 19/Next 16 state flickering
+  const imageUrlRef = useRef('')
+
 
   useEffect(() => {
     fetchTemplates()
@@ -59,16 +65,64 @@ export function GlobalTemplateManager() {
     }
   }
 
-  const handleAdd = async (e: React.FormEvent) => {
+  const handleImageUpload = useCallback((url: string) => {
+    if (!url) return
+    console.log('--- UPLOAD COMPLETE ---', url)
+    
+    // 1. PERMANENT STORAGE
+    localStorage.setItem('magic_importer_last_url', url)
+    
+    // 2. DOM FORCE: Direct manipulation to bypass React state
+    const hiddenInput = document.getElementById('indestructible-url-keeper') as HTMLInputElement
+    if (hiddenInput) {
+      hiddenInput.value = url
+      console.log('--- DOM UPDATED ---', url)
+    }
+    
+    globalPersistenceUrl = url
+    imageUrlRef.current = url
+    if (typeof window !== 'undefined') (window as any).lastUploadedUrl = url
+    setNewTemplate(prev => ({ ...prev, image_url: url }))
+  }, [])
+
+  const handleAdd = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setIsSaving(true)
+    setError(null)
+
+    // NATIVE DOM EXTRACTION
+    const formData = new FormData(e.currentTarget)
+    const domUrl = formData.get('image_url_fallback') as string
+
+    const finalImageUrl = domUrl || 
+                        newTemplate.image_url || 
+                        imageUrlRef.current || 
+                        globalPersistenceUrl || 
+                        localStorage.getItem('magic_importer_last_url') ||
+                        (typeof window !== 'undefined' ? (window as any).lastUploadedUrl : '')
+
+    const payload = {
+      ...newTemplate,
+      image_url: finalImageUrl
+    }
+
     try {
-      await addTemplateAction(newTemplate)
+      await addTemplateAction(payload)
+      
+      // CLEANUP ALL PERSISTENCE LAYERS
+      localStorage.removeItem('magic_importer_last_url')
+      globalPersistenceUrl = '' 
+      imageUrlRef.current = ''
+      const hiddenInput = document.getElementById('indestructible-url-keeper') as HTMLInputElement
+      if (hiddenInput) hiddenInput.value = ''
+      if (typeof window !== 'undefined') delete (window as any).lastUploadedUrl
+
       setShowAddModal(false)
       fetchTemplates()
-      setNewTemplate({ name: '', description: '', price: 0, image_url: '', category_name: 'Döner' })
-    } catch (err) {
-      console.error(err)
+      setNewTemplate({ name: '', description: '', image_url: '' })
+    } catch (err: any) {
+      console.error('Save template error:', err)
+      setError(err.message || 'Speichern fehlgeschlagen.')
     } finally {
       setIsSaving(false)
     }
@@ -100,7 +154,10 @@ export function GlobalTemplateManager() {
         </div>
 
         <button 
-          onClick={() => setShowAddModal(true)}
+          onClick={() => {
+            setShowAddModal(true)
+            setError(null)
+          }}
           className="flex items-center gap-3 px-8 py-4 bg-primary text-on-primary rounded-2xl font-black text-sm uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/20"
         >
           <Plus className="w-5 h-5" />
@@ -161,17 +218,12 @@ export function GlobalTemplateManager() {
                     <ImageIcon className="w-12 h-12" />
                   </div>
                 )}
-                <div className="absolute top-4 left-4">
-                  <span className="px-3 py-1.5 bg-white/90 backdrop-blur-md rounded-xl text-[9px] font-black uppercase tracking-widest shadow-sm">
-                    {template.categories?.name || 'Produkt'}
-                  </span>
-                </div>
               </div>
               <div className="p-6 space-y-3">
                 <h3 className="font-black uppercase tracking-tight italic text-slate-900 line-clamp-1">{template.name}</h3>
                 <p className="text-[11px] font-medium text-slate-500 line-clamp-2 h-8">{template.description}</p>
                 <div className="pt-4 flex items-center justify-between border-t border-slate-50">
-                  <p className="text-sm font-black tracking-tight">{template.price.toFixed(2)} €</p>
+                  <div className="w-4 h-4" /> {/* Spacer */}
                   <button 
                     onClick={() => handleDelete(template.id, template.name)}
                     className="p-2 text-slate-300 hover:text-error transition-colors"
@@ -187,7 +239,9 @@ export function GlobalTemplateManager() {
 
       {/* Add Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-950/20 backdrop-blur-sm animate-in fade-in duration-300">
+        <div 
+          className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-950/20 backdrop-blur-sm animate-in fade-in duration-300"
+        >
           <div 
             className="bg-white w-full max-w-xl rounded-[3rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300"
             onClick={(e) => e.stopPropagation()}
@@ -196,35 +250,41 @@ export function GlobalTemplateManager() {
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-black uppercase tracking-tight italic">Neue Vorlage</h2>
                 <button 
-                  onClick={() => setShowAddModal(false)}
+                  onClick={() => {
+                    setShowAddModal(false)
+                    setError(null)
+                  }}
                   className="p-2 hover:bg-slate-50 rounded-xl transition-colors"
                 >
                   <Plus className="w-6 h-6 rotate-45 text-slate-400" />
                 </button>
               </div>
 
+              {error && (
+                <div className="p-4 bg-error/10 border border-error/20 rounded-2xl flex items-center gap-3 text-error animate-in zoom-in-95 duration-300">
+                  <AlertCircle className="w-4 h-4" />
+                  <p className="text-xs font-black uppercase tracking-widest">{error}</p>
+                </div>
+              )}
+
               <form onSubmit={handleAdd} className="space-y-6">
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Kategorie</label>
-                    <input 
-                      required
-                      className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 font-bold text-slate-900 focus:outline-none focus:border-primary/30 transition-all"
-                      value={newTemplate.category_name}
-                      onChange={(e) => setNewTemplate({ ...newTemplate, category_name: e.target.value })}
-                      placeholder="z.B. Döner"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Name</label>
-                    <input 
-                      required
-                      className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 font-bold text-slate-900 focus:outline-none focus:border-primary/30 transition-all"
-                      value={newTemplate.name}
-                      onChange={(e) => setNewTemplate({ ...newTemplate, name: e.target.value })}
-                      placeholder="z.B. Döner Kebap"
-                    />
-                  </div>
+                {/* NATIVE DOM FALLBACK INPUT */}
+                <input 
+                  type="hidden" 
+                  name="image_url_fallback" 
+                  id="indestructible-url-keeper" 
+                  defaultValue={newTemplate.image_url || imageUrlRef.current || globalPersistenceUrl || (typeof window !== 'undefined' ? localStorage.getItem('magic_importer_last_url') || '' : '')} 
+                />
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Name</label>
+                  <input 
+                    required
+                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 font-bold text-slate-900 focus:outline-none focus:border-primary/30 transition-all"
+                    value={newTemplate.name}
+                    onChange={(e) => setNewTemplate(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="z.B. Döner Kebap"
+                  />
                 </div>
 
                 <div className="space-y-2">
@@ -232,55 +292,34 @@ export function GlobalTemplateManager() {
                   <textarea 
                     className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-medium text-slate-600 focus:outline-none focus:border-primary/30 transition-all h-24 resize-none"
                     value={newTemplate.description}
-                    onChange={(e) => setNewTemplate({ ...newTemplate, description: e.target.value })}
+                    onChange={(e) => setNewTemplate(prev => ({ ...prev, description: e.target.value }))}
                     placeholder="Standard-Beschreibung für dieses Produkt..."
                   />
                 </div>
 
-                <div className="grid grid-cols-1 gap-6">
-                  <div className="space-y-4">
-                    <ImageUploadButton 
-                      onUploadComplete={(url) => setNewTemplate({ ...newTemplate, image_url: url })}
-                      currentImageUrl={newTemplate.image_url}
-                      label="Produktbild hochladen (Wichtig)"
-                      folder="templates"
-                    />
-                    
-                    <div className="relative">
-                      <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t border-slate-100"></span>
-                      </div>
-                      <div className="relative flex justify-center text-[10px] font-black uppercase tracking-widest">
-                        <span className="bg-white px-4 text-slate-300">Oder Bild-URL</span>
-                      </div>
+                <div className="space-y-4">
+                  <ImageUploadButton 
+                    onUploadComplete={handleImageUpload}
+                    currentImageUrl={newTemplate.image_url || imageUrlRef.current}
+                    label="Produktbild hochladen"
+                    folder="templates"
+                    bucket="product-images"
+                  />
+                  
+                  {/* Keep the hidden input for DOM Force survival */}
+                  <input 
+                    type="hidden"
+                    name="image_url_fallback" 
+                    id="indestructible-url-keeper" 
+                    value={newTemplate.image_url || imageUrlRef.current || globalPersistenceUrl || (typeof window !== 'undefined' ? localStorage.getItem('magic_importer_last_url') || '' : '')} 
+                  />
+
+                  {(newTemplate.image_url || imageUrlRef.current || globalPersistenceUrl) && (
+                    <div className="flex items-center gap-2 p-3 bg-success/5 border border-success/20 rounded-xl">
+                      <CheckCircle2 className="w-4 h-4 text-success" />
+                      <span className="text-[10px] font-black uppercase tracking-widest text-success">Bild erfolgreich verknüpft</span>
                     </div>
-
-                    <input 
-                      className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3 text-xs font-bold text-slate-900 focus:outline-none focus:border-primary/30 transition-all"
-                      value={newTemplate.image_url}
-                      onChange={(e) => setNewTemplate({ ...newTemplate, image_url: e.target.value })}
-                      placeholder="https://..."
-                    />
-                  </div>
-                </div>
-
-                <div className="pt-4 border-t border-slate-50">
-                  <div className="flex items-center justify-between group cursor-pointer" onClick={() => {
-                    const el = document.getElementById('price-optional');
-                    if (el) el.classList.toggle('hidden');
-                  }}>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Optional: Preis (€)</label>
-                    <ChevronDown className="w-4 h-4 text-slate-300 group-hover:text-primary transition-colors" />
-                  </div>
-                  <div id="price-optional" className="mt-4 hidden animate-in slide-in-from-top-2">
-                    <input 
-                      type="number"
-                      step="0.01"
-                      className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 font-bold text-slate-900 focus:outline-none focus:border-primary/30 transition-all"
-                      value={newTemplate.price}
-                      onChange={(e) => setNewTemplate({ ...newTemplate, price: parseFloat(e.target.value) || 0 })}
-                    />
-                  </div>
+                  )}
                 </div>
 
                 <button 

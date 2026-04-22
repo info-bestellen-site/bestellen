@@ -126,13 +126,15 @@ export function MagicImporter({ shops }: { shops: ShopInfo[] }) {
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
   const handleUpdateProduct = (catIndex: number, prodIndex: number, field: string, value: any) => {
-    if (!extractedData) return
-    const newData = { ...extractedData }
-    newData.categories[catIndex].products[prodIndex] = {
-      ...newData.categories[catIndex].products[prodIndex],
-      [field]: value
-    }
-    setExtractedData(newData)
+    setExtractedData(prev => {
+      if (!prev) return prev
+      const newData = { ...prev }
+      newData.categories[catIndex].products[prodIndex] = {
+        ...newData.categories[catIndex].products[prodIndex],
+        [field]: value
+      }
+      return newData
+    })
   }
 
   const handleAddProduct = (catIndex: number) => {

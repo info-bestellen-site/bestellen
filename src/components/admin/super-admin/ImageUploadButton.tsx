@@ -17,8 +17,8 @@ interface ImageUploadButtonProps {
 export function ImageUploadButton({
   onUploadComplete,
   currentImageUrl,
-  bucket = 'shop-logos', // Falling back to existing bucket or we can use 'products'
-  folder = 'global-library',
+  bucket = 'product-images', // Force-recompile-v5 (Targeting product-images)
+  folder = 'templates',
   className = '',
   label = 'Bild hochladen'
 }: ImageUploadButtonProps) {
@@ -59,8 +59,10 @@ export function ImageUploadButton({
         .from(bucket)
         .getPublicUrl(fileName)
 
+      console.info('🚀 Image published at:', publicUrl)
       onUploadComplete(publicUrl)
       setSuccess(true)
+
       setTimeout(() => setSuccess(false), 3000)
     } catch (error) {
       console.error('Upload failed:', error)

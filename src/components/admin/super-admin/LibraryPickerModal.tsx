@@ -10,7 +10,6 @@ interface Template {
   name: string
   description: string
   image_url: string
-  categories?: { name: string }
 }
 
 interface LibraryPickerModalProps {
@@ -44,8 +43,7 @@ export function LibraryPickerModal({ isOpen, onClose, onSelect }: LibraryPickerM
   }
 
   const filteredTemplates = templates.filter(t => 
-    t.name.toLowerCase().includes(search.toLowerCase()) || 
-    t.categories?.name?.toLowerCase().includes(search.toLowerCase())
+    t.name.toLowerCase().includes(search.toLowerCase())
   )
 
   return (
@@ -95,13 +93,6 @@ export function LibraryPickerModal({ isOpen, onClose, onSelect }: LibraryPickerM
                     <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
                       <Check className="w-8 h-8 text-on-primary" />
                     </div>
-                    {template.categories?.name && (
-                      <div className="absolute top-2 left-2">
-                        <span className="px-2 py-1 bg-white/90 backdrop-blur-md rounded-lg text-[8px] font-black uppercase tracking-widest shadow-sm">
-                          {template.categories.name}
-                        </span>
-                      </div>
-                    )}
                   </div>
                   <div className="p-3">
                     <p className="text-[10px] font-black uppercase tracking-tight italic text-slate-900 group-hover:text-primary transition-colors line-clamp-1">

@@ -176,13 +176,16 @@ export async function searchLibraryBulkAction(productNames: string[]) {
   // We search for all products in one go by using a combined ILIKE or a more efficient approach
   // Since pg doesn't have a direct 'ilike any array' that works well with wildcards easily,
   // we can use the 'any' operator with a prepared array of patterns
-  const patterns = productNames.map(name => `%${name}%`)
-  
+  // Generate individual ILIKE conditions for each product name
+  const orConditions = productNames
+    .map(name => `name.ilike.%${name.replace(/[()&,]/g, '')}%`)
+    .join(',')
+
   const { data: products, error } = await (supabase
     .from('products') as any)
     .select('*, categories(name)')
     .eq('shop_id', shop.id)
-    .or(`name.ilike.any.{${patterns.join(',')}}`)
+    .or(orConditions)
     .limit(100)
 
   if (error) {
@@ -206,19 +209,22 @@ export async function searchLibraryBulkAction(productNames: string[]) {
 export async function addTemplateAction(data: {
   name: string
   description: string
-  price: number
+  price?: number
   image_url: string
-  category_name: string
+  category_name?: string
 }) {
   const supabase = createAdminSupabaseClient()
   const shop = await getGlobalLibraryShopAction()
+  
+  const categoryName = data.category_name || 'Standard'
+  const price = data.price || 0
 
   // 1. Ensure category exists in library
   let { data: category } = await (supabase
     .from('categories') as any)
     .select('id')
     .eq('shop_id', shop.id)
-    .eq('name', data.category_name)
+    .eq('name', categoryName)
     .single()
 
   if (!category) {
@@ -226,7 +232,7 @@ export async function addTemplateAction(data: {
       .from('categories') as any)
       .insert({
         shop_id: shop.id,
-        name: data.category_name,
+        name: categoryName,
         sort_order: 0
       })
       .select('id')
@@ -244,7 +250,7 @@ export async function addTemplateAction(data: {
       category_id: category.id,
       name: data.name,
       description: data.description,
-      price: data.price || 0,
+      price: price,
       image_url: data.image_url,
       sort_order: 0,
       is_available: true
