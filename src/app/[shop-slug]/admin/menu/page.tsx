@@ -681,7 +681,7 @@ function MenuManagementPage({ params }: { params: Promise<{ 'shop-slug': string 
 
       {/* Category Modal */}
       <Modal
-        isOpen={isCategoryModalOpen}
+        isOpen={isCategoryModalOpen && !imageToCrop}
         onClose={() => setIsCategoryModalOpen(false)}
         title={editingCategory ? t('edit_category') : t('new_category')}
       >
@@ -710,7 +710,7 @@ function MenuManagementPage({ params }: { params: Promise<{ 'shop-slug': string 
 
       {/* Product Modal */}
       <Modal
-        isOpen={isProductModalOpen}
+        isOpen={isProductModalOpen && !imageToCrop}
         onClose={() => setIsProductModalOpen(false)}
         title={editingProduct ? t('edit_product') : t('new_product')}
       >
@@ -803,11 +803,13 @@ function MenuManagementPage({ params }: { params: Promise<{ 'shop-slug': string 
         />
       )}
 
-      <ProductDetailModal
-        product={previewProduct}
-        shopSlug={shopSlug}
-        onClose={() => setPreviewProduct(null)}
-      />
+      {!imageToCrop && (
+        <ProductDetailModal
+          product={previewProduct}
+          shopSlug={shopSlug}
+          onClose={() => setPreviewProduct(null)}
+        />
+      )}
     </div>
   )
 }

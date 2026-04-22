@@ -1124,7 +1124,7 @@ function SettingsPage({ params }: { params: Promise<{ 'shop-slug': string }> }) 
 
       {error && (
         <Modal
-          isOpen={!!error}
+          isOpen={!!error && !imageToCrop}
           onClose={() => setError(null)}
           title={t('error')}
         >

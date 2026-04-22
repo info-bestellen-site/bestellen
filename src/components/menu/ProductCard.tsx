@@ -287,6 +287,7 @@ export function ProductCard({
           image={imageToCrop}
           onCancel={() => setImageToCrop(null)}
           onCropComplete={onCropComplete}
+          aspectRatio={0.8}
         />
       )}
     </div>
