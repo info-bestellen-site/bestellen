@@ -259,7 +259,7 @@ export function ProductDetailModal({ product, shopSlug, onClose }: ProductDetail
         {step === 'overview' && (
           <div key="overview" className="flex flex-col h-full overflow-hidden" style={{ animation: 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)' }}>
             {/* Huge Hero Image */}
-            <div className="h-[65vh] sm:h-[65vh] bg-surface-container-low relative shrink-0">
+            <div className="h-[55vh] sm:h-[55vh] bg-surface-container-low relative shrink-0">
               {product.image_url ? (
                 <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
               ) : (
@@ -268,7 +268,7 @@ export function ProductDetailModal({ product, shopSlug, onClose }: ProductDetail
                 </div>
               )}
               {/* Deeper, smoother gradient to transition from image to text */}
-              <div className="absolute -bottom-1 inset-x-0 h-48 sm:h-35 bg-gradient-to-t from-surface-container-lowest via-surface-container-lowest/90 via-surface-container-lowest/40 to-transparent" />
+              <div className="absolute -bottom-1 inset-x-0 h-10 sm:h-10 bg-gradient-to-t from-surface-container-lowest via-surface-container-lowest/90 via-surface-container-lowest/40 to-transparent" />
             </div>
 
             <div className="flex-1 overflow-y-auto px-6 sm:px-10 pt-3 sm:pt-6 pb-4">
