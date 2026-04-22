@@ -95,6 +95,7 @@ function SettingsPage({ params }: { params: Promise<{ 'shop-slug': string }> }) 
   const [iconName, setIconName] = useState<string | null>(null)
   const [baseLanguage, setBaseLanguage] = useState<Language>('de')
   const [error, setError] = useState<string | null>(null)
+  const [phoneError, setPhoneError] = useState<string | null>(null)
 
   // PayPal State
   const [paypalEnabled, setPaypalEnabled] = useState(false)
@@ -311,9 +312,34 @@ function SettingsPage({ params }: { params: Promise<{ 'shop-slug': string }> }) 
     setDeliveryZipCodes(deliveryZipCodes.filter(z => z !== zipString))
   }
 
+  const validatePhone = (num: string) => {
+    if (!num) return null // Optional field? No, probably should stay as is if user wants to empty it
+    const digitsOnly = num.replace(/\D/g, '')
+    const blacklist = ['110', '112', '911', '115', '116117', '999']
+    
+    if (blacklist.includes(digitsOnly)) {
+      return t('phone_emergency_blocked')
+    }
+    
+    if (digitsOnly.length > 0 && digitsOnly.length < 7) {
+      return t('phone_invalid')
+    }
+    
+    return null
+  }
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!shop) return
+
+    // Phone validation
+    const pError = validatePhone(phone)
+    if (pError) {
+      setPhoneError(pError)
+      return
+    }
+    setPhoneError(null)
+
     setSaving(true)
     setSuccess(false)
 
@@ -513,14 +539,24 @@ function SettingsPage({ params }: { params: Promise<{ 'shop-slug': string }> }) 
             <div className="col-span-2 md:col-span-1">
               <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-2.5 ml-1">{t('phone_label')}</label>
               <div className="relative">
-                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant/40" />
+                <Phone className={`absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors ${phoneError ? 'text-error' : 'text-on-surface-variant/40'}`} />
                 <input
                   type="tel"
                   value={phone}
-                  onChange={e => setPhone(e.target.value)}
-                  className="w-full pl-11 pr-4 py-4 bg-surface-container-low border-none rounded-2xl text-sm font-semibold focus:ring-2 focus:ring-primary/10 transition-all"
+                  onChange={e => {
+                    setPhone(e.target.value)
+                    if (phoneError) setPhoneError(null)
+                  }}
+                  className={`w-full pl-11 pr-4 py-4 bg-surface-container-low border-none rounded-2xl text-sm font-semibold transition-all focus:ring-2 ${
+                    phoneError ? 'ring-2 ring-error/50 bg-error/5' : 'focus:ring-primary/10'
+                  }`}
                 />
               </div>
+              {phoneError && (
+                <p className="mt-2 text-[10px] text-error font-bold ml-1 animate-in fade-in slide-in-from-top-1">
+                  {phoneError}
+                </p>
+              )}
             </div>
           </div>
         </div>
