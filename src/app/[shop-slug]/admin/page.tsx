@@ -4,7 +4,7 @@ import { useState, useEffect, use, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Order, OrderItem, OrderStatus } from '@/types/database'
 import { OrderCard } from '@/components/admin/OrderCard'
-import { playNewOrderSound } from '@/lib/utils/audio'
+import { playNewOrderSound, initAudio } from '@/lib/utils/audio'
 import { Loader2, ChefHat, BellOff, Bell, Clock, CalendarClock, CheckCircle, Play, CheckCircle2 } from 'lucide-react'
 import { useTranslation } from '@/lib/i18n/useTranslation'
 
@@ -43,46 +43,30 @@ function KitchenDashboard({ params }: { params: Promise<{ 'shop-slug': string }>
   }, [])
 
   useEffect(() => {
-    const channelRef = { current: null as any }
-    let isSubscribing = false
+    let channel: any = null
+    let isMounted = true
 
     async function init() {
-      if (isSubscribing) return
-      isSubscribing = true
-      const { data: shop } = await (supabase as any)
+      // 1. Get Shop ID
+      const { data: shop, error: shopError } = await (supabase as any)
         .from('shops')
         .select('id')
         .eq('slug', shopSlug)
         .single()
 
-      if (!shop) return
+      if (shopError || !shop) {
+        console.error('Error fetching shop for kitchen:', shopError)
+        return
+      }
 
-      const todayStr = new Date().toISOString().split('T')[0]
-      const { data: initialOrders } = await (supabase as any)
-        .from('orders')
-        .select('*, order_items(*)')
-        .eq('shop_id', shop.id)
-        .gte('created_at', todayStr + 'T00:00:00Z')
-        .neq('status', 'cancelled')
-        .order('estimated_ready_at', { ascending: true })
+      if (!isMounted) return
 
-      const ordersData = initialOrders as OrderWithItems[] || []
-      const validOrders = ordersData.filter(o => o.total > 0)
-      setOrders(validOrders)
-      setLoading(false)
-
+      // 2. Setup Realtime Channel
       const channelName = `shop-orders-${shop.id}`
+      console.log(`[Kitchen] Subscribing to channel: ${channelName}`)
 
-      // Remove any existing channel with this name to prevent double-subscribe errors in React Strict Mode
-      supabase.getChannels().forEach(c => {
-        if (c.topic === `realtime:${channelName}`) {
-          supabase.removeChannel(c)
-        }
-      })
-
-      const channel = supabase.channel(channelName)
-      channelRef.current = channel
-
+      channel = supabase.channel(channelName)
+      
       channel
         .on(
           'postgres_changes',
@@ -92,7 +76,9 @@ function KitchenDashboard({ params }: { params: Promise<{ 'shop-slug': string }>
             table: 'orders',
             filter: `shop_id=eq.${shop.id}`,
           },
-          async (payload) => {
+          async (payload: any) => {
+            console.log('[Kitchen] Realtime Payload:', payload.eventType, payload.new?.id)
+            
             if (payload.eventType === 'INSERT') {
               const { data: newOrderData } = await (supabase as any)
                 .from('orders')
@@ -100,27 +86,63 @@ function KitchenDashboard({ params }: { params: Promise<{ 'shop-slug': string }>
                 .eq('id', payload.new.id)
                 .single()
 
-              const newOrder = newOrderData as OrderWithItems | null
-              if (newOrder && newOrder.total > 0) {
-                setOrders(prev => [...prev, newOrder])
+              if (isMounted && newOrderData && newOrderData.total > 0) {
+                setOrders(prev => {
+                  // Avoid duplicates if initial fetch and realtime overlap
+                  if (prev.some(o => o.id === newOrderData.id)) return prev
+                  return [...prev, newOrderData]
+                })
                 if (soundEnabledRef.current) playNewOrderSound()
               }
             } else if (payload.eventType === 'UPDATE') {
               const updatedOrder = payload.new as Order
-              if (updatedOrder.status === 'cancelled') {
-                setOrders(prev => prev.filter(o => o.id !== updatedOrder.id))
-              } else {
-                setOrders(prev => prev.map(o => o.id === updatedOrder.id ? { ...o, ...updatedOrder } : o))
+              if (isMounted) {
+                if (updatedOrder.status === 'cancelled') {
+                  setOrders(prev => prev.filter(o => o.id !== updatedOrder.id))
+                } else {
+                  setOrders(prev => prev.map(o => o.id === updatedOrder.id ? { ...o, ...updatedOrder } : o))
+                }
               }
             }
           }
         )
-        .subscribe()
+        .subscribe((status: string) => {
+          console.log(`[Kitchen] Subscription Status:`, status)
+          if (status === 'CHANNEL_ERROR') {
+            console.error('[Kitchen] Realtime error: Ensure the "orders" table is in the "supabase_realtime" publication.')
+          }
+        })
+
+      // 3. Fetch Initial Data
+      const todayStr = new Date().toISOString().split('T')[0]
+      const { data: initialOrders, error: ordersError } = await (supabase as any)
+        .from('orders')
+        .select('*, order_items(*)')
+        .eq('shop_id', shop.id)
+        .gte('created_at', todayStr + 'T00:00:00Z')
+        .neq('status', 'cancelled')
+        .order('estimated_ready_at', { ascending: true })
+
+      if (ordersError) {
+        console.error('Error fetching initial orders:', ordersError)
+      }
+
+      if (isMounted) {
+        const ordersData = initialOrders as OrderWithItems[] || []
+        const validOrders = ordersData.filter(o => o.total > 0)
+        setOrders(validOrders)
+        setLoading(false)
+      }
     }
+
     init()
 
     return () => {
-      if (channelRef.current) supabase.removeChannel(channelRef.current)
+      isMounted = false
+      if (channel) {
+        console.log('[Kitchen] Unsubscribing from channel')
+        supabase.removeChannel(channel)
+      }
     }
   }, [shopSlug, supabase])
 
@@ -198,7 +220,14 @@ function KitchenDashboard({ params }: { params: Promise<{ 'shop-slug': string }>
           <p className="text-sm sm:text-lg text-on-surface-variant font-medium">{t('kitchen_subtitle')}</p>
         </div>
         <button
-          onClick={() => setSoundEnabled(!soundEnabled)}
+          onClick={async () => {
+            const newState = !soundEnabled
+            setSoundEnabled(newState)
+            if (newState) {
+              await initAudio()
+              playNewOrderSound() // Play a test sound so the user knows it's active
+            }
+          }}
           className={`flex items-center justify-center gap-3 px-6 py-3.5 rounded-2xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all ${soundEnabled
               ? 'bg-primary text-on-primary shadow-lg shadow-primary/10'
               : 'bg-surface-container-low text-on-surface-variant ring-1 ring-inset ring-outline-variant/10 whitespace-nowrap'

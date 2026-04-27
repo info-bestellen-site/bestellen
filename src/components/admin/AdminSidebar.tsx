@@ -106,10 +106,10 @@ export function AdminSidebar({
       )}
 
       <aside className={`
-        fixed lg:fixed lg:top-20 left-0 z-50
-        w-72 h-screen lg:h-[calc(100vh-80px)] bg-white border-r border-outline-variant/10 flex flex-col 
+        fixed top-20 left-0 z-50
+        w-72 h-[calc(100vh-80px)] bg-white border-r border-outline-variant/10 flex flex-col 
         transition-transform duration-300 ease-in-out
-        ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         <div className="p-5 flex-1 flex flex-col min-h-0">
           {onClose && (
