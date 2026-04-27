@@ -49,8 +49,8 @@ export function ProductCard({
     const newStatus = !product.is_available
     setProduct(prev => ({ ...prev, is_available: newStatus }))
 
-    await (supabase
-      .from('products') as any)
+    await (supabase as any)
+      .from('products')
       .update({ is_available: newStatus })
       .eq('id', product.id)
   }
@@ -59,8 +59,8 @@ export function ProductCard({
     e.preventDefault()
     setIsSaving(true)
 
-    const { data, error } = await (supabase
-      .from('products') as any)
+    const { data, error } = await (supabase as any)
+      .from('products')
       .update({
         name: editForm.name,
         price: parseFloat(editForm.price) || 0,
@@ -108,8 +108,8 @@ export function ProductCard({
         .from('product-images')
         .getPublicUrl(filePath)
 
-      const { data, error: updateError } = await (supabase
-        .from('products') as any)
+      const { data, error: updateError } = await (supabase as any)
+        .from('products')
         .update({ image_url: publicUrl })
         .eq('id', product.id)
         .select()
@@ -130,7 +130,7 @@ export function ProductCard({
     e.stopPropagation()
     if (!confirm('Produkt wirklich löschen?')) return
     setIsDeleting(true)
-    const { error } = await (supabase.from('products') as any).delete().eq('id', product.id)
+    const { error } = await (supabase as any).from('products').delete().eq('id', product.id)
     if (error) {
       alert('Fehler beim Löschen')
       setIsDeleting(false)

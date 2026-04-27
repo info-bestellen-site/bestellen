@@ -49,8 +49,8 @@ function KitchenDashboard({ params }: { params: Promise<{ 'shop-slug': string }>
     async function init() {
       if (isSubscribing) return
       isSubscribing = true
-      const { data: shop } = await (supabase
-        .from('shops') as any)
+      const { data: shop } = await (supabase as any)
+        .from('shops')
         .select('id')
         .eq('slug', shopSlug)
         .single()
@@ -58,8 +58,8 @@ function KitchenDashboard({ params }: { params: Promise<{ 'shop-slug': string }>
       if (!shop) return
 
       const todayStr = new Date().toISOString().split('T')[0]
-      const { data: initialOrders } = await (supabase
-        .from('orders') as any)
+      const { data: initialOrders } = await (supabase as any)
+        .from('orders')
         .select('*, order_items(*)')
         .eq('shop_id', shop.id)
         .gte('created_at', todayStr + 'T00:00:00Z')
@@ -94,8 +94,8 @@ function KitchenDashboard({ params }: { params: Promise<{ 'shop-slug': string }>
           },
           async (payload) => {
             if (payload.eventType === 'INSERT') {
-              const { data: newOrderData } = await (supabase
-                .from('orders') as any)
+              const { data: newOrderData } = await (supabase as any)
+                .from('orders')
                 .select('*, order_items(*)')
                 .eq('id', payload.new.id)
                 .single()
@@ -131,8 +131,8 @@ function KitchenDashboard({ params }: { params: Promise<{ 'shop-slug': string }>
       updateData.estimated_ready_at = new Date(Date.now() + customMinutes * 60000).toISOString()
     }
 
-    const { error } = await (supabase
-      .from('orders') as any)
+    const { error } = await (supabase as any)
+      .from('orders')
       .update(updateData)
       .eq('id', orderId)
 

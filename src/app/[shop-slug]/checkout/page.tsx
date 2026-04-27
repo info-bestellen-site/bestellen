@@ -78,8 +78,8 @@ function CheckoutPage({ params }: { params: Promise<{ 'shop-slug': string }> }) 
 
   useEffect(() => {
     async function init() {
-      const { data: shopData } = await (supabase
-        .from('shops') as any)
+      const { data: shopData } = await (supabase as any)
+        .from('shops')
         .select('*')
         .eq('slug', shopSlug)
         .single()
@@ -99,29 +99,29 @@ function CheckoutPage({ params }: { params: Promise<{ 'shop-slug': string }> }) 
         setFulfillmentType(defaultType)
         
         // Fetch active orders for wait time calculation
-        const { count } = await (supabase
-          .from('orders') as any)
+        const { count } = await (supabase as any)
+          .from('orders')
           .select('*', { count: 'exact', head: true })
           .eq('shop_id', shopData.id)
           .in('status', ['pending', 'preparing'])
         setActiveOrders(count || 0)
         
         // Fetch opening hours
-        const { data: hoursData } = await (supabase
-          .from('opening_hours') as any)
+        const { data: hoursData } = await (supabase as any)
+          .from('opening_hours')
           .select('*')
           .eq('shop_id', shopData.id)
           
         // Fetch table layouts
-        const { data: tablesData } = await (supabase
-          .from('tables') as any)
+        const { data: tablesData } = await (supabase as any)
+          .from('tables')
           .select('*')
           .eq('shop_id', shopData.id)
           
         // Fetch existing dine-in bookings for the current day
         const todayStr = new Date().toISOString().split('T')[0]
-        const { data: ordersData } = await (supabase
-          .from('orders') as any)
+        const { data: ordersData } = await (supabase as any)
+          .from('orders')
           .select('*')
           .eq('shop_id', shopData.id)
           .eq('fulfillment_type', 'dine_in')
@@ -184,8 +184,8 @@ function CheckoutPage({ params }: { params: Promise<{ 'shop-slug': string }> }) 
     setOrderLoading(true)
     try {
       // Final check if shop is still open
-      const { data: latestShop } = await (supabase.from('shops') as any).select('is_open, manual_status_updated_at').eq('id', shop.id).single()
-      const { data: hours } = await (supabase.from('opening_hours') as any).select('*').eq('shop_id', shop.id)
+      const { data: latestShop } = await (supabase as any).from('shops').select('is_open, manual_status_updated_at').eq('id', shop.id).single()
+      const { data: hours } = await (supabase as any).from('opening_hours').select('*').eq('shop_id', shop.id)
       if (!isShopOpen(hours || [], latestShop?.is_open ?? false, latestShop?.manual_status_updated_at)) {
         alert('Der Shop hat gerade geschlossen. Ihre Bestellung konnte nicht aufgegeben werden.')
         window.location.reload()
@@ -193,8 +193,8 @@ function CheckoutPage({ params }: { params: Promise<{ 'shop-slug': string }> }) 
       }
 
       // 1. Create order
-      const { data: order, error: orderError } = await (supabase
-        .from('orders') as any)
+      const { data: order, error: orderError } = await (supabase as any)
+        .from('orders')
         .insert({
           shop_id: shop.id,
           customer_name: isAdmin ? 'Admin' : customerName,
@@ -237,8 +237,8 @@ function CheckoutPage({ params }: { params: Promise<{ 'shop-slug': string }> }) 
         }
       })
 
-      const { error: itemsError } = await (supabase
-        .from('order_items') as any)
+      const { error: itemsError } = await (supabase as any)
+        .from('order_items')
         .insert(orderItems)
 
       if (itemsError) throw itemsError

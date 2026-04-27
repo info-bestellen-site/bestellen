@@ -1,25 +1,24 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ChefHat, Mail, Lock, Loader2, CheckCircle2 } from 'lucide-react'
+import Link from 'next/link'
+import { ChefHat, Lock, Loader2, CheckCircle2 } from 'lucide-react'
 
-function SignupPage() {
+function ResetPasswordPage() {
   const router = useRouter()
   const supabase = createClient()
   
-  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [passwordConfirm, setPasswordConfirm] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
 
-  const handleSignup = async (e: React.FormEvent) => {
+  const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault()
-
+    
     if (password !== passwordConfirm) {
       setError('Passwörter stimmen nicht überein')
       return
@@ -28,12 +27,8 @@ function SignupPage() {
     setLoading(true)
     setError(null)
 
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
+    const { error } = await supabase.auth.updateUser({
+      password: password
     })
 
     if (error) {
@@ -44,6 +39,11 @@ function SignupPage() {
 
     setSuccess(true)
     setLoading(false)
+    
+    // Auto-redirect after 3 seconds
+    setTimeout(() => {
+      router.push('/auth/login')
+    }, 3000)
   }
 
   if (success) {
@@ -53,14 +53,13 @@ function SignupPage() {
           <div className="w-20 h-20 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-8">
             <CheckCircle2 className="w-10 h-10 text-success" />
           </div>
-          <h1 className="text-3xl font-black tracking-tight mb-4">Fast geschafft!</h1>
+          <h1 className="text-3xl font-black tracking-tight mb-4">Erfolgreich geändert!</h1>
           <p className="text-lg text-on-surface-variant font-medium mb-8">
-            Wir haben dir einen Bestätigungslink an <b>{email}</b> gesendet.
-            Bitte klicke auf den Link, um dein Konto zu aktivieren.
+            Dein Passwort wurde erfolgreich aktualisiert. Du wirst in Kürze zum Login weitergeleitet.
           </p>
-          <p className="text-xs text-on-surface-variant">
-            Keine E-Mail erhalten? Schau bitte auch im Spam-Ordner nach.
-          </p>
+          <Link href="/auth/login" className="py-4 px-8 bg-primary text-on-primary rounded-full font-bold text-sm inline-flex items-center justify-center gap-2 hover:opacity-95 transition-all shadow-lg shadow-primary/10">
+            Jetzt anmelden
+          </Link>
         </div>
       </div>
     )
@@ -74,11 +73,11 @@ function SignupPage() {
             <ChefHat className="w-8 h-8 text-primary" />
             <span className="text-2xl font-bold tracking-tighter">Bestellen</span>
           </Link>
-          <h1 className="text-2xl font-black tracking-tight mb-2">Konto erstellen</h1>
-          <p className="text-sm text-on-surface-variant font-medium">Digitalisiere deinen Betrieb in wenigen Minuten.</p>
+          <h1 className="text-2xl font-black tracking-tight mb-2">Neues Passwort</h1>
+          <p className="text-sm text-on-surface-variant font-medium">Lege dein neues, sicheres Passwort fest.</p>
         </div>
 
-        <form onSubmit={handleSignup} className="bg-white rounded-3xl p-8 border border-outline-variant/10 shadow-xl shadow-primary/5 space-y-6">
+        <form onSubmit={handleResetPassword} className="bg-white rounded-3xl p-8 border border-outline-variant/10 shadow-xl shadow-primary/5 space-y-6">
           {error && (
             <div className="p-4 bg-error/5 text-error text-xs font-bold rounded-xl animate-shake">
               {error}
@@ -87,22 +86,7 @@ function SignupPage() {
 
           <div className="space-y-4">
             <div>
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5 ml-1">E-Mail Adresse</label>
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant/40" />
-                <input 
-                  required
-                  type="email" 
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  placeholder="name@restaurant.de"
-                  className="w-full pl-11 pr-4 py-3.5 bg-surface-container-low border-none rounded-2xl text-sm focus:ring-2 focus:ring-primary/10 transition-all"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5 ml-1">Passwort</label>
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5 ml-1">Neues Passwort</label>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant/40" />
                 <input 
@@ -118,7 +102,7 @@ function SignupPage() {
             </div>
 
             <div>
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5 ml-1">Passwort wiederholen</label>
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5 ml-1">Passwort bestätigen</label>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant/40" />
                 <input 
@@ -126,7 +110,7 @@ function SignupPage() {
                   type="password" 
                   value={passwordConfirm}
                   onChange={e => setPasswordConfirm(e.target.value)}
-                  placeholder="Passwort bestätigen"
+                  placeholder="Passwort wiederholen"
                   className="w-full pl-11 pr-4 py-3.5 bg-surface-container-low border-none rounded-2xl text-sm focus:ring-2 focus:ring-primary/10 transition-all"
                 />
               </div>
@@ -137,19 +121,12 @@ function SignupPage() {
             disabled={loading}
             className="w-full py-4 bg-primary text-on-primary rounded-full font-bold text-sm flex items-center justify-center gap-2 hover:opacity-95 transition-all shadow-lg shadow-primary/10 active:scale-[0.98] disabled:opacity-50"
           >
-            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Konto erstellen'}
+            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Passwort speichern'}
           </button>
-
-          <p className="text-center text-xs text-on-surface-variant font-medium pt-2">
-            Bereits ein Konto?{' '}
-            <Link href="/auth/login" className="text-primary font-bold hover:underline">
-              Anmelden
-            </Link>
-          </p>
         </form>
       </div>
     </div>
   )
 }
 
-export default SignupPage;
+export default ResetPasswordPage;

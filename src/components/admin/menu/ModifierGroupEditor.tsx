@@ -62,8 +62,8 @@ export function ModifierGroupEditor({ product, shopId, onClose }: ModifierGroupE
     if (!newGroupForm.name.trim()) return
     setSavingGroupId('new')
 
-    const { data } = await (supabase
-      .from('modifier_groups') as any)
+    const { data } = await (supabase as any)
+      .from('modifier_groups')
       .insert({
         shop_id: shopId,
         product_id: product.id,
@@ -88,14 +88,14 @@ export function ModifierGroupEditor({ product, shopId, onClose }: ModifierGroupE
 
   async function handleDeleteGroup(groupId: string) {
     if (!confirm('Modifier-Gruppe wirklich löschen?')) return
-    await (supabase.from('modifier_groups') as any).delete().eq('id', groupId)
+    await (supabase as any).from('modifier_groups').delete().eq('id', groupId)
     setGroups(prev => prev.filter(g => g.id !== groupId))
   }
 
   async function handleToggleRequired(group: ModifierGroupWithOptions) {
     const newRequired = !group.is_required
-    const { error } = await (supabase
-      .from('modifier_groups') as any)
+    const { error } = await (supabase as any)
+      .from('modifier_groups')
       .update({ is_required: newRequired, min_selections: newRequired ? 1 : 0 })
       .eq('id', group.id)
 
@@ -107,8 +107,8 @@ export function ModifierGroupEditor({ product, shopId, onClose }: ModifierGroupE
   }
 
   async function handleUpdateMaxSelections(group: ModifierGroupWithOptions, max: number) {
-    const { error } = await (supabase
-      .from('modifier_groups') as any)
+    const { error } = await (supabase as any)
+      .from('modifier_groups')
       .update({ max_selections: max })
       .eq('id', group.id)
 
@@ -125,8 +125,8 @@ export function ModifierGroupEditor({ product, shopId, onClose }: ModifierGroupE
     setSavingGroupId(groupId)
 
     const group = groups.find(g => g.id === groupId)
-    const { data } = await (supabase
-      .from('modifier_options') as any)
+    const { data } = await (supabase as any)
+      .from('modifier_options')
       .insert({
         group_id: groupId,
         name: form.name.trim(),
@@ -150,7 +150,7 @@ export function ModifierGroupEditor({ product, shopId, onClose }: ModifierGroupE
 
   async function handleDeleteOption(groupId: string, optionId: string) {
     if (!confirm('Option wirklich löschen?')) return
-    await (supabase.from('modifier_options') as any).delete().eq('id', optionId)
+    await (supabase as any).from('modifier_options').delete().eq('id', optionId)
     setGroups(prev => prev.map(g => 
       g.id === groupId 
         ? { ...g, modifier_options: g.modifier_options.filter(o => o.id !== optionId) }
@@ -163,14 +163,14 @@ export function ModifierGroupEditor({ product, shopId, onClose }: ModifierGroupE
     
     // If setting to default, unset others in group
     if (newDefault) {
-      await (supabase
-        .from('modifier_options') as any)
+      await (supabase as any)
+        .from('modifier_options')
         .update({ is_default: false })
         .eq('group_id', groupId)
     }
 
-    const { error } = await (supabase
-      .from('modifier_options') as any)
+    const { error } = await (supabase as any)
+      .from('modifier_options')
       .update({ is_default: newDefault })
       .eq('id', option.id)
 

@@ -42,8 +42,8 @@ function OrderHistoryPage({ params }: { params: Promise<{ 'shop-slug': string }>
 
   useEffect(() => {
     async function loadHistory() {
-      const { data: shopData } = await (supabase
-        .from('shops') as any)
+      const { data: shopData } = await (supabase as any)
+        .from('shops')
         .select('id')
         .eq('slug', shopSlug)
         .single()
@@ -52,8 +52,8 @@ function OrderHistoryPage({ params }: { params: Promise<{ 'shop-slug': string }>
       if (!shop) return
       setShopId(shop.id)
 
-      const { data: historyOrdersData } = await (supabase
-        .from('orders') as any)
+      const { data: historyOrdersData } = await (supabase as any)
+        .from('orders')
         .select('*, order_items(*)')
         .eq('shop_id', shop.id)
         .in('status', ['completed', 'cancelled', 'preparing', 'ready', 'pending'])

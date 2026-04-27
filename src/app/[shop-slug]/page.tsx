@@ -13,8 +13,8 @@ async function ShopPage({ params }: ShopPageProps) {
   const supabase = await createServerSupabaseClient()
 
   // Fetch shop, categories and products
-  const { data: shop } = await (supabase
-    .from('shops') as any)
+  const { data: shop } = await (supabase as any)
+    .from('shops')
     .select('*')
     .eq('slug', decodedSlug)
     .single()
@@ -25,20 +25,20 @@ async function ShopPage({ params }: ShopPageProps) {
   const { data: { user } } = await supabase.auth.getUser()
   const isAdmin = user?.id === shop.owner_id
 
-  const { data: categories } = await (supabase
-    .from('categories') as any)
+  const { data: categories } = await (supabase as any)
+    .from('categories')
     .select('*')
     .eq('shop_id', shop.id)
     .order('sort_order')
 
-  const { data: products } = await (supabase
-    .from('products') as any)
+  const { data: products } = await (supabase as any)
+    .from('products')
     .select('*')
     .eq('shop_id', shop.id)
     .order('sort_order')
 
   // Fetch opening hours
-  const { data: hours } = await (supabase.from('opening_hours') as any).select('*').eq('shop_id', shop.id)
+  const { data: hours } = await (supabase as any).from('opening_hours').select('*').eq('shop_id', shop.id)
   const isCurrentlyOpen = isShopOpen(hours || [], shop.is_open, shop.manual_status_updated_at)
 
   let isLimitReached = false;
@@ -47,8 +47,8 @@ async function ShopPage({ params }: ShopPageProps) {
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
 
-    const { count } = await (supabase
-      .from('orders') as any)
+    const { count } = await (supabase as any)
+      .from('orders')
       .select('id', { count: 'exact', head: true })
       .eq('shop_id', shop.id)
       .gte('created_at', startOfMonth.toISOString());

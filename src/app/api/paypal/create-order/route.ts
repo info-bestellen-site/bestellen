@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
       var supabase = createClient(supabaseUrl, supabaseServiceKey)
     }
 
-    const { data: shop, error: shopError } = await supabase
+    const { data: shop, error: shopError } = await (supabase as any)
       .from('shops')
       .select('id, name, paypal_enabled, paypal_merchant_id')
       .eq('slug', shopSlug)

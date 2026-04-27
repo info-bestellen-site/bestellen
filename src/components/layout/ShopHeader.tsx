@@ -130,8 +130,8 @@ export function ShopHeader({
     const newStatus = !isOpenInternal
     
     try {
-      const { error } = await (supabase
-        .from('shops') as any)
+      const { error } = await (supabase as any)
+        .from('shops')
         .update({ 
           is_open: newStatus,
           manual_status_updated_at: new Date().toISOString()

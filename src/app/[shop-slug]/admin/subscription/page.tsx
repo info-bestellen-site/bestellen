@@ -26,8 +26,8 @@ function SubscriptionPage({ params }: SubscriptionPageProps) {
 
   useEffect(() => {
     async function init() {
-      const { data: shopData, error: shopError } = await (supabase
-        .from('shops') as any)
+      const { data: shopData, error: shopError } = await (supabase as any)
+        .from('shops')
         .select('*')
         .eq('slug', slug)
         .single();
@@ -44,8 +44,8 @@ function SubscriptionPage({ params }: SubscriptionPageProps) {
         startOfMonth.setDate(1);
         startOfMonth.setHours(0, 0, 0, 0);
 
-        const { count, error: countError } = await (supabase
-          .from('orders') as any)
+        const { count, error: countError } = await (supabase as any)
+          .from('orders')
           .select('id', { count: 'exact', head: true })
           .eq('shop_id', shopData.id)
           .gte('created_at', startOfMonth.toISOString());

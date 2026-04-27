@@ -28,7 +28,7 @@ function ConfirmationPage({ params }: { params: Promise<{ 'shop-slug': string; '
       return
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('orders')
       .select('*, shops(*), order_items(*)')
       .eq('id', orderId)

@@ -67,8 +67,8 @@ export async function POST(req: NextRequest) {
     // 4. Create the order in Supabase
     console.log(`[PayPal] Creating Supabase order for shop: ${orderData.shop_id}`)
     
-    const { data: order, error: orderError } = await (supabase
-      .from('orders') as any)
+    const { data: order, error: orderError } = await (supabase as any)
+      .from('orders')
       .insert({
         shop_id: orderData.shop_id,
         customer_name: customerName,
@@ -111,8 +111,8 @@ export async function POST(req: NextRequest) {
       unit_price: item.totalPrice,
     }))
 
-    const { error: itemsError } = await (supabase
-      .from('order_items') as any)
+    const { error: itemsError } = await (supabase as any)
+      .from('order_items')
       .insert(orderItems)
 
     if (itemsError) {

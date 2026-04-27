@@ -89,8 +89,8 @@ function MenuManagementPage({ params }: { params: Promise<{ 'shop-slug': string 
 
   useEffect(() => {
     async function fetchData() {
-      const { data: shopData } = await (supabase
-        .from('shops') as any)
+      const { data: shopData } = await (supabase as any)
+        .from('shops')
         .select('id')
         .eq('slug', shopSlug)
         .single()
@@ -99,14 +99,14 @@ function MenuManagementPage({ params }: { params: Promise<{ 'shop-slug': string 
         const shop = shopData as Shop
         setShopId(shop.id)
 
-        const { data: cats } = await (supabase
-          .from('categories') as any)
+        const { data: cats } = await (supabase as any)
+          .from('categories')
           .select('*')
           .eq('shop_id', shop.id)
           .order('sort_order')
 
-        const { data: prods } = await (supabase
-          .from('products') as any)
+        const { data: prods } = await (supabase as any)
+          .from('products')
           .select('*')
           .eq('shop_id', shop.id)
           .order('sort_order')
@@ -125,7 +125,7 @@ function MenuManagementPage({ params }: { params: Promise<{ 'shop-slug': string 
     setIsSaving(true)
 
     if (editingCategory) {
-      const { data } = await (supabase.from('categories') as any)
+      const { data } = await (supabase as any).from('categories')
         .update({ name: newCategoryName.trim() })
         .eq('id', editingCategory.id)
         .select()
@@ -139,7 +139,7 @@ function MenuManagementPage({ params }: { params: Promise<{ 'shop-slug': string 
         setNewCategoryName('')
       }
     } else {
-      const { data } = await (supabase.from('categories') as any)
+      const { data } = await (supabase as any).from('categories')
         .insert({
           shop_id: shopId,
           name: newCategoryName.trim(),
@@ -166,7 +166,7 @@ function MenuManagementPage({ params }: { params: Promise<{ 'shop-slug': string 
 
   const handleDeleteCategory = async (id: string) => {
     if (!confirm(t('delete_category_confirm'))) return
-    await (supabase.from('categories') as any).delete().eq('id', id)
+    await (supabase as any).from('categories').delete().eq('id', id)
     setCategories(categories.filter(c => c.id !== id))
     setProducts(products.filter(p => p.category_id !== id))
   }
@@ -210,7 +210,7 @@ function MenuManagementPage({ params }: { params: Promise<{ 'shop-slug': string 
     }
 
     if (editingProduct) {
-      const { data } = await (supabase.from('products') as any)
+      const { data } = await (supabase as any).from('products')
         .update(productData)
         .eq('id', editingProduct.id)
         .select()
@@ -223,7 +223,7 @@ function MenuManagementPage({ params }: { params: Promise<{ 'shop-slug': string 
         setEditingProduct(null)
       }
     } else {
-      const { data } = await (supabase.from('products') as any)
+      const { data } = await (supabase as any).from('products')
         .insert({
           ...productData,
           sort_order: products.filter(p => p.category_id === selectedCategoryId).length
@@ -275,8 +275,8 @@ function MenuManagementPage({ params }: { params: Promise<{ 'shop-slug': string 
 
       if (selectedProductForImage) {
         // Direct update for existing product
-        const { error: updateError } = await (supabase
-          .from('products') as any)
+        const { error: updateError } = await (supabase as any)
+          .from('products')
           .update({ image_url: publicUrl })
           .eq('id', selectedProductForImage.id)
 
@@ -298,14 +298,14 @@ function MenuManagementPage({ params }: { params: Promise<{ 'shop-slug': string 
 
   const handleDeleteProduct = async (id: string) => {
     if (!confirm(t('delete_product_confirm'))) return
-    await (supabase.from('products') as any).delete().eq('id', id)
+    await (supabase as any).from('products').delete().eq('id', id)
     setProducts(products.filter(p => p.id !== id))
   }
 
   const toggleVisibility = async (product: Product) => {
     const newVal = !product.is_hidden_from_menu
-    const { error } = await (supabase
-      .from('products') as any)
+    const { error } = await (supabase as any)
+      .from('products')
       .update({ is_hidden_from_menu: newVal })
       .eq('id', product.id)
 
@@ -316,8 +316,8 @@ function MenuManagementPage({ params }: { params: Promise<{ 'shop-slug': string 
 
   const toggleAvailability = async (product: Product) => {
     const newVal = !product.is_available
-    const { error } = await (supabase
-      .from('products') as any)
+    const { error } = await (supabase as any)
+      .from('products')
       .update({ is_available: newVal })
       .eq('id', product.id)
 
@@ -399,8 +399,8 @@ function MenuManagementPage({ params }: { params: Promise<{ 'shop-slug': string 
 
       // Persist to DB
       for (let i = 0; i < newCategories.length; i++) {
-        await (supabase
-          .from('categories') as any)
+        await (supabase as any)
+          .from('categories')
           .update({ sort_order: i })
           .eq('id', newCategories[i].id)
       }
@@ -425,8 +425,8 @@ function MenuManagementPage({ params }: { params: Promise<{ 'shop-slug': string 
       for (const catId in categoryGroups) {
         const group = categoryGroups[catId]
         for (let i = 0; i < group.length; i++) {
-          await (supabase
-            .from('products') as any)
+          await (supabase as any)
+            .from('products')
             .update({
               category_id: catId,
               sort_order: i

@@ -39,8 +39,8 @@ function ReservationsPage({ params }: ReservationPageProps) {
 
   useEffect(() => {
     async function init() {
-      const { data: shopData } = await (supabase
-        .from('shops') as any)
+      const { data: shopData } = await (supabase as any)
+        .from('shops')
         .select('*')
         .eq('slug', shopSlug)
         .single()
@@ -64,8 +64,8 @@ function ReservationsPage({ params }: ReservationPageProps) {
   }, [shopSlug, supabase, selectedDate])
 
   const loadTables = async (shopId: string) => {
-    const { data } = await (supabase
-      .from('tables') as any)
+    const { data } = await (supabase as any)
+      .from('tables')
       .select('*')
       .eq('shop_id', shopId)
       .order('name')
@@ -78,8 +78,8 @@ function ReservationsPage({ params }: ReservationPageProps) {
     const endOfDay = new Date(date)
     endOfDay.setHours(23, 59, 59, 999)
 
-    const { data } = await (supabase
-      .from('orders') as any)
+    const { data } = await (supabase as any)
+      .from('orders')
       .select('*')
       .eq('shop_id', shopId)
       .eq('fulfillment_type', 'dine_in')
@@ -102,8 +102,8 @@ function ReservationsPage({ params }: ReservationPageProps) {
     const [hours, minutes] = newResTime.split(':')
     targetDate.setHours(parseInt(hours), parseInt(minutes), 0, 0)
     
-    const { error } = await (supabase
-      .from('orders') as any)
+    const { error } = await (supabase as any)
+      .from('orders')
       .insert({
         shop_id: shop.id,
         customer_name: newResName,
@@ -134,8 +134,8 @@ function ReservationsPage({ params }: ReservationPageProps) {
   }
 
   const updateReservationStatus = async (id: string, newStatus: OrderStatus) => {
-    const { error } = await (supabase
-      .from('orders') as any)
+    const { error } = await (supabase as any)
+      .from('orders')
       .update({ status: newStatus })
       .eq('id', id)
       
@@ -145,8 +145,8 @@ function ReservationsPage({ params }: ReservationPageProps) {
   }
 
   const updateReservationTable = async (id: string, tableId: string | null) => {
-    const { error } = await (supabase
-      .from('orders') as any)
+    const { error } = await (supabase as any)
+      .from('orders')
       .update({ table_id: tableId })
       .eq('id', id)
       

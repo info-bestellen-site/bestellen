@@ -33,14 +33,14 @@ function ReservePage({ params }: ReservePageProps) {
 
   useEffect(() => {
     async function init() {
-      const { data: shopData } = await (supabase.from('shops') as any).select('*').eq('slug', shopSlug).single()
+      const { data: shopData } = await (supabase as any).from('shops').select('*').eq('slug', shopSlug).single()
       if (!shopData) return
       setShop(shopData)
 
       const [hoursRes, tablesRes, ordersRes] = await Promise.all([
-        (supabase.from('opening_hours') as any).select('*').eq('shop_id', shopData.id),
-        (supabase.from('tables') as any).select('*').eq('shop_id', shopData.id),
-        (supabase.from('orders') as any).select('*').eq('shop_id', shopData.id).eq('fulfillment_type', 'dine_in')
+        (supabase as any).from('opening_hours').select('*').eq('shop_id', shopData.id),
+        (supabase as any).from('tables').select('*').eq('shop_id', shopData.id),
+        (supabase as any).from('orders').select('*').eq('shop_id', shopData.id).eq('fulfillment_type', 'dine_in')
       ])
 
       if (hoursRes.data) setHours(hoursRes.data)
@@ -86,7 +86,7 @@ function ReservePage({ params }: ReservePageProps) {
       notes: 'Online Tischreservierung (Ohne Speisen)'
     }
 
-    const { error } = await (supabase.from('orders') as any).insert(orderPayload)
+    const { error } = await (supabase as any).from('orders').insert(orderPayload)
     if (!error) {
       setSuccess(true)
     } else {

@@ -84,7 +84,12 @@ function LoginPage() {
             </div>
 
             <div>
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5 ml-1">Passwort</label>
+              <div className="flex items-center justify-between mb-1.5 ml-1">
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Passwort</label>
+                <Link href="/auth/forgot-password" className="text-[10px] font-bold text-primary hover:underline">
+                  Passwort vergessen?
+                </Link>
+              </div>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant/40" />
                 <input 

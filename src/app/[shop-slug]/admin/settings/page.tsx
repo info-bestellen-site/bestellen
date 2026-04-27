@@ -142,8 +142,8 @@ function SettingsPage({ params }: { params: Promise<{ 'shop-slug': string }> }) 
 
   useEffect(() => {
     async function fetchShop() {
-      const { data } = await (supabase
-        .from('shops') as any)
+      const { data } = await (supabase as any)
+        .from('shops')
         .select('*')
         .eq('slug', shopSlug)
         .single()
@@ -174,19 +174,19 @@ function SettingsPage({ params }: { params: Promise<{ 'shop-slug': string }> }) 
     }
 
     async function fetchHours() {
-      const { data } = await (supabase
-        .from('opening_hours') as any)
+      const { data } = await (supabase as any)
+        .from('opening_hours')
         .select('*')
-        .eq('shop_id', (await (supabase.from('shops') as any).select('id').eq('slug', shopSlug).single()).data?.id || '')
+        .eq('shop_id', (await (supabase as any).from('shops').select('id').eq('slug', shopSlug).single()).data?.id || '')
         .order('start_time')
       if (data) setOpeningHours(data)
     }
 
     async function fetchTables() {
-      const { data } = await (supabase
-        .from('tables') as any)
+      const { data } = await (supabase as any)
+        .from('tables')
         .select('*')
-        .eq('shop_id', (await (supabase.from('shops') as any).select('id').eq('slug', shopSlug).single()).data?.id || '')
+        .eq('shop_id', (await (supabase as any).from('shops').select('id').eq('slug', shopSlug).single()).data?.id || '')
         .order('name')
       if (data) setTables(data)
     }
@@ -253,8 +253,8 @@ function SettingsPage({ params }: { params: Promise<{ 'shop-slug': string }> }) 
 
   const handleAddSlot = async () => {
     if (!shop) return
-    const { data, error } = await (supabase
-      .from('opening_hours') as any)
+    const { data, error } = await (supabase as any)
+      .from('opening_hours')
       .insert({
         shop_id: shop.id,
         day_of_week: newSlot.day,
@@ -269,14 +269,14 @@ function SettingsPage({ params }: { params: Promise<{ 'shop-slug': string }> }) 
   }
 
   const handleDeleteSlot = async (id: string) => {
-    const { error } = await (supabase.from('opening_hours') as any).delete().eq('id', id)
+    const { error } = await (supabase as any).from('opening_hours').delete().eq('id', id)
     if (!error) setOpeningHours(openingHours.filter(h => h.id !== id))
   }
 
   const handleAddTable = async () => {
     if (!shop || !newTable.number) return
-    const { data, error } = await (supabase
-      .from('tables') as any)
+    const { data, error } = await (supabase as any)
+      .from('tables')
       .insert({
         shop_id: shop.id,
         name: newTable.number,
@@ -293,7 +293,7 @@ function SettingsPage({ params }: { params: Promise<{ 'shop-slug': string }> }) 
   }
 
   const handleDeleteTable = async (id: string) => {
-    const { error } = await (supabase.from('tables') as any).delete().eq('id', id)
+    const { error } = await (supabase as any).from('tables').delete().eq('id', id)
     if (!error) setTables(tables.filter(t => t.id !== id))
   }
 
@@ -343,8 +343,8 @@ function SettingsPage({ params }: { params: Promise<{ 'shop-slug': string }> }) 
     setSaving(true)
     setSuccess(false)
 
-    const { error } = await (supabase
-      .from('shops') as any)
+    const { error } = await (supabase as any)
+      .from('shops')
       .update({
         name,
         slug,
@@ -440,8 +440,8 @@ function SettingsPage({ params }: { params: Promise<{ 'shop-slug': string }> }) 
     if (!confirm(t('confirm_disconnect_paypal') || 'Are you sure you want to disconnect PayPal?')) return
 
     try {
-      const { error } = await (supabase
-        .from('shops') as any)
+      const { error } = await (supabase as any)
+        .from('shops')
         .update({
           paypal_merchant_id: null,
           paypal_enabled: false

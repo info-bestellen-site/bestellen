@@ -25,8 +25,8 @@ export function AnalyticsClient({ shopSlug }: { shopSlug: string }) {
 
   useEffect(() => {
     async function loadAnalysis() {
-      const { data: shopData } = await (supabase
-        .from('shops') as any)
+      const { data: shopData } = await (supabase as any)
+        .from('shops')
         .select('id')
         .eq('slug', shopSlug)
         .single()
@@ -34,8 +34,8 @@ export function AnalyticsClient({ shopSlug }: { shopSlug: string }) {
       const shop = shopData as { id: string } | null
       if (!shop) return
 
-      const { data: historyOrders } = await (supabase
-        .from('orders') as any)
+      const { data: historyOrders } = await (supabase as any)
+        .from('orders')
         .select('*, order_items(*)')
         .eq('shop_id', shop.id)
         .eq('status', 'completed')

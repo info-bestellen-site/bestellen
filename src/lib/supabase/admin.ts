@@ -21,3 +21,28 @@ export function createAdminSupabaseClient() {
     }
   })
 }
+
+/**
+ * Creates a Super Admin user with email verification skipped.
+ * Use this to manually provision admin accounts.
+ */
+export async function createSuperAdmin(email: string, password: string, metadata: any = {}) {
+  const supabase = createAdminSupabaseClient()
+  
+  const { data, error } = await supabase.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    user_metadata: { 
+      role: 'super_admin',
+      ...metadata 
+    }
+  })
+
+  if (error) {
+    console.error('Error creating super admin:', error)
+    throw error
+  }
+
+  return data.user
+}
