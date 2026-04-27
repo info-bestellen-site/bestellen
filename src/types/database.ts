@@ -19,6 +19,7 @@ export interface Database {
           subscription_tier: "starter" | "pro" | "max"
           is_open: boolean
           manual_status_updated_at: string | null
+          order_cutoff_minutes: number
           has_pickup: boolean
           has_delivery: boolean
           has_dine_in: boolean
@@ -44,6 +45,7 @@ export interface Database {
           subscription_tier?: "starter" | "pro" | "max"
           is_open?: boolean
           manual_status_updated_at?: string | null
+          order_cutoff_minutes?: number
           has_pickup?: boolean
           has_delivery?: boolean
           has_dine_in?: boolean
@@ -257,6 +259,7 @@ export interface Database {
           day_of_week: number
           start_time: string
           end_time: string
+          type: 'general' | 'delivery'
         }
         Insert: {
           id?: string
@@ -264,6 +267,7 @@ export interface Database {
           day_of_week: number
           start_time: string
           end_time: string
+          type?: 'general' | 'delivery'
         }
         Update: {
           id?: string
@@ -271,6 +275,7 @@ export interface Database {
           day_of_week?: number
           start_time?: string
           end_time?: string
+          type?: 'general' | 'delivery'
         }
       }
       tables: {

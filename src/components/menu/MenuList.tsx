@@ -97,20 +97,59 @@ export function MenuList({
                   <Clock className="w-3.5 h-3.5" />
                   <span className="text-[10px] font-black uppercase tracking-widest">Unsere Regulären Zeiten</span>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {DAYS_OF_WEEK.map((day, index) => {
                     const dayHours = hours.filter(h => Number(h.day_of_week) === index)
-                    return (
-                      <div key={index} className="flex justify-between items-center text-xs">
+                    const generalSlots = dayHours.filter(h => (h as any).type === 'general' || !(h as any).type)
+                    const deliverySlots = dayHours.filter(h => (h as any).type === 'delivery')
+
+                    if (dayHours.length === 0) return (
+                      <div key={index} className="flex justify-between items-center text-xs opacity-30">
                         <span className="font-bold">{t(DAY_KEYS[index])}</span>
-                        <span className="font-medium text-on-surface-variant">
-                          {dayHours.length > 0
-                            ? dayHours.map(h => `${h.start_time.substring(0, 5)} - ${h.end_time.substring(0, 5)}`).join(', ')
-                            : t('closed')}
-                        </span>
+                        <span className="font-medium uppercase tracking-widest text-[9px]">{t('closed')}</span>
+                      </div>
+                    )
+
+                    return (
+                      <div key={index} className="space-y-1.5 pb-2 border-b border-outline-variant/5 last:border-none last:pb-0">
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="font-black uppercase tracking-wider text-[10px] text-on-surface/40">{t(DAY_KEYS[index])}</span>
+                        </div>
+                        <div className="space-y-1">
+                          {generalSlots.length > 0 && (
+                            <div className="flex justify-between items-center text-[11px]">
+                              <span className="text-on-surface-variant font-medium">{t('general')}</span>
+                              <span className="font-bold text-on-surface">
+                                {generalSlots.map(h => `${h.start_time.substring(0, 5)} - ${h.end_time.substring(0, 5)}`).join(', ')}
+                              </span>
+                            </div>
+                          )}
+                          {deliverySlots.length > 0 && (
+                            <div className="flex justify-between items-center text-[11px]">
+                              <span className="text-primary font-bold uppercase tracking-tighter text-[9px]">{t('delivery')}</span>
+                              <span className="font-normal text-primary/80">
+                                {deliverySlots.map(h => `${h.start_time.substring(0, 5)} - ${h.end_time.substring(0, 5)}`).join(', ')}
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )
                   })}
+
+                  {shop.order_cutoff_minutes > 0 && (
+                    <div className="mt-4 pt-3 border-t border-outline-variant/10">
+                      <div className="flex items-start gap-2 text-primary">
+                        <Clock className="w-3 h-3 mt-0.5" />
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-wider">Bestellschluss</p>
+                          <p className="text-[10px] font-medium opacity-80">
+                            Bestellungen werden bis {shop.order_cutoff_minutes} Min. vor Ende der Öffnungszeit angenommen.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

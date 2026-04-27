@@ -183,11 +183,9 @@ function CheckoutPage({ params }: { params: Promise<{ 'shop-slug': string }> }) 
 
     setOrderLoading(true)
     try {
-      // Final check if shop is still open
-      const { data: latestShop } = await (supabase as any).from('shops').select('is_open, manual_status_updated_at').eq('id', shop.id).single()
-      const { data: hours } = await (supabase as any).from('opening_hours').select('*').eq('shop_id', shop.id)
-      if (!isShopOpen(hours || [], latestShop?.is_open ?? false, latestShop?.manual_status_updated_at)) {
-        alert('Der Shop hat gerade geschlossen. Ihre Bestellung konnte nicht aufgegeben werden.')
+      const deliveryType = fulfillmentType === 'delivery' ? 'delivery' : 'general'
+      if (!isShopOpen(openingHours, shop.is_open, shop.manual_status_updated_at, deliveryType, shop.order_cutoff_minutes)) {
+        alert('Der Shop hat gerade geschlossen oder nimmt keine Bestellungen mehr an.')
         window.location.reload()
         return
       }

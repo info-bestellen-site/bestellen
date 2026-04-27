@@ -77,7 +77,7 @@ export function ShopHeader({
     if (!hours?.length) return
 
     const interval = setInterval(() => {
-      const currentCalculatedStatus = isShopOpen(hours, shop.is_open, shop.manual_status_updated_at)
+      const currentCalculatedStatus = isShopOpen(hours, shop.is_open, shop.manual_status_updated_at, 'general', shop.order_cutoff_minutes)
       setIsOpenInternal(currentCalculatedStatus)
     }, 60000)
 
@@ -95,7 +95,7 @@ export function ShopHeader({
         filter: `id=eq.${shop.id}`
       }, (payload) => {
         const updatedShop = payload.new as Shop
-        const newStatus = isShopOpen(hours || [], updatedShop.is_open, updatedShop.manual_status_updated_at)
+        const newStatus = isShopOpen(hours || [], updatedShop.is_open, updatedShop.manual_status_updated_at, 'general', updatedShop.order_cutoff_minutes)
         setIsOpenInternal(newStatus)
       })
       .subscribe()

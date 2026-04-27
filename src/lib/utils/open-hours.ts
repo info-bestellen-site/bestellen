@@ -1,6 +1,12 @@
 import { OpeningHour, Table, Order } from '@/types/database'
 
-export function isShopOpen(hours: OpeningHour[], manualOpen: boolean, lastUpdate?: string | null): boolean {
+export function isShopOpen(
+  hours: OpeningHour[], 
+  manualOpen: boolean, 
+  lastUpdate?: string | null,
+  type: 'general' | 'delivery' = 'general',
+  cutoffMinutes: number = 0
+): boolean {
   const now = new Date()
   let isManualOverride = !manualOpen
 
@@ -18,16 +24,35 @@ export function isShopOpen(hours: OpeningHour[], manualOpen: boolean, lastUpdate
     }
   }
 
-  // 2. Identify today's schedule
   const originalIndex = now.getDay()
   const dayOfWeek = (originalIndex + 6) % 7 // Transform 0=Sun to 6=Sun, 1=Mon to 0=Mon
   const currentTimeInt = now.getHours() * 100 + now.getMinutes()
-  const todayHours = hours.filter(h => Number(h.day_of_week) === dayOfWeek)
+  
+  // Filter by type (defaulting to general if no type provided in data)
+  const todayHours = hours.filter(h => 
+    Number(h.day_of_week) === dayOfWeek && 
+    ((h as any).type === type || (!(h as any).type && type === 'general'))
+  )
 
   // 3. Find if we are currently in an opening slot
   const currentSlot = todayHours.find(slot => {
     const start = parseInt(slot.start_time.replace(/:/g, '').substring(0, 4))
-    const end = parseInt(slot.end_time.replace(/:/g, '').substring(0, 4))
+    let end = parseInt(slot.end_time.replace(/:/g, '').substring(0, 4))
+
+    // Apply cutoff if this is a general/delivery check (not for reservations usually)
+    if (cutoffMinutes > 0) {
+      const parts = slot.end_time.split(':')
+      const endH = parseInt(parts[0])
+      const endM = parseInt(parts[1])
+      
+      const dateWithCutoff = new Date(now)
+      dateWithCutoff.setHours(endH, endM, 0, 0)
+      dateWithCutoff.setMinutes(dateWithCutoff.getMinutes() - cutoffMinutes)
+      
+      const cutoffTimeInt = dateWithCutoff.getHours() * 100 + dateWithCutoff.getMinutes()
+      end = cutoffTimeInt
+    }
+
     return currentTimeInt >= start && currentTimeInt < end
   })
 
@@ -55,14 +80,21 @@ export function isShopOpen(hours: OpeningHour[], manualOpen: boolean, lastUpdate
   return !!currentSlot
 }
 
-export function generateAvailableSlots(hours: OpeningHour[], targetDate: Date = new Date()): string[] {
+export function generateAvailableSlots(
+  hours: OpeningHour[], 
+  targetDate: Date = new Date(),
+  type: 'general' | 'delivery' = 'general'
+): string[] {
   const originalIndex = targetDate.getDay()
   const dayOfWeek = (originalIndex + 6) % 7
   
   const now = new Date()
   const isToday = targetDate.toDateString() === now.toDateString()
 
-  const todayHours = hours.filter(h => Number(h.day_of_week) === dayOfWeek)
+  const todayHours = hours.filter(h => 
+    Number(h.day_of_week) === dayOfWeek && 
+    ((h as any).type === type || (!(h as any).type && type === 'general'))
+  )
   const slots: string[] = []
 
   todayHours.forEach(slot => {

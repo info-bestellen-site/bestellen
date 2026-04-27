@@ -135,6 +135,8 @@ function SettingsPage({ params }: { params: Promise<{ 'shop-slug': string }> }) 
   // Opening Hours State
   const [openingHours, setOpeningHours] = useState<OpeningHour[]>([])
   const [newSlot, setNewSlot] = useState({ day: 0, start: '09:00', end: '18:00' })
+  const [activeHoursTab, setActiveHoursTab] = useState<'general' | 'delivery'>('general')
+  const [orderCutoffMinutes, setOrderCutoffMinutes] = useState(0)
 
   // Tables State
   const [tables, setTables] = useState<ShopTable[]>([])
@@ -169,6 +171,7 @@ function SettingsPage({ params }: { params: Promise<{ 'shop-slug': string }> }) 
         setPaypalEnabled(data.paypal_enabled ?? false)
         setPaypalMerchantId(data.paypal_merchant_id || '')
         setPaypalEmail(data.paypal_email || '')
+        setOrderCutoffMinutes(data.order_cutoff_minutes || 0)
       }
       setLoading(false)
     }
@@ -259,7 +262,8 @@ function SettingsPage({ params }: { params: Promise<{ 'shop-slug': string }> }) 
         shop_id: shop.id,
         day_of_week: newSlot.day,
         start_time: newSlot.start + ':00',
-        end_time: newSlot.end + ':00'
+        end_time: newSlot.end + ':00',
+        type: activeHoursTab
       })
       .select()
       .single()
@@ -362,6 +366,7 @@ function SettingsPage({ params }: { params: Promise<{ 'shop-slug': string }> }) 
         paypal_enabled: paypalEnabled,
         paypal_merchant_id: paypalMerchantId || null,
         paypal_email: paypalEmail || null,
+        order_cutoff_minutes: orderCutoffMinutes,
       })
       .eq('id', shop.id)
 
@@ -692,15 +697,46 @@ function SettingsPage({ params }: { params: Promise<{ 'shop-slug': string }> }) 
 
         {/* Opening Hours Section */}
         <div className="bg-white rounded-[2rem] p-8 border border-outline-variant/10 shadow-xl shadow-primary/5 space-y-8">
-          <div className="flex items-center gap-3 mb-2">
-            <Clock className="w-6 h-6 text-primary" />
-            <h2 className="text-xl font-bold tracking-tight">{t('opening_hours_subtitle')}</h2>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
+            <div className="flex items-center gap-3">
+              <Clock className="w-6 h-6 text-primary" />
+              <h2 className="text-xl font-bold tracking-tight">{t('opening_hours_title')}</h2>
+            </div>
+            
+            {/* Tab Switcher */}
+            <div className="flex bg-surface-container-low p-1 rounded-2xl border border-outline-variant/10">
+              <button
+                type="button"
+                onClick={() => setActiveHoursTab('general')}
+                className={`px-6 py-2 rounded-xl text-xs font-black transition-all ${
+                  activeHoursTab === 'general' 
+                    ? 'bg-white text-primary shadow-sm' 
+                    : 'text-on-surface-variant/60 hover:text-on-surface-variant'
+                }`}
+              >
+                {t('general')}
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveHoursTab('delivery')}
+                className={`px-6 py-2 rounded-xl text-xs font-black transition-all ${
+                  activeHoursTab === 'delivery' 
+                    ? 'bg-white text-primary shadow-sm' 
+                    : 'text-on-surface-variant/60 hover:text-on-surface-variant'
+                }`}
+              >
+                {t('delivery_hours')}
+              </button>
+            </div>
           </div>
 
           <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-surface-container-low/50 p-6 rounded-3xl border border-outline-variant/5">
-              <div className="space-y-4">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">{t('new_time_slot')}</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+              {/* Add New Slot */}
+              <div className="bg-surface-container-low/50 p-6 rounded-3xl border border-outline-variant/5 space-y-4">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">
+                  {activeHoursTab === 'general' ? t('new_time_slot') : t('delivery_hours_title')}
+                </p>
                 <div className="grid grid-cols-3 gap-3">
                   <select
                     value={newSlot.day}
@@ -730,11 +766,37 @@ function SettingsPage({ params }: { params: Promise<{ 'shop-slug': string }> }) 
                   </button>
                 </div>
               </div>
+
+              {/* Order Cutoff Setting */}
+              <div className="bg-surface-container-low/50 p-6 rounded-3xl border border-outline-variant/5 space-y-4">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">
+                  {t('order_cutoff_label')}
+                </p>
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-4 bg-white p-3 rounded-xl ring-1 ring-outline-variant/10">
+                    <Clock className="w-5 h-5 text-on-surface-variant/40" />
+                    <input
+                      type="number"
+                      min="0"
+                      value={orderCutoffMinutes}
+                      onChange={e => setOrderCutoffMinutes(Math.max(0, parseInt(e.target.value) || 0))}
+                      className="flex-1 text-sm font-bold border-none p-0 focus:ring-0"
+                    />
+                    <span className="text-xs font-bold text-on-surface-variant opacity-40">MIN</span>
+                  </div>
+                  <p className="text-[10px] text-on-surface-variant leading-relaxed opacity-60">
+                    {t('order_cutoff_hint')}
+                  </p>
+                </div>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 gap-3">
               {DAYS_OF_WEEK.map((day, dayIdx) => {
-                const daySlots = openingHours.filter(h => Number(h.day_of_week) === dayIdx)
+                const daySlots = openingHours.filter(h => 
+                  Number(h.day_of_week) === dayIdx && 
+                  ((h as any).type === activeHoursTab || (!(h as any).type && activeHoursTab === 'general'))
+                )
                 return (
                   <div key={dayIdx} className="flex items-center justify-between p-4 bg-white rounded-2xl border border-outline-variant/5 group">
                     <span className="text-sm font-bold w-32">{t(DAY_KEYS[dayIdx])}</span>

@@ -39,7 +39,7 @@ async function ShopPage({ params }: ShopPageProps) {
 
   // Fetch opening hours
   const { data: hours } = await (supabase as any).from('opening_hours').select('*').eq('shop_id', shop.id)
-  const isCurrentlyOpen = isShopOpen(hours || [], shop.is_open, shop.manual_status_updated_at)
+  const isCurrentlyOpen = isShopOpen(hours || [], shop.is_open, shop.manual_status_updated_at, 'general', shop.order_cutoff_minutes)
 
   let isLimitReached = false;
   if (shop.subscription_tier === 'starter') {
