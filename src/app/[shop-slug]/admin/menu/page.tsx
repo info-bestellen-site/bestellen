@@ -24,6 +24,8 @@ import { formatCurrency } from '@/lib/utils/format-currency'
 import { Modal } from '@/components/ui/Modal'
 import { ImageCropper } from '@/components/ui/ImageCropper'
 import { ProductDetailModal } from '@/components/menu/ProductDetailModal'
+import { GlobalTemplatePicker } from '@/components/admin/menu/GlobalTemplatePicker'
+import { Sparkles } from 'lucide-react'
 import {
   DndContext,
   closestCorners,
@@ -78,6 +80,8 @@ function MenuManagementPage({ params }: { params: Promise<{ 'shop-slug': string 
   const [isUploading, setIsUploading] = useState(false)
   const [imageToCrop, setImageToCrop] = useState<string | null>(null)
   const [selectedProductForImage, setSelectedProductForImage] = useState<Product | null>(null)
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false)
+  const [isTemplatePickerOpen, setIsTemplatePickerOpen] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const sensors = useSensors(
@@ -117,6 +121,14 @@ function MenuManagementPage({ params }: { params: Promise<{ 'shop-slug': string 
       setLoading(false)
     }
     fetchData()
+
+    async function checkRole() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user?.app_metadata?.role === 'super_admin') {
+        setIsSuperAdmin(true)
+      }
+    }
+    checkRole()
   }, [supabase, shopSlug])
 
   const handleSaveCategory = async (e: React.FormEvent) => {
@@ -711,11 +723,44 @@ function MenuManagementPage({ params }: { params: Promise<{ 'shop-slug': string 
       {/* Product Modal */}
       <Modal
         isOpen={isProductModalOpen && !imageToCrop}
-        onClose={() => setIsProductModalOpen(false)}
+        onClose={() => {
+          setIsProductModalOpen(false)
+          setIsTemplatePickerOpen(false)
+        }}
         title={editingProduct ? t('edit_product') : t('new_product')}
       >
-        <form onSubmit={handleSaveProduct} className="space-y-6">
-          <div className="space-y-2">
+        <div className="relative">
+          {isTemplatePickerOpen && (
+            <div className="absolute inset-0 z-50 bg-white animate-in slide-in-from-bottom-10 duration-300 -m-8">
+              <GlobalTemplatePicker
+                onClose={() => setIsTemplatePickerOpen(false)}
+                onSelect={(template) => {
+                  setNewProduct(prev => ({
+                    ...prev,
+                    name: template.name,
+                    description: template.description || '',
+                    image_url: template.image_url || ''
+                  }))
+                  setIsTemplatePickerOpen(false)
+                }}
+              />
+            </div>
+          )}
+
+          <form onSubmit={handleSaveProduct} className="space-y-6">
+            {isSuperAdmin && !editingProduct && (
+              <div className="pb-6 border-b border-outline-variant/10 mb-6">
+                <button
+                  type="button"
+                  onClick={() => setIsTemplatePickerOpen(true)}
+                  className="w-full py-4 bg-primary/10 text-primary rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-primary/20 transition-all border-2 border-dashed border-primary/20"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Aus Vorlagen wählen
+                </button>
+              </div>
+            )}
+            <div className="space-y-2">
             <label className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">{t('name')}</label>
             <input
               type="text"
@@ -782,6 +827,7 @@ function MenuManagementPage({ params }: { params: Promise<{ 'shop-slug': string 
             {isSaving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : (editingProduct ? t('update_product') : t('save_product'))}
           </button>
         </form>
+        </div>
       </Modal>
 
       <input

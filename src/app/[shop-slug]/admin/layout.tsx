@@ -17,6 +17,7 @@ async function AdminLayout({ children, params }: AdminLayoutProps) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth/login')
 
+  const isSuperAdmin = user.app_metadata?.role === 'super_admin'
   const { data: shopData } = await (supabase
     .from('shops') as any)
     .select('id, owner_id')
@@ -25,7 +26,7 @@ async function AdminLayout({ children, params }: AdminLayoutProps) {
 
   const shop = shopData as { id: string, owner_id: string } | null
 
-  if (!shop || shop.owner_id !== user.id) {
+  if (!shop || (shop.owner_id !== user.id && !isSuperAdmin)) {
     redirect('/auth/login')
   }
 

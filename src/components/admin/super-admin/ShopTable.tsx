@@ -1,6 +1,6 @@
 'use client'
 
-import { Download, ExternalLink, MoreVertical, Users, Calendar, Store, Upload } from 'lucide-react'
+import { Download, ExternalLink, MoreVertical, Users, Calendar, Store, Upload, Settings2 } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useRef } from 'react'
 import { exportShopMenuAction, importCatalogAction } from '@/app/super-admin/actions'
@@ -123,6 +123,13 @@ export function ShopTable({ initialShops }: { initialShops: Shop[] }) {
                 </td>
                 <td className="px-8 py-6 text-right">
                   <div className="flex items-center justify-end gap-2">
+                    <Link 
+                      href={`/${shop.slug}/admin`}
+                      className="flex items-center gap-2 px-4 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all font-bold"
+                    >
+                      <Settings2 className="w-4 h-4" />
+                      Verwalten
+                    </Link>
                     <Link 
                       href={`/${shop.slug}`}
                       target="_blank"

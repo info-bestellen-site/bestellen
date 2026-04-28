@@ -164,7 +164,31 @@ export async function getGlobalTemplatesAction() {
     .order('name')
 
   if (error) throw error
-  return products
+
+  // Generate signed URLs for images stored in Supabase
+  const productsWithSignedUrls = await Promise.all((products || []).map(async (product: any) => {
+    if (product.image_url && product.image_url.includes('storage/v1/object/public')) {
+      // Extract bucket and path from URL
+      // Example: .../storage/v1/object/public/product-images/path/to/image.jpg
+      const parts = product.image_url.split('/storage/v1/object/public/')
+      if (parts.length > 1) {
+        const fullPath = parts[1]
+        const bucket = fullPath.split('/')[0]
+        const path = fullPath.split('/').slice(1).join('/')
+
+        const { data: signedUrlData } = await supabase.storage
+          .from(bucket)
+          .createSignedUrl(path, 3600) // 1 hour expiry
+
+        if (signedUrlData) {
+          return { ...product, image_url: signedUrlData.signedUrl }
+        }
+      }
+    }
+    return product
+  }))
+
+  return productsWithSignedUrls
 }
 
 export async function searchLibraryBulkAction(productNames: string[]) {
